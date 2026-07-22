@@ -27,7 +27,7 @@
                      <set_value name="$_ValidationStatus" exact="'already_current'"/>
                   </do_if>
                   <do_else>
-                     <find_sector name="$_AccessibleTargetSector" space="$_Station" accessgrantedto="$_Ship.owner"/>
+                     <find_sector name="$_AccessibleTargetSector" space="player.galaxy" macro="$_Station.sector.macro" accessgrantedto="$_Ship.owner"/>
                      <do_if value="$_AccessibleTargetSector != $_Station.sector">
                         <set_value name="$_ValidationStatus" exact="'target_disallowed'"/>
                      </do_if>

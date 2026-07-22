@@ -110,7 +110,7 @@
             <!-- Idle Move: preflight and execution use the same effective policy. -->
             <do_if value="$IDLE_MOVE_TO and not $FAILED_MOVE">
                <set_value name="$_IdleMoveAllowed" exact="false"/>
-               <find_sector name="$_AccessibleIdleMoveSector" space="$WHERE_TO_MOVE.{1}" accessgrantedto="$_Ship.owner"/>
+               <find_sector name="$_AccessibleIdleMoveSector" space="player.galaxy" macro="$WHERE_TO_MOVE.{1}.macro" accessgrantedto="$_Ship.owner"/>
                <do_if value="$_AccessibleIdleMoveSector == $WHERE_TO_MOVE.{1} and
                              not $WHERE_TO_MOVE.{1}.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} and
                              not $WHERE_TO_MOVE.{1}.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
@@ -146,7 +146,7 @@
                              not $WHO_TO_FOLLOW.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} and
                              not $WHO_TO_FOLLOW.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} and
                              not $WHO_TO_FOLLOW.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
-                  <find_sector name="$_AccessibleIdleFollowSector" space="$WHO_TO_FOLLOW" accessgrantedto="$_Ship.owner"/>
+                  <find_sector name="$_AccessibleIdleFollowSector" space="player.galaxy" macro="$WHO_TO_FOLLOW.sector.macro" accessgrantedto="$_Ship.owner"/>
                   <do_if value="$_AccessibleIdleFollowSector == $WHO_TO_FOLLOW.sector">
                      <get_global_path component="$_IdlePathComponent" resultdistance="$_IdlePathDistance" refobject="$_Ship"
                                       useblacklist="$blacklistgroup" useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
@@ -177,7 +177,7 @@
                              not $WHERE_TO_DOCK.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} and
                              not $WHERE_TO_DOCK.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} and
                              not $WHERE_TO_DOCK.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
-                  <find_sector name="$_AccessibleIdleDockSector" space="$WHERE_TO_DOCK" accessgrantedto="$_Ship.owner"/>
+                  <find_sector name="$_AccessibleIdleDockSector" space="player.galaxy" macro="$WHERE_TO_DOCK.sector.macro" accessgrantedto="$_Ship.owner"/>
                   <do_if value="$_AccessibleIdleDockSector == $WHERE_TO_DOCK.sector">
                      <get_global_path component="$_IdlePathComponent" resultdistance="$_IdlePathDistance" refobject="$_Ship"
                                       useblacklist="$blacklistgroup" useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
@@ -200,7 +200,7 @@
                   <do_for_each name="$_FoundStation" in="$_FoundStations">
                      <do_if value="$_FoundStation.dockingallowed.{$_Ship} and
                                    not $_FoundStation.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
-                        <find_sector name="$_AccessibleIdleDockSector" space="$_FoundStation" accessgrantedto="$_Ship.owner"/>
+                        <find_sector name="$_AccessibleIdleDockSector" space="player.galaxy" macro="$_FoundStation.sector.macro" accessgrantedto="$_Ship.owner"/>
                         <do_if value="$_AccessibleIdleDockSector == $_FoundStation.sector">
                            <get_global_path component="$_IdlePathComponent" resultdistance="$_IdlePathDistance" refobject="$_Ship"
                                             useblacklist="$blacklistgroup" useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">

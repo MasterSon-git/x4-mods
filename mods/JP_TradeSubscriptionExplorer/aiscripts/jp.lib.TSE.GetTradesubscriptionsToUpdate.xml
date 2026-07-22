@@ -97,7 +97,7 @@
          <do_for_each name="$_Sector" in="$_Sectors">
 
             <!-- Repeat access and policy checks here for fixed-sector orders and dynamic changes. -->
-            <find_sector name="$_AccessibleSector" space="$_Sector" accessgrantedto="$_Ship.owner"/>
+            <find_sector name="$_AccessibleSector" space="player.galaxy" macro="$_Sector.macro" accessgrantedto="$_Ship.owner"/>
             <do_if value="$_AccessibleSector != $_Sector">
                <continue/>
             </do_if>
