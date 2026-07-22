@@ -113,28 +113,6 @@
          </actions>
       </cue>
 
-      <!-- Cancel all orders if any of the orders parameter has been changed -->
-      <cue name="TSE_EventObjectOrderReady1_MD" instantiate="true">
-         <conditions>
-            <event_object_order_ready group="global.$SL_PlayerShips"/>
-            <check_any>
-               <check_value value="@event.param.id == 'JP_TradeSubscriptionExplorerS'"/>
-               <check_value value="@event.param.id == 'JP_TradeSubscriptionExplorerG'"/>
-            </check_any>
-            <check_value value="global.$TSE_ShipsGroup.indexof.{event.object}"/>
-         </conditions>
-         <actions>
-            <cancel_all_orders object="event.object"/>
-            <do_if value="event.param.id == 'JP_TradeSubscriptionExplorerG' and event.object.subordinates.count gt 0">
-               <do_for_each name="$_Subordinate" in="event.object.subordinates">
-                  <do_if value="$_Subordinate.defaultorder.id == 'Assist'">
-                     <cancel_all_orders object="$_Subordinate"/>
-                  </do_if>
-               </do_for_each>
-            </do_if>
-         </actions>
-      </cue>
-
       <!-- Cleanup when JP_TradeSubscriptionExplorerS or JP_TradeSubscriptionExplorerG is cancelled -->
       <cue name="TSE_EventObjectOrderReady2_MD" instantiate="true">
          <conditions>

@@ -119,7 +119,6 @@ Assert-Condition ($null -ne $tseSetup.SelectSingleNode("actions/set_value[@name=
 
 $requiredListenerNames = @(
     'TSE_EventObjectDestroyed_MD',
-    'TSE_EventObjectOrderReady1_MD',
     'TSE_EventObjectOrderReady2_MD'
 )
 foreach ($listenerName in $requiredListenerNames) {
@@ -130,7 +129,7 @@ $topLevelGlobalGroupEvents = $tse.SelectNodes("/mdscript/cues/cue/conditions/*[s
 Assert-Condition ($topLevelGlobalGroupEvents.Count -eq 0) 'No top-level TSE event cue may require a global group.'
 
 $globalGroupEvents = $tse.SelectNodes("//*[starts-with(local-name(), 'event_') and starts-with(@group, 'global.`$')]")
-Assert-Condition ($globalGroupEvents.Count -eq 3) 'Exactly the three known TSE event conditions must use global groups.'
+Assert-Condition ($globalGroupEvents.Count -eq 2) 'Exactly the two known TSE event conditions must use global groups.'
 foreach ($eventNode in $globalGroupEvents) {
     Assert-Condition ($requiredGroups -contains $eventNode.GetAttribute('group')) "Unexpected global event group $($eventNode.GetAttribute('group'))."
     Assert-Condition ($null -ne $eventNode.SelectSingleNode("ancestor::cue[@name='TSE_Setup_MD']")) "$($eventNode.LocalName) must be below initialized TSE_Setup_MD."
