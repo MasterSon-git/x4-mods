@@ -3,7 +3,7 @@
 <mdscript name="JP_TradeSubscriptionExplorer_MD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
    <cues>
 
-      <cue name="TSE_Setup_MD" instantiate="true">
+      <cue name="TSE_Setup_MD">
          <conditions>
             <check_any>
                <event_game_started/>
@@ -28,11 +28,25 @@
                <remove_value name="global.$TradeSubscriptionExplorer_Settings"/>
             </do_if>
 
+            <!-- TSE must not depend on the execution order of the two extension setup cues. -->
+            <run_actions ref="md.JP_ScriptLibrary_MD.SL_RefreshPlayerShips"/>
+
             <!-- group ~ [$_Ship, $_Ship, ...] -->
             <do_if value="global.$TSE_ShipsGroup? and typeof global.$TSE_ShipsGroup != datatype.group">
                <remove_value name="global.$TSE_ShipsGroup"/>
             </do_if>
             <create_group groupname="global.$TSE_ShipsGroup" chance="if not global.$TSE_ShipsGroup? then 100 else 0"/>
+
+            <!-- Reconstruct active TSE ships from their current default orders. -->
+            <create_group groupname="$_TSEActiveShips"/>
+            <do_for_each name="$_Ship" in="global.$SL_PlayerShips">
+               <do_if value="@$_Ship.defaultorder.id == 'JP_TradeSubscriptionExplorerS'
+                     or @$_Ship.defaultorder.id == 'JP_TradeSubscriptionExplorerG'
+                     or (@$_Ship.defaultorder.id == 'Assist' and @$_Ship.commander.defaultorder.id == 'JP_TradeSubscriptionExplorerG')">
+                  <add_to_group groupname="$_TSEActiveShips" object="$_Ship"/>
+               </do_if>
+            </do_for_each>
+            <add_to_group groupname="global.$TSE_ShipsGroup" group="$_TSEActiveShips" replace="true"/>
 
             <!-- group ~ [$_Sector, $_Sector, ...] -->
             <do_if value="global.$TSE_SectorsBlacklistGroup? and typeof global.$TSE_SectorsBlacklistGroup != datatype.group">
@@ -46,6 +60,27 @@
             </do_if>
             <set_value name="global.$TSE_ShipsCurrentSectorTable" exact="table[]" chance="(if not global.$TSE_ShipsCurrentSectorTable? then 100 else 0)"/>
 
+            <!-- Keep only sector reservations belonging to reconstructed active TSE ships. -->
+            <set_value name="$_PreviousShipsCurrentSectorTable" exact="global.$TSE_ShipsCurrentSectorTable"/>
+            <set_value name="$_RebuiltShipsCurrentSectorTable" exact="table[]"/>
+            <create_group groupname="$_RebuiltSectorsBlacklistGroup"/>
+            <do_for_each name="$_Ship" in="global.$TSE_ShipsGroup">
+               <set_value name="$_Sector" exact="@$_PreviousShipsCurrentSectorTable.{$_Ship}"/>
+               <do_if value="@$_Sector.isclass.sector">
+                  <set_value name="$_RebuiltShipsCurrentSectorTable.{$_Ship}" exact="$_Sector"/>
+                  <add_to_group groupname="$_RebuiltSectorsBlacklistGroup" object="$_Sector"/>
+               </do_if>
+            </do_for_each>
+            <set_value name="global.$TSE_ShipsCurrentSectorTable" exact="$_RebuiltShipsCurrentSectorTable"/>
+            <add_to_group groupname="global.$TSE_SectorsBlacklistGroup" group="$_RebuiltSectorsBlacklistGroup" replace="true"/>
+
+            <remove_value name="$_Sector" chance="if $_Sector? then 100 else 0"/>
+            <remove_value name="$_RebuiltSectorsBlacklistGroup"/>
+            <remove_value name="$_RebuiltShipsCurrentSectorTable"/>
+            <remove_value name="$_PreviousShipsCurrentSectorTable"/>
+            <remove_value name="$_Ship" chance="if $_Ship? then 100 else 0"/>
+            <remove_value name="$_TSEActiveShips"/>
+
             <!-- Cleanup of unused global ~ remove in a future version -->
             <remove_value name="global.$TSE_SectorBlacklist" chance="if global.$TSE_SectorBlacklist? then 100 else 0"/>
 
@@ -57,7 +92,7 @@
             </do_if>
 
          </actions>
-      </cue>
+         <cues>
 
       <!-- Cleanup when the ship got destroyed -->
       <cue name="TSE_EventObjectDestroyed_MD" instantiate="true">
@@ -216,6 +251,9 @@
             </do_if>
 
          </actions>
+      </cue>
+
+         </cues>
       </cue>
 
    </cues>

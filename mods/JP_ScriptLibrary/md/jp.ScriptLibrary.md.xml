@@ -3,7 +3,25 @@
 <mdscript name="JP_ScriptLibrary_MD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
    <cues>
 
-      <cue name="SL_Setup_MD" instantiate="true">
+      <library name="SL_RefreshPlayerShips" purpose="run_actions">
+         <params>
+            <param name="Excluded" default="null"/>
+         </params>
+         <actions>
+            <do_if value="global.$SL_PlayerShips? and typeof global.$SL_PlayerShips != datatype.group">
+               <remove_value name="global.$SL_PlayerShips"/>
+            </do_if>
+            <create_group groupname="global.$SL_PlayerShips" chance="if not global.$SL_PlayerShips? then 100 else 0"/>
+
+            <set_value name="$PlayerShips" exact="[]"/>
+            <find_ship_by_true_owner name="$PlayerShips" space="player.galaxy" faction="faction.player" unit="false" normalcluster="true" explorationcluster="true" venturercluster="true" multiple="true" append="true" excluded="$Excluded">
+               <match class="class.spacesuit" negate="true"/>
+            </find_ship_by_true_owner>
+            <add_to_group groupname="global.$SL_PlayerShips" list="$PlayerShips" replace="true"/>
+         </actions>
+      </library>
+
+      <cue name="SL_Setup_MD">
          <conditions>
             <check_any>
                <event_game_started/>
@@ -24,9 +42,12 @@
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
             <!-- group ~ $SL_PlayerShips -->
-            <find_ship_by_true_owner groupname="global.$SL_PlayerShips" space="player.galaxy" faction="faction.player" trueowner="faction.player" multiple="true" append="true"/>
+            <run_actions ref="md.JP_ScriptLibrary_MD.SL_RefreshPlayerShips"/>
 
             <!-- table[] ~ key = $_Ship, value = [$_IdleStartTime] -->
+            <do_if value="global.$SL_IdleShips? and typeof global.$SL_IdleShips != datatype.table">
+               <remove_value name="global.$SL_IdleShips"/>
+            </do_if>
             <set_value name="global.$SL_IdleShips" exact="table[]" chance="(if not global.$SL_IdleShips? then 100 else 0)"/>
 
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -37,7 +58,30 @@
             </do_if>
 
          </actions>
-      </cue>
+         <cues>
+
+            <cue name="SL_RefreshPlayerShips_MD" instantiate="true">
+               <conditions>
+                  <check_any>
+                     <event_player_built_ship/>
+                     <event_player_owned_destroyed/>
+                     <check_all>
+                        <check_any>
+                           <event_object_entered space="player.galaxy"/>
+                           <event_contained_object_changed_true_owner space="player.galaxy" owner="faction.player"/>
+                           <event_contained_object_changed_true_owner space="player.galaxy" previous="faction.player"/>
+                        </check_any>
+                        <check_value value="(event.name == 'event_contained_object_changed_true_owner' or event.param.isplayerowned) and event.param.isoperational"/>
+                     </check_all>
+                  </check_any>
+                  <check_value value="event.param.isrealclass.ship and not event.param.isunit and not event.param.isrealclass.spacesuit"/>
+               </conditions>
+               <actions>
+                  <run_actions ref="md.JP_ScriptLibrary_MD.SL_RefreshPlayerShips">
+                     <param name="Excluded" value="if event.name == 'event_player_owned_destroyed' then event.param else null"/>
+                  </run_actions>
+               </actions>
+            </cue>
 
       <cue name="SL_DebugInfo_MD" instantiate="false" checkinterval="1s">
          <actions>
@@ -130,6 +174,9 @@
             </do_if>
 
          </actions>
+      </cue>
+
+         </cues>
       </cue>
 
    </cues>
