@@ -69,17 +69,51 @@
          <do_if value="$SECTOR == null">
             <find_sector name="$_Sectors" space="player.galaxy" multiple="true" accessgrantedto="$_Ship.owner">
                <match knownto="$_Ship.owner"/>
-               <match_gate_distance object="$_Ship" min="0"/>
+               <match_gate_distance object="$_Ship" min="0">
+                  <blacklist object="$_Ship" group="$blacklistgroup"/>
+               </match_gate_distance>
                <match_use_blacklist object="$_Ship" type="blacklisttype.sectortravel" group="$blacklistgroup"/>
+               <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
             </find_sector>
-            <do_if value="$_Sectors.count gt 1">
-               <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_Sectors">
-                  <param name="LIST" value="$_Sectors"/>
-               </run_script>
-            </do_if>
+
+            <!-- Stage 1: retain only paths that use this ship's effective travel blacklist and known sectors. -->
+            <create_list name="$_ReachableSectors"/>
+            <do_for_each name="$_CandidateSector" in="$_Sectors">
+               <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                                useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+                  <start object="$_Ship"/>
+                  <end object="$_CandidateSector"/>
+               </get_global_path>
+               <do_if value="$_PathDistance ge 0">
+                  <append_to_list name="$_ReachableSectors" exact="$_CandidateSector"/>
+               </do_if>
+            </do_for_each>
+            <!-- Stage 2: estimate_travel_time only ranks the already-safe candidates. -->
+            <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_Sectors">
+               <param name="LIST" value="$_ReachableSectors"/>
+            </run_script>
          </do_if>
 
          <do_for_each name="$_Sector" in="$_Sectors">
+
+            <!-- Repeat access and policy checks here for fixed-sector orders and dynamic changes. -->
+            <find_sector name="$_AccessibleSector" space="$_Sector" accessgrantedto="$_Ship.owner"/>
+            <do_if value="$_AccessibleSector != $_Sector">
+               <continue/>
+            </do_if>
+            <do_if value="$_Sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} or
+                          $_Sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+               <continue/>
+            </do_if>
+
+            <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                             useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+               <start object="$_Ship"/>
+               <end object="$_Sector"/>
+            </get_global_path>
+            <do_if value="$_PathDistance lt 0">
+               <continue/>
+            </do_if>
 
             <do_if value="@global.$TSE_SectorsBlacklistGroup.indexof.{$_Sector} and @global.$TSE_ShipsCurrentSectorTable.{$_Ship} != $_Sector">
                <continue/>
@@ -95,14 +129,30 @@
                <match exactclass="class.station"/>
                <match tradesknownto="$_Ship.owner" negate="true"/>
                <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
+               <match_use_blacklist object="$_Ship" type="blacklisttype.objectactivity" group="$blacklistgroup"/>
             </find_object>
+            <create_list name="$_ReachableStations"/>
             <do_for_each name="$_Station" in="$_Stations" reverse="true">
-               <do_if value="$_Station.iswreck or ($_Station.isconstruction and $_Station.buildstorage.hastradesubscription)">
+               <do_if value="$_Station.iswreck">
+                  <continue/>
+               </do_if>
+               <do_if value="$_Station.isconstruction">
+                  <do_if value="not $_Station.buildstorage.exists or $_Station.buildstorage.hastradesubscription">
+                     <continue/>
+                  </do_if>
+                  <set_value name="$_SubscriptionTarget" exact="$_Station.buildstorage"/>
+               </do_if>
+               <do_else>
+                  <set_value name="$_SubscriptionTarget" exact="$_Station"/>
+               </do_else>
+               <do_if value="$_SubscriptionTarget.hastradesubscription or
+                             $_Station.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} or
+                             $_SubscriptionTarget.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship}">
                   <continue/>
                </do_if>
                <do_if value="$_Station.isconstruction and not $CONSTRUCTION_SITES or
-                                $_Station.iswharf and not $WHARFS or
-                                $_Station.isshipyard and not $SHIPYARDS or
+                                 $_Station.iswharf and not $WHARFS or
+                                 $_Station.isshipyard and not $SHIPYARDS or
                                 $_Station.isequipmentdock and not $_Station.iswharf and not $_Station.isshipyard and not $_Station.ispiratebase and not $EQUIPMENTDOCKS or
                                 $_Station.istradestation and not $TRADING_STATIONS or
                                 $_Station.ispiratebase and not $PIRATE_BASES or
@@ -114,22 +164,32 @@
                <do_if value="(not $_Station.isconstruction and not $_Station.iswharf and not $_Station.isshipyard and
                                  not $_Station.isequipmentdock and not $_Station.istradestation and not $_Station.ispiratebase and
                                  not $_Station.isrecyclingfacility and not $_Station.isdefencestation and
-                                 not $_Station.isfactionheadquarters and not $NON_SPECIAL_STATIONS)">
+                                  not $_Station.isfactionheadquarters and not $NON_SPECIAL_STATIONS)">
                   <continue/>
                </do_if>
-               <append_to_list name="$_FoundStations" exact="$_Station"/>
+
+               <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                                useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+                  <start object="$_Ship"/>
+                  <end object="$_SubscriptionTarget"/>
+               </get_global_path>
+               <do_if value="$_PathDistance ge 0">
+                  <append_to_list name="$_ReachableStations" exact="$_Station"/>
+               </do_if>
             </do_for_each>
             <remove_value name="$_Stations"/>
 
-            <do_if value="$_FoundStations.count gt 0">
-               <do_if value="$_FoundStations.count gt 1">
-                  <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_FoundStations">
-                     <param name="LIST" value="$_FoundStations"/>
-                  </run_script>
+            <do_if value="$_ReachableStations.count gt 0">
+               <!-- Only the blacklist/known-path prefiltered list reaches the time estimator. -->
+               <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_FoundStations">
+                  <param name="LIST" value="$_ReachableStations"/>
+               </run_script>
+               <do_if value="$_FoundStations.count">
+                  <set_value name="$SECTOR" exact="$_Sector"/>
+                  <break/>
                </do_if>
-               <set_value name="$SECTOR" exact="$_Sector"/>
-               <break/>
             </do_if>
+            <remove_value name="$_ReachableStations"/>
 
          </do_for_each>
 

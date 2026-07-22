@@ -170,8 +170,19 @@
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
+         <label name="SEARCH_LBL"/>
          <set_command command="command.investigate"/>
          <set_command_action commandaction="commandaction.calculating"/>
+
+         <!-- Every subordinate evaluates and escapes with its own effective
+              blacklist; the commander sector is not an allow-list exception. -->
+         <run_script name="'jp.lib.EscapeTravelBlacklist'" result="$_EscapeResult">
+            <param name="USE_KNOWN_PATH" value="true"/>
+         </run_script>
+         <do_if value="$_EscapeResult != 'not_required' and $_EscapeResult != 'success'">
+            <wait exact="$IDLE_TIME"/>
+            <resume label="SEARCH_LBL"/>
+         </do_if>
 
          <create_list name="$_FoundStations"/>
          <run_script name="'jp.lib.TSE.GetTradesubscriptionsToUpdate'" result="$_FoundStations">
@@ -196,11 +207,16 @@
             <resume label="IDLE_LBL"/>
          </do_if>
 
-         <create_order object="$_Ship" id="'JP_lib_TSE_UpdateSubscription'" immediate="true">
-            <param name="SECTOR" value="global.$TSE_ShipsCurrentSectorTable.{$_Ship}"/>
-            <param name="STATION" value="$_FoundStations.{1}"/>
-         </create_order>
-         <wait exact="1ms"/>
+         <do_for_each name="$_CandidateStation" in="$_FoundStations">
+            <run_script name="'jp.lib.TSE.UpdateSubscription'" result="$_UpdateResult">
+               <param name="SECTOR" value="global.$TSE_ShipsCurrentSectorTable.{$_Ship}"/>
+               <param name="STATION" value="$_CandidateStation"/>
+            </run_script>
+            <do_if value="$_UpdateResult == 'move_failed' or $_UpdateResult == 'approach_failed'">
+               <continue/>
+            </do_if>
+         </do_for_each>
+         <resume label="IDLE_LBL"/>
 
          <label name="IDLE_LBL"/>
 
@@ -215,6 +231,8 @@
             <param name="IDLE_DOCKING"   value="$IDLE_DOCKING"/>
             <param name="FIND_STATION"   value="$FIND_STATION"/>
             <param name="WHERE_TO_DOCK"  value="$WHERE_TO_DOCK"/>
+            <param name="STRICT_BLACKLIST" value="true"/>
+            <param name="USE_KNOWN_PATH"   value="true"/>
          </create_order>
          <wait exact="1ms"/>
 

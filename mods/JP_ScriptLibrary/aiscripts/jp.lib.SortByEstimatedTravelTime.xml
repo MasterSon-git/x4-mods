@@ -39,27 +39,28 @@
 
          <set_command_action commandaction="commandaction.calculating"/>
 
-         <do_if value="@$LIST.{1}.distanceto.{$_Ship}">
-            <create_list name="$_SectorTravelTimes"/>
-            <do_for_each name="$_ListEntry" in="$LIST">
-               <estimate_travel_time ship="$_Ship" start="$_Ship" target="$_ListEntry" result="$_TravelTime"/>
+         <create_list name="$_SectorTravelTimes"/>
+         <do_for_each name="$_ListEntry" in="$LIST">
+            <estimate_travel_time ship="$_Ship" start="$_Ship" target="$_ListEntry" result="$_TravelTime"/>
+            <!-- X4 9.00 defines a negative result as no path; do not rank it before valid times. -->
+            <do_if value="$_TravelTime ge 0">
                <append_to_list name="$_SectorTravelTimes" exact="[$_ListEntry, $_TravelTime]"/>
-            </do_for_each>
-            <sort_list list="$_SectorTravelTimes" sortbyvalue="loop.element.{2}"/>
-            <clear_list list="$LIST"/>
-            <do_if value="$_SectorTravelTimes.{1}.{1}.isclass.{class.sector}">
-               <do_for_each name="$_Sector" in="$_SectorTravelTimes" reverse="true">
-                  <do_if value="$_Sector.{1} == $_Ship.sector">
-                     <remove_from_list name="$_SectorTravelTimes" exact="$_Sector"/>
-                     <append_to_list name="$LIST" exact="$_Ship.sector"/>
-                     <break/>
-                  </do_if>
-               </do_for_each>
             </do_if>
-            <do_for_each name="$_SectorTravelTime" in="$_SectorTravelTimes">
-               <append_to_list name="$LIST" exact="$_SectorTravelTime.{1}"/>
+         </do_for_each>
+         <sort_list list="$_SectorTravelTimes" sortbyvalue="loop.element.{2}"/>
+         <clear_list list="$LIST"/>
+         <do_if value="@$_SectorTravelTimes.{1}.{1}.isclass.{class.sector}">
+            <do_for_each name="$_Sector" in="$_SectorTravelTimes" reverse="true">
+               <do_if value="$_Sector.{1} == $_Ship.sector">
+                  <remove_from_list name="$_SectorTravelTimes" exact="$_Sector"/>
+                  <append_to_list name="$LIST" exact="$_Ship.sector"/>
+                  <break/>
+               </do_if>
             </do_for_each>
          </do_if>
+         <do_for_each name="$_SectorTravelTime" in="$_SectorTravelTimes">
+            <append_to_list name="$LIST" exact="$_SectorTravelTime.{1}"/>
+         </do_for_each>
 
          <do_if value="$REVERSE">
             <create_list name="$_ReversedList"/>

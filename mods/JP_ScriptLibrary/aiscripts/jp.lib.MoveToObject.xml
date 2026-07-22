@@ -61,6 +61,7 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$_Ship" exact="this.ship"/>
       <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$_MoveResult" exact="false"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -176,7 +177,7 @@
          <set_value name="this.$LOCATION" exact="[$SECTOR, $POSITION]"/>
 
          <set_command command="command.move" param="$OBJECT"/>
-         <run_script name="'jp.lib.MoveToPosition'">
+         <run_script name="'jp.lib.MoveToPosition'" result="$_PositionMoveResult">
             <param name="SECTOR"                   value="$SECTOR"/>
             <param name="POSITION"                 value="$POSITION"/>
             <param name="ROTATION"                 value="$ROTATION"/>
@@ -187,6 +188,10 @@
             <param name="FORCE_ROTATION"           value="$FORCE_ROTATION"/>
             <param name="IGNORE_DANGEROUS_REGIONS" value="$IGNORE_DANGEROUS_REGIONS"/>
          </run_script>
+
+         <do_if value="$_PositionMoveResult">
+            <set_value name="$_MoveResult" exact="true"/>
+         </do_if>
 
          <label name="FINISH_LBL"/>
          <stop_moving object="$_Ship" immediate="true"/>
@@ -199,6 +204,8 @@
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
          </do_if>
+
+         <return value="$_MoveResult"/>
 
       </actions>
    </attention>

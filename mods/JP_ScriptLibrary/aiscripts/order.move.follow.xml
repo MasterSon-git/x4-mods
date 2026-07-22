@@ -4,7 +4,27 @@
 
    <add sel="//params">
       <param name="IDLE_RETURN_HOME"  type="internal" default="false"/>
+      <param name="STRICT_BLACKLIST" type="internal" default="false"/>
+      <param name="USE_KNOWN_PATH" type="internal" default="this.ship.isplayerowned"/>
    </add>
+
+   <add sel="//run_script[@name=&quot;'move.generic'&quot;]">
+      <param name="strictblacklist" value="$STRICT_BLACKLIST"/>
+      <param name="useknownpath" value="$USE_KNOWN_PATH"/>
+   </add>
+
+   <!-- When Follow is called synchronously by IdleReturnHome, completion is the
+        failure signal for the caller.  Do not mark the caller order itself as
+        failed; ordinary Follow orders retain the Vanilla failure state. -->
+   <replace sel="//do_if[@value='not $movesuccess']">
+      <do_if value="not $movesuccess">
+         <do_if value="not $IDLE_RETURN_HOME and @this.assignedcontrolled.order.isrunning">
+            <set_order_failed order="this.assignedcontrolled.order" text="{1045, 101}"/>
+         </do_if>
+         <debug_text text="'Unable to reach destination. Aborting.'" chance="$debugchance"/>
+         <resume label="finish"/>
+      </do_if>
+   </replace>
 
    <add sel="//interrupts">
       <handler>

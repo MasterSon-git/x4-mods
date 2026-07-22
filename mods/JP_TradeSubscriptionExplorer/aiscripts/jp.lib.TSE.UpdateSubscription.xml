@@ -15,6 +15,58 @@
    </order>
 
    <interrupts>
+      <library>
+         <!-- Validate against the current target state and the ship's effective Vanilla blacklist policy. -->
+         <actions name="ValidateTarget">
+            <set_value name="$_ValidationStatus" exact="'target_invalid'"/>
+            <set_value name="$_Station" exact="null"/>
+            <do_if value="$STATION.exists">
+               <set_value name="$_Station" exact="if $STATION.isconstruction then $STATION.buildstorage else $STATION"/>
+               <do_if value="$_Station.exists">
+                  <do_if value="$_Station.hastradesubscription">
+                     <set_value name="$_ValidationStatus" exact="'already_current'"/>
+                  </do_if>
+                  <do_else>
+                     <find_sector name="$_AccessibleTargetSector" space="$_Station" accessgrantedto="$_Ship.owner"/>
+                     <do_if value="$_AccessibleTargetSector != $_Station.sector">
+                        <set_value name="$_ValidationStatus" exact="'target_disallowed'"/>
+                     </do_if>
+                     <do_else>
+                        <include_interrupt_actions ref="GetBlacklistgroup"/>
+                        <!-- Construction sites deliberately require both the site and its
+                             buildstorage to pass Object Activity. -->
+                        <do_if value="$STATION.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} or
+                                      $_Station.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} or
+                                      $_Station.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} or
+                                      $_Station.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+                           <set_value name="$_ValidationStatus" exact="'target_disallowed'"/>
+                        </do_if>
+                        <do_else>
+                           <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                                            useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+                              <start object="$_Ship"/>
+                              <end object="$_Station"/>
+                           </get_global_path>
+                           <set_value name="$_ValidationStatus" exact="if $_PathDistance ge 0 then 'valid' else 'no_valid_path'"/>
+                        </do_else>
+                     </do_else>
+                  </do_else>
+               </do_if>
+            </do_if>
+         </actions>
+      </library>
+      <handler>
+         <conditions>
+            <check_any>
+               <event_object_destroyed object="$STATION"/>
+               <event_object_destroyed object="$_Station"/>
+            </check_any>
+         </conditions>
+         <actions>
+            <set_value name="$_Result" exact="'target_invalid'"/>
+            <abort_called_scripts resume="END_LBL"/>
+         </actions>
+      </handler>
       <handler ref="AttackHandler"/>
       <handler ref="MissileLockHandler" />
       <handler ref="ScannedHandler"/>
@@ -29,6 +81,8 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$_Ship" exact="this.ship"/>
       <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$_Result" exact="'target_invalid'"/>
+      <set_value name="$_Station" exact="if $STATION.exists and $STATION.isconstruction then $STATION.buildstorage else $STATION"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -54,19 +108,76 @@
          <set_command command="command.investigate"/>
          <set_command_action commandaction="commandaction.calculating"/>
 
-         <set_value name="$_Station" exact="(if $STATION.isconstruction then $STATION.buildstorage else $STATION)"/>
+         <!-- Do not depart for a destroyed, current, blacklisted, unknown-route or unreachable target. -->
+         <include_interrupt_actions ref="ValidateTarget"/>
+         <do_if value="$_ValidationStatus != 'valid'">
+            <set_value name="$_Result" exact="$_ValidationStatus"/>
+            <resume label="END_LBL"/>
+         </do_if>
 
-         <run_script name="'jp.lib.MoveToObject'">
+         <!-- Vanilla 9.00 owns all inter-sector gate, accelerator and highway handling. -->
+         <do_if value="$_Ship.sector != $_Station.sector">
+            <run_script name="'move.generic'" result="$_MoveSuccess">
+               <param name="destination" value="$_Station.sector"/>
+               <param name="endintargetsector" value="true"/>
+               <param name="strictblacklist" value="true"/>
+               <param name="useknownpath" value="true"/>
+               <param name="uselocalhighways" value="not $_Ship.iscapitalship"/>
+               <param name="recallsubordinates" value="false"/>
+               <param name="debugchance" value="$debugchance"/>
+            </run_script>
+            <do_if value="not $_MoveSuccess">
+               <set_value name="$_Result" exact="'move_failed'"/>
+               <resume label="END_LBL"/>
+            </do_if>
+         </do_if>
+
+         <!-- Time passed during travel: reject targets that became current or invalid. -->
+         <include_interrupt_actions ref="ValidateTarget"/>
+         <do_if value="$_ValidationStatus != 'valid'">
+            <set_value name="$_Result" exact="$_ValidationStatus"/>
+            <resume label="END_LBL"/>
+         </do_if>
+         <do_if value="$_Ship.sector != $_Station.sector">
+            <set_value name="$_Result" exact="'move_failed'"/>
+            <resume label="END_LBL"/>
+         </do_if>
+
+         <!-- Preserve the existing radar approach, but prevent it from reaching the legacy sector stack. -->
+         <run_script name="'jp.lib.MoveToObject'" result="$_ApproachSuccess">
             <param name="OBJECT" value="$_Station"/>
             <param name="POSITION_SPACE" value="$_Ship"/>
             <param name="DISTANCE_TO_OBJECT" value="($_Ship.maxradarrange * 0.75)"/>
             <param name="FORCE_POSITION" value="false"/>
             <param name="FINISH_ON_APPROACH" value="true"/>
+            <param name="SKIP_SECTOR_CHECK" value="true"/>
          </run_script>
 
-         <do_while value="not $_Station.hastradesubscription">
+         <include_interrupt_actions ref="ValidateTarget"/>
+         <do_if value="$_ValidationStatus == 'already_current'">
+            <resume label="SUCCESS_LBL"/>
+         </do_if>
+         <do_if value="$_ValidationStatus != 'valid'">
+            <set_value name="$_Result" exact="$_ValidationStatus"/>
+            <resume label="END_LBL"/>
+         </do_if>
+         <do_if value="not $_ApproachSuccess">
+            <set_value name="$_Result" exact="'approach_failed'"/>
+            <resume label="END_LBL"/>
+         </do_if>
+
+         <!-- No arbitrary timeout: leave only when Vanilla confirms the update or the target becomes invalid. -->
+         <do_while value="$_ValidationStatus != 'already_current'">
             <wait exact="5s"/>
+            <include_interrupt_actions ref="ValidateTarget"/>
+            <do_if value="$_ValidationStatus != 'valid' and $_ValidationStatus != 'already_current'">
+               <set_value name="$_Result" exact="$_ValidationStatus"/>
+               <resume label="END_LBL"/>
+            </do_if>
          </do_while>
+
+         <label name="SUCCESS_LBL"/>
+         <set_value name="$_Result" exact="'success'"/>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
@@ -102,6 +213,8 @@
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
          </do_if>
+
+         <return value="$_Result"/>
 
       </actions>
    </attention>

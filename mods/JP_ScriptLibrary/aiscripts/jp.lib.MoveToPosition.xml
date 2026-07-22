@@ -49,6 +49,7 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$_Ship" exact="this.ship"/>
       <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$_MoveResult" exact="false"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <do_if value="$POSITIONS.count == 0">
          <append_to_list name="$POSITIONS" exact="$POSITION"/>
@@ -129,6 +130,7 @@
 
          </do_for_each>
 
+         <set_value name="$_MoveResult" exact="true"/>
          <label name="FINISH_LBL"/>
          <stop_moving object="$_Ship" immediate="true"/>
          <stop_boost object="$_Ship"/>
@@ -140,6 +142,8 @@
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
          </do_if>
+
+         <return value="$_MoveResult"/>
 
       </actions>
    </attention>

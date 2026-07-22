@@ -67,7 +67,7 @@
          <actions>
             <signal_cue_instantly cue="TSE_ClearBlacklist_MD" param="event.object"/>
             <do_if value="event.object.subordinates.count gt 0">
-               <do_for_each name="$_Subordinate" in="$_Ship.subordinates">
+               <do_for_each name="$_Subordinate" in="event.object.subordinates">
                   <do_if value="$_Subordinate.defaultorder.id == 'Assist'">
                      <signal_cue_instantly cue="TSE_ClearBlacklist_MD" param="$_Subordinate"/>
                      <signal_cue_instantly cue="TSE_ResetName_MD" param="$_Subordinate"/>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="jp.lib.EscapeTravelBlacklist" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+   <params>
+      <param name="USE_KNOWN_PATH" default="this.ship.isplayerowned"/>
+      <param name="debugchance" default="0"/>
+   </params>
+
+   <attention min="unknown">
+      <actions>
+
+         <set_value name="$_Ship" exact="this.ship"/>
+         <include_interrupt_actions ref="GetBlacklistgroup"/>
+
+         <do_if value="not $_Ship.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+            <return value="'not_required'"/>
+         </do_if>
+
+         <!-- Escape is deliberately separate from normal work-target selection.  The
+              unblacklisted path may cross as many connected blocked sectors as needed,
+              but every destination in this list is itself travel-allowed. -->
+         <find_sector name="$_AllowedSectors" space="player.galaxy" multiple="true">
+            <match knownto="$_Ship.owner"/>
+            <match_gate_distance object="$_Ship" min="0"/>
+            <match_use_blacklist object="$_Ship" type="blacklisttype.sectortravel" group="$blacklistgroup"/>
+         </find_sector>
+
+         <create_list name="$_ReachableAllowedSectors"/>
+         <set_value name="$_MinimumJumpCount" exact="null"/>
+         <set_value name="$_MaximumJumpCount" exact="0"/>
+         <do_for_each name="$_AllowedSector" in="$_AllowedSectors">
+            <!-- Omitting useblacklist is intentional and documented by common.xsd:
+                 this is the escape-only route out of the blocked connected region. -->
+            <get_global_path component="$_EscapePathComponent" resultdistance="$_EscapePathDistance" refobject="$_Ship"
+                             useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
+               <start object="$_Ship"/>
+               <end object="$_AllowedSector"/>
+            </get_global_path>
+            <get_jump_path component="$_EscapeJumpPath" multiple="true" refobject="$_Ship"
+                           useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
+               <start object="$_Ship"/>
+               <end object="$_AllowedSector"/>
+            </get_jump_path>
+            <do_if value="$_EscapePathDistance ge 0 and $_EscapeJumpPath.count ge 2">
+               <append_to_list name="$_ReachableAllowedSectors" exact="[$_AllowedSector, $_EscapeJumpPath.count, $_EscapePathDistance]"/>
+               <do_if value="$_MinimumJumpCount == null or $_EscapeJumpPath.count lt $_MinimumJumpCount">
+                  <set_value name="$_MinimumJumpCount" exact="$_EscapeJumpPath.count"/>
+               </do_if>
+               <do_if value="$_EscapeJumpPath.count gt $_MaximumJumpCount">
+                  <set_value name="$_MaximumJumpCount" exact="$_EscapeJumpPath.count"/>
+               </do_if>
+            </do_if>
+         </do_for_each>
+
+         <!-- Fewest gate transitions guarantees that an allowed sector earlier
+              on the same known route wins.  Path length breaks ties. -->
+         <create_list name="$_SortedEscapeSectors"/>
+         <set_value name="$_JumpCount" exact="$_MinimumJumpCount"/>
+         <do_while value="$_JumpCount != null and $_JumpCount le $_MaximumJumpCount">
+            <create_list name="$_SameJumpCount"/>
+            <do_for_each name="$_EscapeCandidate" in="$_ReachableAllowedSectors">
+               <do_if value="$_EscapeCandidate.{2} == $_JumpCount">
+                  <append_to_list name="$_SameJumpCount" exact="[$_EscapeCandidate.{1}, $_EscapeCandidate.{3}]"/>
+               </do_if>
+            </do_for_each>
+            <sort_list list="$_SameJumpCount" sortbyvalue="loop.element.{2}"/>
+            <do_for_each name="$_EscapeCandidate" in="$_SameJumpCount">
+               <append_to_list name="$_SortedEscapeSectors" exact="$_EscapeCandidate.{1}"/>
+            </do_for_each>
+            <set_value name="$_JumpCount" operation="add" exact="1"/>
+         </do_while>
+
+         <set_value name="$_AttemptedMove" exact="false"/>
+         <do_for_each name="$_EscapeSector" in="$_SortedEscapeSectors">
+            <do_if value="$_EscapeSector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+               <continue/>
+            </do_if>
+            <set_value name="$_AttemptedMove" exact="true"/>
+            <run_script name="'move.generic'" result="$_EscapeMoveSuccess">
+               <param name="destination" value="$_EscapeSector"/>
+               <param name="endintargetsector" value="true"/>
+               <param name="strictblacklist" value="false"/>
+               <param name="useknownpath" value="$USE_KNOWN_PATH"/>
+               <param name="uselocalhighways" value="not $_Ship.iscapitalship"/>
+               <param name="recallsubordinates" value="false"/>
+               <param name="debugchance" value="$debugchance"/>
+            </run_script>
+            <include_interrupt_actions ref="GetBlacklistgroup"/>
+            <!-- A failed movement can still have crossed the boundary before
+                 returning.  The first observed allowed sector ends Escape. -->
+            <do_if value="not $_Ship.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+               <return value="'success'"/>
+            </do_if>
+         </do_for_each>
+
+         <do_if value="$_AttemptedMove">
+            <return value="'move_failed'"/>
+         </do_if>
+         <return value="'no_valid_path'"/>
+
+      </actions>
+   </attention>
+
+</aiscript>
