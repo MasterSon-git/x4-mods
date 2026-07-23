@@ -79,7 +79,6 @@
             <set_value name="$_AttemptedMove" exact="true"/>
             <run_script name="'move.generic'" result="$_EscapeMoveSuccess">
                <param name="destination" value="$_EscapeSector"/>
-               <param name="endintargetsector" value="true"/>
                <param name="strictblacklist" value="false"/>
                <param name="useknownpath" value="$USE_KNOWN_PATH"/>
                <param name="uselocalhighways" value="not $_Ship.iscapitalship"/>
