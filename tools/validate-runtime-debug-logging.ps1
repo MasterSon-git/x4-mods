@@ -5,6 +5,10 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $modsRoot = Join-Path $repoRoot 'mods'
 $baselineCommit = 'f7f70dec53eaf01a11fe2979080e0e470a4a5b06'
+$loggingFixCommit = '016b7544c1225f25ee249e9339627d2fdbf4140b'
+$postLoggingFunctionalPaths = @(
+    'mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
+)
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'
 $mdSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/md.xsd'
 
@@ -494,7 +498,26 @@ foreach ($relativePath in $changedCodePaths) {
     $baseline = [System.Xml.XmlDocument]::new()
     $baseline.PreserveWhitespace = $true
     $baseline.LoadXml($baselineText)
-    $current = [System.Xml.XmlDocument] $documents[(Join-Path $repoRoot $relativePath)].CloneNode($true)
+    if ($relativePath -in $postLoggingFunctionalPaths) {
+        # Later gameplay fixes are validated by their own regression.  Compare
+        # the committed logging snapshot here so this test continues to prove
+        # the functional inertness of the logging change itself.
+        $loggingSnapshot = [System.Xml.XmlDocument]::new()
+        $loggingSnapshot.PreserveWhitespace = $true
+        $loggingSnapshot.LoadXml((Get-GitContent -Revision $loggingFixCommit -Path $relativePath))
+        $current = $loggingSnapshot
+
+        $laterDiff = (& git -C $repoRoot diff $loggingFixCommit --unified=0 -- $relativePath) -join [Environment]::NewLine
+        Assert-Condition ($LASTEXITCODE -eq 0) "Could not inspect post-logging changes in $relativePath."
+        $laterDiagnosticChanges = @(
+            $laterDiff -split "\r?\n" |
+                Where-Object { $_ -match '^[+-](?![+-])' -and $_ -match '(?:debug_to_file|debug_text|\[TSE-TRACE\]|_Trace|_TSETrace)' }
+        )
+        Assert-Condition ($laterDiagnosticChanges.Count -eq 0) "$relativePath changed logging instrumentation after $loggingFixCommit."
+    }
+    else {
+        $current = [System.Xml.XmlDocument] $documents[(Join-Path $repoRoot $relativePath)].CloneNode($true)
+    }
 
     if ($current.DocumentElement.LocalName -eq 'diff') {
         Assert-Condition ($diffMappings.ContainsKey($relativePath)) "$relativePath has no Vanilla mapping for functional comparison."
@@ -510,7 +533,7 @@ foreach ($relativePath in $changedCodePaths) {
     Assert-Condition ($baselineSignature -ceq $currentSignature) "$relativePath changed the functional XML tree after diagnostic elements were removed."
 }
 
-Write-Output "15/20 functional XML tree after removing diagnostics: unchanged from $baselineCommit"
+Write-Output "15/20 logging snapshot functional XML tree after removing diagnostics: unchanged from $baselineCommit"
 
 $validationTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("tse-runtime-debug-validation-" + [guid]::NewGuid().ToString('N'))
 [void] (New-Item -ItemType Directory -Path $validationTempRoot)

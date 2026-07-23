@@ -171,7 +171,15 @@
                <do_if value="$_IdleOrderPresent and ((player.age - $_IdleStartTime) lt $_IdleTime)">
                   <continue/>
                </do_if>
-               <signal_objects object="$_Ship" param="'Cancel_IdleReturnHome'"/>
+               <!-- Cancel only the registered idle helper and orders explicitly
+                    tagged as its children.  A broadcast signal handled via
+                    this.ship.order only cancels the current immediate child and
+                    therefore lets the interrupted IdleReturnHome order restart. -->
+               <do_for_each name="$_Order" in="$_Ship.orders.clone">
+                  <do_if value="$_Order.exists and ($_Order.id == 'JP_lib_IdleReturnHome' or @$_Order.$IDLE_RETURN_HOME)">
+                     <cancel_order order="$_Order"/>
+                  </do_if>
+               </do_for_each>
                <remove_value name="global.$SL_IdleShips.{$_Ship}"/>
                <substitute_text source="$_Ship.knownname" text="$_ResultName">
                   <replace string="'\033#FFCEFBA1# ~ Idle\033X'" with="''"/>
