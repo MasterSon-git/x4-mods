@@ -120,7 +120,8 @@
       <do_if value="$DEBUG gt 0">
          <set_value name="$_DebugFolderName" exact="$DEBUG_FOLDER_NAME"/>
          <set_value name="$_DebugScriptName" exact="'JP_TradeSubscriptionExplorerG'"/>
-         <set_value name="$_DebugFileName" exact="$_Ship.idcode + '.' + $_DebugScriptName + '.xml.log'"/>
+         <set_value name="$_DebugFileName" exact="'TSE_Runtime.log'"/>
+         <set_value name="$_TraceCycle" exact="0"/>
       </do_if>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
    </init>
@@ -130,8 +131,8 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + '\n'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=lifecycle event=script_start result=active mode=galaxy debug=%2 current_sector=%3'.[$_Ship.idcode, $DEBUG, $_Ship.sector.knownname]"/>
+            <debug_text filter="scripts" text="'[TSE-TRACE] source=tse_g ship=%1 phase=order event=order_start result=active mode=galaxy'.[$_Ship.idcode]"/>
          </do_if>
 
          <do_if value="$SAVE_ORDER_SETTINGS">
@@ -173,18 +174,37 @@
          <label name="SEARCH_LBL"/>
          <set_command command="command.investigate"/>
          <set_command_action commandaction="commandaction.calculating"/>
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceCycle" operation="add" exact="1"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_start result=active mode=galaxy cycle=%2 current_sector=%3'.[$_Ship.idcode, $_TraceCycle, $_Ship.sector.knownname]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=escape event=check_start result=pending cycle=%2 current_sector=%3'.[$_Ship.idcode, $_TraceCycle, $_Ship.sector.knownname]"/>
+         </do_if>
 
          <!-- Every subordinate evaluates and escapes with its own effective
               blacklist; the commander sector is not an allow-list exception. -->
          <run_script name="'jp.lib.EscapeTravelBlacklist'" result="$_EscapeResult">
             <param name="USE_KNOWN_PATH" value="true"/>
          </run_script>
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceEscapeReason" exact="if $_EscapeResult == 'no_valid_path' then 'no_known_path' else $_EscapeResult"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=escape event=check_result result=%2 reason=%3 cycle=%4 current_sector=%5'.[$_Ship.idcode, $_EscapeResult, $_TraceEscapeReason, $_TraceCycle, $_Ship.sector.knownname]"/>
+         </do_if>
          <do_if value="$_EscapeResult != 'not_required' and $_EscapeResult != 'success'">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=idle event=idle_enter result=waiting reason=escape_failed cycle=%2 idle_action=wait'.[$_Ship.idcode, $_TraceCycle]"/>
+               <debug_text filter="scripts" text="'[TSE-TRACE] source=tse_g ship=%1 phase=order event=escape_failed result=%2 reason=escape_failed'.[$_Ship.idcode, $_EscapeResult]"/>
+            </do_if>
             <wait exact="$IDLE_TIME"/>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_restart result=retry reason=idle_backoff cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+            </do_if>
             <resume label="SEARCH_LBL"/>
          </do_if>
 
          <create_list name="$_FoundStations"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=search event=candidate_search_start result=pending mode=galaxy cycle=%2 current_sector=%3'.[$_Ship.idcode, $_TraceCycle, $_Ship.sector.knownname]"/>
+         </do_if>
          <run_script name="'jp.lib.TSE.GetTradesubscriptionsToUpdate'" result="$_FoundStations">
             <param name="OWNERLESS_SECTORS"       value="$OWNERLESS_SECTORS"/>
             <param name="WHARFS"                  value="$WHARFS"/>
@@ -198,8 +218,15 @@
             <param name="NON_SPECIAL_STATIONS"    value="$NON_SPECIAL_STATIONS"/>
             <param name="CONSTRUCTION_SITES"      value="$CONSTRUCTION_SITES"/>
          </run_script>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=search event=candidate_search_result result=complete mode=galaxy cycle=%2 candidate_count=%3'.[$_Ship.idcode, $_TraceCycle, $_FoundStations.count]"/>
+         </do_if>
 
          <do_if value="$_FoundStations.count == 0">
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceIdleReason" exact="'no_candidates'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=idle event=idle_reason result=selected reason=no_candidates cycle=%2 candidate_count=0'.[$_Ship.idcode, $_TraceCycle]"/>
+            </do_if>
             <!-- There are no remaining stations within my defined workspace that require a trade subscription update. -->
             <run_script name="'jp.lib.MessageLog'">
                <param name="TEXT"  value="'%1\n%2'.[$IDLE_TITLE, ({8888888, 1961} + '\n' + {8888888, 55})]"/>
@@ -207,18 +234,49 @@
             <resume label="IDLE_LBL"/>
          </do_if>
 
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceCandidateIndex" exact="0"/>
+            <set_value name="$_TraceSucceeded" exact="0"/>
+            <set_value name="$_TraceSkipped" exact="0"/>
+            <set_value name="$_TraceFailed" exact="0"/>
+         </do_if>
          <do_for_each name="$_CandidateStation" in="$_FoundStations">
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceCandidateIndex" operation="add" exact="1"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_start result=pending cycle=%2 candidate_index=%3 target=%4 target_sector=%5'.[$_Ship.idcode, $_TraceCycle, $_TraceCandidateIndex, $_CandidateStation.idcode, $_CandidateStation.sector.knownname]"/>
+            </do_if>
             <run_script name="'jp.lib.TSE.UpdateSubscription'" result="$_UpdateResult">
                <param name="SECTOR" value="global.$TSE_ShipsCurrentSectorTable.{$_Ship}"/>
                <param name="STATION" value="$_CandidateStation"/>
             </run_script>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceUpdateReason" exact="if $_UpdateResult == 'target_invalid' then 'invalid_target' else if $_UpdateResult == 'target_disallowed' then 'access_denied' else if $_UpdateResult == 'no_valid_path' then 'no_known_path' else $_UpdateResult"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_result result=%2 reason=%3 cycle=%4 candidate_index=%5 target=%6'.[$_Ship.idcode, $_UpdateResult, $_TraceUpdateReason, $_TraceCycle, $_TraceCandidateIndex, $_CandidateStation.idcode]"/>
+               <do_if value="$_UpdateResult == 'success'">
+                  <set_value name="$_TraceSucceeded" operation="add" exact="1"/>
+               </do_if>
+               <do_elseif value="$_UpdateResult == 'already_current'">
+                  <set_value name="$_TraceSkipped" operation="add" exact="1"/>
+               </do_elseif>
+               <do_else>
+                  <set_value name="$_TraceFailed" operation="add" exact="1"/>
+               </do_else>
+            </do_if>
             <do_if value="$_UpdateResult == 'move_failed' or $_UpdateResult == 'approach_failed'">
                <continue/>
             </do_if>
          </do_for_each>
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceIdleReason" exact="if $_TraceFailed == $_FoundStations.count then 'all_candidates_failed' else 'all_candidates_processed'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_summary result=complete reason=%2 cycle=%3 candidate_count=%4 succeeded=%5 skipped=%6 failed=%7'.[$_Ship.idcode, $_TraceIdleReason, $_TraceCycle, $_FoundStations.count, $_TraceSucceeded, $_TraceSkipped, $_TraceFailed]"/>
+         </do_if>
          <resume label="IDLE_LBL"/>
 
          <label name="IDLE_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=idle event=idle_enter result=selected reason=%2 cycle=%3 idle_action=idle_return_home'.[$_Ship.idcode, $_TraceIdleReason, $_TraceCycle]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_end result=idle reason=idle_backoff cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+         </do_if>
 
          <!-- I will switch to idle mode and try again later. -->
          <create_order object="$_Ship" id="'JP_lib_IdleReturnHome'" immediate="true">
@@ -242,8 +300,8 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=lifecycle event=script_end result=complete reason=order_changed cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+            <debug_text filter="scripts" text="'[TSE-TRACE] source=tse_g ship=%1 phase=order event=order_end result=complete reason=order_changed'.[$_Ship.idcode]"/>
          </do_if>
 
          <set_order_syncpoint_reached order="this.ship.defaultorder"/>
@@ -253,6 +311,10 @@
    </attention>
 
    <on_abort>
+      <do_if value="$DEBUG gt 0">
+         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
+         <debug_text filter="scripts" text="'[TSE-TRACE] source=tse_g ship=%1 phase=order event=order_abort result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
+      </do_if>
    </on_abort>
 
 </aiscript>

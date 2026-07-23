@@ -29,6 +29,7 @@
             </check_any>
          </conditions>
          <actions>
+            <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_setup_md ship=none phase=setup event=setup_start result=active reason=success'"/>
 
             <set_value name="$DEBUG" exact="0"/>
             <do_if value="$DEBUG gt 0">
@@ -42,7 +43,9 @@
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
             <!-- group ~ $SL_PlayerShips -->
+            <set_value name="$_TracePlayerShipsBefore" exact="if global.$SL_PlayerShips? then global.$SL_PlayerShips.count else 0"/>
             <run_actions ref="md.JP_ScriptLibrary_MD.SL_RefreshPlayerShips"/>
+            <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_setup_md ship=none phase=player_ship_group event=group_refresh result=complete reason=success before_count=%1 after_count=%2'.[$_TracePlayerShipsBefore, global.$SL_PlayerShips.count]"/>
 
             <!-- table[] ~ key = $_Ship, value = [$_IdleStartTime] -->
             <do_if value="global.$SL_IdleShips? and typeof global.$SL_IdleShips != datatype.table">
@@ -56,6 +59,8 @@
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
             </do_if>
+            <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_setup_md ship=none phase=setup event=setup_end result=success reason=success player_ship_count=%1'.[global.$SL_PlayerShips.count]"/>
+            <remove_value name="$_TracePlayerShipsBefore"/>
 
          </actions>
          <cues>
@@ -77,9 +82,17 @@
                   <check_value value="event.param.isrealclass.ship and not event.param.isunit and not event.param.isrealclass.spacesuit"/>
                </conditions>
                <actions>
+                  <set_value name="$_TracePlayerShipsBefore" exact="global.$SL_PlayerShips.count"/>
+                  <set_value name="$_TraceWasMember" exact="global.$SL_PlayerShips.indexof.{event.param} gt 0"/>
+                  <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_player_ship_group ship=%1 phase=refresh event=%2 result=pending reason=success before_count=%3 was_member=%4'.[event.param, event.name, $_TracePlayerShipsBefore, $_TraceWasMember]"/>
                   <run_actions ref="md.JP_ScriptLibrary_MD.SL_RefreshPlayerShips">
                      <param name="Excluded" value="if event.name == 'event_player_owned_destroyed' then event.param else null"/>
                   </run_actions>
+                  <set_value name="$_TraceIsMember" exact="global.$SL_PlayerShips.indexof.{event.param} gt 0"/>
+                  <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_player_ship_group ship=%1 phase=refresh event=%2 result=%3 reason=success before_count=%4 after_count=%5 is_member=%6'.[event.param, event.name, if not $_TraceWasMember and $_TraceIsMember then 'added' else (if $_TraceWasMember and not $_TraceIsMember then 'removed' else 'unchanged'), $_TracePlayerShipsBefore, global.$SL_PlayerShips.count, $_TraceIsMember]"/>
+                  <remove_value name="$_TraceIsMember"/>
+                  <remove_value name="$_TraceWasMember"/>
+                  <remove_value name="$_TracePlayerShipsBefore"/>
                </actions>
             </cue>
 

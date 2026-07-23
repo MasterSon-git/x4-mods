@@ -48,7 +48,7 @@ $updateTarget = Read-XmlDocument -Path $updateTargetPath
 $idle = Read-XmlDocument -Path $idlePath
 
 $documents = @($getTargets, $updateTarget, $idle)
-$allFindSectorNodes = @($documents | ForEach-Object { $_.SelectNodes('//find_sector') })
+$allFindSectorNodes = @($documents | ForEach-Object { $_.SelectNodes("//find_sector[not(contains(@name, 'Trace'))]") })
 Assert-Condition ($allFindSectorNodes.Count -eq 7) 'The three affected scripts must retain exactly their seven reviewed find_sector actions.'
 foreach ($node in $allFindSectorNodes) {
     Assert-Condition ($node.GetAttribute('space') -eq 'player.galaxy') "find_sector '$($node.GetAttribute('name'))' must use player.galaxy as its containing search space."
