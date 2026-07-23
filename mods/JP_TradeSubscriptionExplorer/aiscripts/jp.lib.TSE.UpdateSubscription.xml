@@ -119,7 +119,6 @@
          <do_if value="$_Ship.sector != $_Station.sector">
             <run_script name="'move.generic'" result="$_MoveSuccess">
                <param name="destination" value="$_Station.sector"/>
-               <param name="endintargetsector" value="true"/>
                <param name="strictblacklist" value="true"/>
                <param name="useknownpath" value="true"/>
                <param name="uselocalhighways" value="not $_Ship.iscapitalship"/>
