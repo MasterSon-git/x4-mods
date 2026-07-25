@@ -262,7 +262,7 @@ Assert-Condition ($traceNodes.Count -gt 0) 'At least one structured TSE trace mu
 
 foreach ($trace in $traceNodes) {
     $text = $trace.Node.GetAttribute('text')
-    Assert-Condition ($text -match "^'\[TSE-TRACE\] ") "$($trace.Path) has a trace without the required prefix."
+    Assert-Condition ($text -match "^'\[(?:TSEAI |TSEMD |SLIBAI|SLIBMD)\] ' \+ player\.age \+ ' \*\*\* [A-Za-z0-9_.]+:' \+ '\[TSE-TRACE\] ") "$($trace.Path) has a trace without the required timestamp envelope."
     Assert-Condition ($text -notmatch '(\\n|\\r|[\r\n])') "$($trace.Path) has a multiline trace."
     Assert-Condition ($text -cmatch '^[\x00-\x7F]+$') "$($trace.Path) has a non-ASCII trace template."
     foreach ($key in @('source=', 'ship=', 'phase=')) {
@@ -278,8 +278,11 @@ foreach ($trace in $traceNodes) {
         Assert-Condition (Test-DebugGuard -Node $trace.Node) "$($trace.Path) contains an AI trace outside an effective DEBUG > 0 guard."
     }
     elseif ($trace.Path -match '[\\/]md[\\/]') {
-        Assert-Condition ($trace.Node.LocalName -eq 'debug_text') "$($trace.Path) must use debug_text for MD lifecycle traces."
-        Assert-Condition ($trace.Node.GetAttribute('filter') -eq 'scripts') "$($trace.Path) has an MD trace without filter=scripts."
+        $isSessionMarker = $text -match 'phase=session event=session_start'
+        Assert-Condition ($trace.Node.LocalName -eq 'debug_text' -or ($isSessionMarker -and $trace.Node.LocalName -eq 'debug_to_file')) "$($trace.Path) must use debug_text except for the single session marker."
+        if ($trace.Node.LocalName -eq 'debug_text') {
+            Assert-Condition ($trace.Node.GetAttribute('filter') -eq 'scripts') "$($trace.Path) has an MD trace without filter=scripts."
+        }
         Assert-Condition ($null -eq $trace.Node.SelectSingleNode("ancestor::cue[@checkinterval]")) "$($trace.Path) has an MD trace in a polling cue."
     }
 }
@@ -619,6 +622,7 @@ $existingRegressions = @(
     'validate-cycle-idle-refinement.ps1'
     'validate-experience-skill-contract.ps1'
     'validate-runtime-visibility.ps1'
+    'validate-log-session-format.ps1'
 )
 foreach ($regression in $existingRegressions) {
     & (Join-Path $PSScriptRoot $regression) | Out-Null

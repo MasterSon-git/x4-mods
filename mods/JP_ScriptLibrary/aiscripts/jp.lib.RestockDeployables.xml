@@ -62,8 +62,8 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + '\n'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.RestockDeployables:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.RestockDeployables:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -114,9 +114,9 @@
          <!-- Should not occcur, but just in case the script that calls this script has forgotten to check for this. -->
          <do_if value="not $FORCE_RERSTOCK and $_TotalFreeStorage == 0">
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'Our storage is full and we are not allowed to sell any Deployables ~ $FORCE_RERSTOCK is false!'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.RestockDeployables:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.RestockDeployables:' + 'Our storage is full and we are not allowed to sell any Deployables ~ $FORCE_RERSTOCK is false!'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.RestockDeployables:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
             </do_if>
             <return value="'Failed'"/>
          </do_if>
@@ -338,8 +338,8 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.RestockDeployables:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.RestockDeployables:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
          </do_if>
 
          <return value="$_Result"/>

@@ -29,15 +29,15 @@
             </check_any>
          </conditions>
          <actions>
-            <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_setup_md ship=none phase=setup event=setup_start result=active reason=success'"/>
+            <debug_text filter="scripts" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '[TSE-TRACE] source=sl_setup_md ship=none phase=setup event=setup_start result=active reason=success'"/>
 
             <set_value name="$DEBUG" exact="0"/>
             <do_if value="$DEBUG gt 0">
                <set_value name="$_DebugFolderName" exact="'JP_ScriptLibrary.logs'"/>
                <set_value name="$_DebugScriptName" exact="'SL_Setup_MD'"/>
                <set_value name="$_DebugFileName" exact="'sl.Setup.md.xml.log'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + '\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
             </do_if>
 
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -45,7 +45,7 @@
             <!-- group ~ $SL_PlayerShips -->
             <set_value name="$_TracePlayerShipsBefore" exact="if global.$SL_PlayerShips? then global.$SL_PlayerShips.count else 0"/>
             <run_actions ref="md.JP_ScriptLibrary_MD.SL_RefreshPlayerShips"/>
-            <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_setup_md ship=none phase=player_ship_group event=group_refresh result=complete reason=success before_count=%1 after_count=%2'.[$_TracePlayerShipsBefore, global.$SL_PlayerShips.count]"/>
+            <debug_text filter="scripts" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '[TSE-TRACE] source=sl_setup_md ship=none phase=player_ship_group event=group_refresh result=complete reason=success before_count=%1 after_count=%2'.[$_TracePlayerShipsBefore, global.$SL_PlayerShips.count]"/>
 
             <!-- table[] ~ key = $_Ship, value = [$_IdleStartTime] -->
             <do_if value="global.$SL_IdleShips? and typeof global.$SL_IdleShips != datatype.table">
@@ -56,10 +56,10 @@
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
             </do_if>
-            <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_setup_md ship=none phase=setup event=setup_end result=success reason=success player_ship_count=%1'.[global.$SL_PlayerShips.count]"/>
+            <debug_text filter="scripts" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '[TSE-TRACE] source=sl_setup_md ship=none phase=setup event=setup_end result=success reason=success player_ship_count=%1'.[global.$SL_PlayerShips.count]"/>
             <remove_value name="$_TracePlayerShipsBefore"/>
 
          </actions>
@@ -84,12 +84,12 @@
                <actions>
                   <set_value name="$_TracePlayerShipsBefore" exact="global.$SL_PlayerShips.count"/>
                   <set_value name="$_TraceWasMember" exact="global.$SL_PlayerShips.indexof.{event.param} gt 0"/>
-                  <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_player_ship_group ship=%1 phase=refresh event=%2 result=pending reason=success before_count=%3 was_member=%4'.[event.param, event.name, $_TracePlayerShipsBefore, $_TraceWasMember]"/>
+                  <debug_text filter="scripts" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '[TSE-TRACE] source=sl_player_ship_group ship=%1 phase=refresh event=%2 result=pending reason=success before_count=%3 was_member=%4'.[event.param, event.name, $_TracePlayerShipsBefore, $_TraceWasMember]"/>
                   <run_actions ref="md.JP_ScriptLibrary_MD.SL_RefreshPlayerShips">
                      <param name="Excluded" value="if event.name == 'event_player_owned_destroyed' then event.param else null"/>
                   </run_actions>
                   <set_value name="$_TraceIsMember" exact="global.$SL_PlayerShips.indexof.{event.param} gt 0"/>
-                  <debug_text filter="scripts" text="'[TSE-TRACE] source=sl_player_ship_group ship=%1 phase=refresh event=%2 result=%3 reason=success before_count=%4 after_count=%5 is_member=%6'.[event.param, event.name, if not $_TraceWasMember and $_TraceIsMember then 'added' else (if $_TraceWasMember and not $_TraceIsMember then 'removed' else 'unchanged'), $_TracePlayerShipsBefore, global.$SL_PlayerShips.count, $_TraceIsMember]"/>
+                  <debug_text filter="scripts" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '[TSE-TRACE] source=sl_player_ship_group ship=%1 phase=refresh event=%2 result=%3 reason=success before_count=%4 after_count=%5 is_member=%6'.[event.param, event.name, if not $_TraceWasMember and $_TraceIsMember then 'added' else (if $_TraceWasMember and not $_TraceIsMember then 'removed' else 'unchanged'), $_TracePlayerShipsBefore, global.$SL_PlayerShips.count, $_TraceIsMember]"/>
                   <remove_value name="$_TraceIsMember"/>
                   <remove_value name="$_TraceWasMember"/>
                   <remove_value name="$_TracePlayerShipsBefore"/>
@@ -104,37 +104,37 @@
                <set_value name="$_DebugFolderName" exact="'JP_ScriptLibrary.logs'"/>
                <set_value name="$_DebugScriptName" exact="'SL_DebugInfo_MD'"/>
                <set_value name="$_DebugFileName" exact="'sl.Debug.md.xml.log'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + '\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
             </do_if>
 
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
             <do_if value="$DEBUG gt 0 and @global.$SL_PlayerShips != null">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'global.$SL_PlayerShips.count %1'.[@global.$SL_PlayerShips.count]"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + 'global.$SL_PlayerShips.count %1'.[@global.$SL_PlayerShips.count]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
                <do_for_each name="$_Ship" in="global.$SL_PlayerShips">
-                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'$_Ship: %1 [%2]'.[@$_Ship.knownname, @$_Ship.idcode]"/>
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '$_Ship: %1 [%2]'.[@$_Ship.knownname, @$_Ship.idcode]"/>
                </do_for_each>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
             </do_if>
 
             <do_if value="$DEBUG gt 0 and @global.$SL_IdleShips != null">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'global.$SL_IdleShips.keys.count %1'.[@global.$SL_IdleShips.keys.count]"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + 'global.$SL_IdleShips.keys.count %1'.[@global.$SL_IdleShips.keys.count]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
                <do_for_each name="$_Ship"  valuename="$_IdleStartTime" in="global.$SL_IdleShips">
-                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'$_Ship: %1 [%2] ~ %3'.[@$_Ship.knownname, @$_Ship.idcode, @$_IdleStartTime]"/>
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '$_Ship: %1 [%2] ~ %3'.[@$_Ship.knownname, @$_Ship.idcode, @$_IdleStartTime]"/>
                </do_for_each>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
             </do_if>
 
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
             </do_if>
 
          </actions>
@@ -151,8 +151,8 @@
                <set_value name="$_DebugFolderName" exact="'JP_ScriptLibrary.logs'"/>
                <set_value name="$_DebugScriptName" exact="'SL_ManageIdleReturnHome_MD'"/>
                <set_value name="$_DebugFileName" exact="'sl.ManageIdleReturnHome.md.xml.log'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + '\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
             </do_if>
 
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -192,8 +192,8 @@
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBMD] ' + player.age + ' *** JP_ScriptLibrary_MD:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
             </do_if>
 
          </actions>

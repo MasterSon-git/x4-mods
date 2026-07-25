@@ -33,7 +33,7 @@
          </conditions>
          <actions>
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=interrupt event=move_interrupted result=aborted reason=order_interrupted current_sector=%2 target_sector=%3'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=interrupt event=move_interrupted result=aborted reason=order_interrupted current_sector=%2 target_sector=%3'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname]"/>
             </do_if>
             <abort_called_scripts resume="FINISH_LBL"/>
          </actions>
@@ -74,8 +74,8 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=lifecycle event=script_start result=active current_sector=%2 target_sector=%3 position=%4 skip_sector_check=%5 position_count=%6'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname, $POSITION, $SKIP_SECTOR_CHECK, $POSITIONS.count]"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=sector_check event=sector_difference result=%2 reason=%3 current_sector=%4 target_sector=%5 skip_sector_check=%6'.[$_Ship.idcode, $_Ship.sector != $SECTOR, if $_Ship.sector != $SECTOR then 'sector_changed' else 'not_required', $_Ship.sector.knownname, $SECTOR.knownname, $SKIP_SECTOR_CHECK]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=lifecycle event=script_start result=active current_sector=%2 target_sector=%3 position=%4 skip_sector_check=%5 position_count=%6'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname, $POSITION, $SKIP_SECTOR_CHECK, $POSITIONS.count]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=sector_check event=sector_difference result=%2 reason=%3 current_sector=%4 target_sector=%5 skip_sector_check=%6'.[$_Ship.idcode, $_Ship.sector != $SECTOR, if $_Ship.sector != $SECTOR then 'sector_changed' else 'not_required', $_Ship.sector.knownname, $SECTOR.knownname, $SKIP_SECTOR_CHECK]"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -84,7 +84,7 @@
 
          <do_if value="not $SKIP_SECTOR_CHECK and $_Ship.sector != $SECTOR">
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=sector_check event=legacy_chain_entered result=active reason=sector_changed current_sector=%2 target_sector=%3 skip_sector_check=%4 next_source=move_to_sector'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname, $SKIP_SECTOR_CHECK]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=sector_check event=legacy_chain_entered result=active reason=sector_changed current_sector=%2 target_sector=%3 skip_sector_check=%4 next_source=move_to_sector'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname, $SKIP_SECTOR_CHECK]"/>
             </do_if>
             <run_script name="'jp.lib.MoveToSector'">
                <param name="SECTOR" value="$SECTOR"/>
@@ -105,7 +105,7 @@
          <do_for_each name="$POSITION" in="$POSITIONS">
             <do_if value="$DEBUG gt 0">
                <set_value name="$_TracePositionIndex" operation="add" exact="1"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=local_move event=position_start result=pending candidate_index=%2 target_sector=%3 position=%4'.[$_Ship.idcode, $_TracePositionIndex, $SECTOR.knownname, $POSITION]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=local_move event=position_start result=pending candidate_index=%2 target_sector=%3 position=%4'.[$_Ship.idcode, $_TracePositionIndex, $SECTOR.knownname, $POSITION]"/>
             </do_if>
 
             <!-- Long distance travel -->
@@ -139,7 +139,7 @@
                </move_to>
             </do_else>
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=local_move event=position_reached result=success reason=success candidate_index=%2 current_sector=%3 target_sector=%4'.[$_Ship.idcode, $_TracePositionIndex, $_Ship.sector.knownname, $SECTOR.knownname]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=local_move event=position_reached result=success reason=success candidate_index=%2 current_sector=%3 target_sector=%4'.[$_Ship.idcode, $_TracePositionIndex, $_Ship.sector.knownname, $SECTOR.knownname]"/>
             </do_if>
 
          </do_for_each>
@@ -153,7 +153,7 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 current_sector=%4 target_sector=%5'.[$_Ship.idcode, $_MoveResult, if $_MoveResult then 'success' else 'move_failed', $_Ship.sector.knownname, $SECTOR.knownname]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 current_sector=%4 target_sector=%5'.[$_Ship.idcode, $_MoveResult, if $_MoveResult then 'success' else 'move_failed', $_Ship.sector.knownname, $SECTOR.knownname]"/>
          </do_if>
 
          <return value="$_MoveResult"/>
@@ -163,7 +163,7 @@
 
    <on_abort>
       <do_if value="$DEBUG gt 0">
-         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=move_to_position ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted current_sector=%2 target_sector=%3'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname]"/>
+         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MoveToPosition:' + '[TSE-TRACE] source=move_to_position ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted current_sector=%2 target_sector=%3'.[$_Ship.idcode, $_Ship.sector.knownname, $SECTOR.knownname]"/>
       </do_if>
       <stop_moving object="$_Ship" immediate="true"/>
       <stop_boost object="$_Ship"/>

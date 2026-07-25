@@ -28,8 +28,8 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + '\n'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.FindStationToEquipAt:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.FindStationToEquipAt:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -56,8 +56,8 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.FindStationToEquipAt:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.FindStationToEquipAt:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
          </do_if>
 
          <return value="$_FoundStations"/>

@@ -80,8 +80,8 @@
          <actions>
             <set_value name="$_Result" exact="'target_invalid'"/>
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=interrupt event=target_destroyed result=target_invalid reason=target_destroyed target=%2'.[$_Ship.idcode, $STATION]"/>
-               <debug_text filter="scripts" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=error event=target_destroyed result=target_invalid reason=target_destroyed'.[$_Ship.idcode]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=interrupt event=target_destroyed result=target_invalid reason=target_destroyed target=%2'.[$_Ship.idcode, $STATION]"/>
+               <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=error event=target_destroyed result=target_invalid reason=target_destroyed'.[$_Ship.idcode]"/>
             </do_if>
             <abort_called_scripts resume="END_LBL"/>
          </actions>
@@ -120,7 +120,7 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_start result=active target=%2 current_sector=%3 target_sector=%4 subscription=%5'.[$_Ship.idcode, $STATION, $_Ship.sector.knownname, @$_Station.sector.knownname, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_start result=active target=%2 current_sector=%3 target_sector=%4 subscription=%5'.[$_Ship.idcode, $STATION, $_Ship.sector.knownname, @$_Station.sector.knownname, @$_Station.hastradesubscription]"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -131,11 +131,11 @@
          <!-- Do not depart for a destroyed, current, blacklisted, unknown-route or unreachable target. -->
          <do_if value="$DEBUG gt 0">
             <set_value name="$_TraceValidationPhase" exact="'before_intersector_move'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_start result=pending stage=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_start result=pending stage=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
          </do_if>
          <include_interrupt_actions ref="ValidateTarget"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 target=%5 path_distance=%6 subscription=%7'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_PathDistance, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 target=%5 path_distance=%6 subscription=%7'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_PathDistance, @$_Station.hastradesubscription]"/>
          </do_if>
          <do_if value="$_ValidationStatus != 'valid'">
             <set_value name="$_Result" exact="$_ValidationStatus"/>
@@ -144,11 +144,11 @@
 
          <!-- Vanilla 9.00 owns all inter-sector gate, accelerator and highway handling. -->
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_required result=%2 reason=%3 current_sector=%4 target_sector=%5 subscription=%6'.[$_Ship.idcode, $_Ship.sector != $_Station.sector, if $_Ship.sector != $_Station.sector then 'success' else 'not_required', $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_required result=%2 reason=%3 current_sector=%4 target_sector=%5 subscription=%6'.[$_Ship.idcode, $_Ship.sector != $_Station.sector, if $_Ship.sector != $_Station.sector then 'success' else 'not_required', $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
          </do_if>
          <do_if value="$_Ship.sector != $_Station.sector">
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_start result=pending target_sector=%2 strictblacklist=true useknownpath=true uselocalhighways=%3 recallsubordinates=false subscription=%4'.[$_Ship.idcode, $_Station.sector.knownname, not $_Ship.iscapitalship, $_Station.hastradesubscription]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_start result=pending target_sector=%2 strictblacklist=true useknownpath=true uselocalhighways=%3 recallsubordinates=false subscription=%4'.[$_Ship.idcode, $_Station.sector.knownname, not $_Ship.iscapitalship, $_Station.hastradesubscription]"/>
             </do_if>
             <run_script name="'move.generic'" result="$_MoveSuccess">
                <param name="destination" value="$_Station.sector"/>
@@ -159,7 +159,7 @@
                <param name="debugchance" value="$debugchance"/>
             </run_script>
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_return result=%2 reason=%3 move_result=%2 current_sector=%4 target_sector=%5 subscription=%6'.[$_Ship.idcode, $_MoveSuccess, if $_MoveSuccess then 'success' else 'move_failed', $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_return result=%2 reason=%3 move_result=%2 current_sector=%4 target_sector=%5 subscription=%6'.[$_Ship.idcode, $_MoveSuccess, if $_MoveSuccess then 'success' else 'move_failed', $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
             </do_if>
             <do_if value="not $_MoveSuccess">
                <set_value name="$_Result" exact="'move_failed'"/>
@@ -173,7 +173,7 @@
          </do_if>
          <include_interrupt_actions ref="ValidateTarget"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 current_sector=%5 target_sector=%6 subscription=%7'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $_Ship.sector.knownname, @$_Station.sector.knownname, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 current_sector=%5 target_sector=%6 subscription=%7'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $_Ship.sector.knownname, @$_Station.sector.knownname, @$_Station.hastradesubscription]"/>
          </do_if>
          <do_if value="$_ValidationStatus != 'valid'">
             <set_value name="$_Result" exact="$_ValidationStatus"/>
@@ -187,8 +187,8 @@
          <!-- Preserve the existing radar approach, but prevent it from reaching the legacy sector stack. -->
          <do_if value="$DEBUG gt 0">
             <set_value name="$_TraceValidationPhase" exact="'before_radar_approach'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_snapshot result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=approach event=move_start result=pending target=%2 current_sector=%3 target_sector=%4 target_distance=%5 subscription=%6'.[$_Ship.idcode, $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, ($_Ship.maxradarrange * 0.75), $_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_snapshot result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=approach event=move_start result=pending target=%2 current_sector=%3 target_sector=%4 target_distance=%5 subscription=%6'.[$_Ship.idcode, $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, ($_Ship.maxradarrange * 0.75), $_Station.hastradesubscription]"/>
          </do_if>
          <run_script name="'jp.lib.MoveToObject'" result="$_ApproachSuccess">
             <param name="OBJECT" value="$_Station"/>
@@ -199,13 +199,13 @@
             <param name="SKIP_SECTOR_CHECK" value="true"/>
          </run_script>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=approach event=move_return result=%2 reason=%3 target=%4 current_sector=%5 target_sector=%6 subscription=%7'.[$_Ship.idcode, $_ApproachSuccess, if $_ApproachSuccess then 'success' else 'approach_failed', $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=approach event=move_return result=%2 reason=%3 target=%4 current_sector=%5 target_sector=%6 subscription=%7'.[$_Ship.idcode, $_ApproachSuccess, if $_ApproachSuccess then 'success' else 'approach_failed', $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
             <set_value name="$_TraceValidationPhase" exact="'after_radar_approach'"/>
          </do_if>
 
          <include_interrupt_actions ref="ValidateTarget"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
          </do_if>
          <do_if value="$_ValidationStatus == 'already_current'">
             <resume label="SUCCESS_LBL"/>
@@ -221,7 +221,7 @@
 
          <!-- No arbitrary timeout: leave only when Vanilla confirms the update or the target becomes invalid. -->
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_start result=pending target=%2 subscription=%3'.[$_Ship.idcode, $_Station, $_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_start result=pending target=%2 subscription=%3'.[$_Ship.idcode, $_Station, $_Station.hastradesubscription]"/>
          </do_if>
          <do_while value="$_ValidationStatus != 'already_current'">
             <wait exact="5s"/>
@@ -229,13 +229,13 @@
                <set_value name="$_TraceWaitAttempt" operation="add" exact="1"/>
                <set_value name="$_TraceValidationPhase" exact="'subscription_wait'"/>
                <do_if value="$_TraceWaitAttempt ge $_TraceNextWaitLog">
-                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_tick result=pending attempt=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_TraceWaitAttempt, $_Station, $_Station.hastradesubscription]"/>
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_tick result=pending attempt=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_TraceWaitAttempt, $_Station, $_Station.hastradesubscription]"/>
                   <set_value name="$_TraceNextWaitLog" operation="add" exact="12"/>
                </do_if>
             </do_if>
             <include_interrupt_actions ref="ValidateTarget"/>
             <do_if value="$DEBUG gt 0 and $_ValidationStatus != 'valid'">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=subscription_wait attempt=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceWaitAttempt, $STATION, @$_Station.hastradesubscription]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=subscription_wait attempt=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceWaitAttempt, $STATION, @$_Station.hastradesubscription]"/>
             </do_if>
             <do_if value="$_ValidationStatus != 'valid' and $_ValidationStatus != 'already_current'">
                <set_value name="$_Result" exact="$_ValidationStatus"/>
@@ -246,7 +246,7 @@
          <label name="SUCCESS_LBL"/>
          <set_value name="$_Result" exact="'success'"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=subscription_detected result=success reason=success target=%2 subscription=true attempt=%3'.[$_Ship.idcode, $_Station, $_TraceWaitAttempt]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=subscription_detected result=success reason=success target=%2 subscription=true attempt=%3'.[$_Ship.idcode, $_Station, $_TraceWaitAttempt]"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -273,7 +273,7 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 target=%4 current_sector=%5 subscription=%6'.[$_Ship.idcode, $_Result, if $_Result == 'target_invalid' then 'invalid_target' else (if $_Result == 'target_disallowed' then $_ValidationReason else (if $_Result == 'no_valid_path' then 'no_known_path' else $_Result)), $STATION, $_Ship.sector.knownname, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 target=%4 current_sector=%5 subscription=%6'.[$_Ship.idcode, $_Result, if $_Result == 'target_invalid' then 'invalid_target' else (if $_Result == 'target_disallowed' then $_ValidationReason else (if $_Result == 'no_valid_path' then 'no_known_path' else $_Result)), $STATION, $_Ship.sector.knownname, @$_Station.hastradesubscription]"/>
          </do_if>
 
          <return value="$_Result"/>
@@ -283,7 +283,7 @@
 
    <on_abort>
       <do_if value="$DEBUG gt 0">
-         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted target=%2'.[$_Ship.idcode, $STATION]"/>
+         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted target=%2'.[$_Ship.idcode, $STATION]"/>
       </do_if>
    </on_abort>
 
