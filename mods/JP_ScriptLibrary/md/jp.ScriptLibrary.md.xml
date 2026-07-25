@@ -184,7 +184,9 @@
                <substitute_text source="$_Ship.knownname" text="$_ResultName">
                   <replace string="'\033#FFCEFBA1# ~ Idle\033X'" with="''"/>
                </substitute_text>
-               <set_object_name object="$_Ship" name="$_ResultName"/>
+               <do_if value="$_Ship.knownname != $_ResultName">
+                  <set_object_name object="$_Ship" name="$_ResultName"/>
+               </do_if>
             </do_for_each>
 
             <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->

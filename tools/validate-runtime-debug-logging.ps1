@@ -13,7 +13,8 @@ $postLoggingFunctionalPaths = @(
     'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml',
     'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml',
     'mods/JP_TradeSubscriptionExplorer/libraries/experiences.xml',
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml'
+    'mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml',
+    'mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
 )
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'
 $mdSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/md.xsd'
@@ -617,6 +618,7 @@ $existingRegressions = @(
     'validate-order-ready.ps1'
     'validate-cycle-idle-refinement.ps1'
     'validate-experience-skill-contract.ps1'
+    'validate-runtime-visibility.ps1'
 )
 foreach ($regression in $existingRegressions) {
     & (Join-Path $PSScriptRoot $regression) | Out-Null

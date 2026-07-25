@@ -125,8 +125,8 @@
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
-         <set_command command="command.investigate"/>
-         <set_command_action commandaction="commandaction.calculating"/>
+         <set_command command="command.investigate" param="$STATION"/>
+         <set_command_action commandaction="commandaction.investigating" param="$STATION"/>
 
          <!-- Do not depart for a destroyed, current, blacklisted, unknown-route or unreachable target. -->
          <do_if value="$DEBUG gt 0">

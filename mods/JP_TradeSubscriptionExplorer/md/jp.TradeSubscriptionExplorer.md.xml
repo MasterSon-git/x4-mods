@@ -195,10 +195,14 @@
          <actions>
             <debug_text filter="scripts" text="'[TSE-TRACE] source=tse_reset_name_md ship=%1 phase=name_cleanup event=name_cleanup_start result=active reason=order_changed'.[event.param]"/>
             <substitute_text source="event.param.knownname" text="$_ResultName">
+               <replace string="'\033#FFA95908#[TSE]\033X '" with="''"/>
                <replace string="'\033#FFA95908##TSE-S\033X ~ '" with="''"/>
                <replace string="'\033#FFA95908##TSE-G\033X ~ '" with="''"/>
+               <replace string="'\033#FFCEFBA1# ~ Idle\033X'" with="''"/>
             </substitute_text>
-            <set_object_name object="event.param" name="$_ResultName"/>
+            <do_if value="event.param.knownname != $_ResultName">
+               <set_object_name object="event.param" name="$_ResultName"/>
+            </do_if>
             <debug_text filter="scripts" text="'[TSE-TRACE] source=tse_reset_name_md ship=%1 phase=name_cleanup event=name_cleanup_end result=complete reason=order_changed'.[event.param]"/>
             <remove_value name="$_ResultName"/>
          </actions>

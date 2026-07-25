@@ -2,7 +2,7 @@
 
 <aiscript name="JP_TradeSubscriptionExplorerG" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd" version="1">
 
-   <order id="JP_TradeSubscriptionExplorerG" name="_{8888888, 97}TradeSubscriptionExplorer - {8888888, 99}{8888888, 98}{20001, 901}{8888888, 99}" description="{8888888, 1971}" category="navigation" infinite="true" allowinloop="false">
+   <order id="JP_TradeSubscriptionExplorerG" name="{8888888, 97}Trade Subscription Explorer - {8888888, 99}{8888888, 98}{20001, 901}{8888888, 99}" description="{8888888, 1971}" category="navigation" infinite="true" allowinloop="false">
       <params>
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
          <param name="PLACE_HOLDER_000" text="----------------------------------" type="object" default="null">
@@ -162,10 +162,14 @@
 
          <do_if value="$ADD_ORDER_TAG">
             <substitute_text source="$_Ship.knownname" text="$_ResultName">
+               <replace string="'\033#FFA95908#[TSE]\033X '" with="''"/>
+               <replace string="'\033#FFA95908##TSE-S\033X ~ '" with="''"/>
                <replace string="'\033#FFA95908##TSE-G\033X ~ '" with="''"/>
+               <replace string="'\033#FFCEFBA1# ~ Idle\033X'" with="''"/>
             </substitute_text>
-            <do_if value="$_Ship.knownname == $_ResultName">
-               <set_object_name object="$_Ship" name="'\033#FFA95908##TSE-G\033X ~ ' + $_Ship.knownname"/>
+            <set_value name="$_TaggedName" exact="'\033#FFA95908#[TSE]\033X ' + $_ResultName"/>
+            <do_if value="$_Ship.knownname != $_TaggedName">
+               <set_object_name object="$_Ship" name="$_TaggedName"/>
             </do_if>
          </do_if>
 

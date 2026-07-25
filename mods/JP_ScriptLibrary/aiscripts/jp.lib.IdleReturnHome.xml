@@ -66,13 +66,6 @@
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=idle_return_home ship=%1 phase=configuration event=priority result=move_follow_dock idle_move=%2 idle_follow=%3 idle_dock=%4 failed_move=%5 failed_follow=%6 failed_dock=%7 cannotdock=%8'.[$_Ship.idcode, $IDLE_MOVE_TO, $IDLE_FOLLOW, $IDLE_DOCKING, $FAILED_MOVE, $FAILED_FOLLOW, $FAILED_DOCK, $cannotdock]"/>
          </do_if>
 
-         <substitute_text source="$_Ship.knownname" text="$_ResultName">
-            <replace string="'\033#FFCEFBA1# ~ Idle\033X'" with="''"/>
-         </substitute_text>
-         <do_if value="$_Ship.knownname == $_ResultName">
-            <set_object_name object="$_Ship" name="$_Ship.knownname + '\033#FFCEFBA1# ~ Idle\033X'"/>
-         </do_if>
-
          <do_if value="not $STRICT_BLACKLIST and not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
             <set_value name="$IDLE_MOVE_TO" exact="true" chance="100"/>
             <set_value name="$WHERE_TO_MOVE" exact="$START_POSITION"/>
