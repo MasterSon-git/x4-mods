@@ -271,13 +271,6 @@
             <param name="LOG_CHANCE"         value="3"/>
          </run_script>
 
-         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-
-         <apply_experience entity="$_Ship.pilot" experience="'JP_SHIP_TRADESUBSCRIPTION_UPDATED'"/>
-         <apply_experience object="$_Ship" experience="'JP_SHIP_TRADESUBSCRIPTION_UPDATED'" role="entityrole.service"/>
-
-         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 target=%4 current_sector=%5 subscription=%6'.[$_Ship.idcode, $_Result, if $_Result == 'target_invalid' then 'invalid_target' else (if $_Result == 'target_disallowed' then $_ValidationReason else (if $_Result == 'no_valid_path' then 'no_known_path' else $_Result)), $STATION, $_Ship.sector.knownname, @$_Station.hastradesubscription]"/>

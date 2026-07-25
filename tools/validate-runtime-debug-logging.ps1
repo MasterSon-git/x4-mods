@@ -616,6 +616,7 @@ $existingRegressions = @(
     'validate-md-groups.ps1',
     'validate-order-ready.ps1'
     'validate-cycle-idle-refinement.ps1'
+    'validate-experience-skill-contract.ps1'
 )
 foreach ($regression in $existingRegressions) {
     & (Join-Path $PSScriptRoot $regression) | Out-Null
