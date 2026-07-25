@@ -234,6 +234,7 @@
             <resume label="IDLE_LBL"/>
          </do_if>
 
+         <set_value name="$_CycleMadeProgress" exact="false"/>
          <do_if value="$DEBUG gt 0">
             <set_value name="$_TraceCandidateIndex" exact="0"/>
             <set_value name="$_TraceSucceeded" exact="0"/>
@@ -249,6 +250,9 @@
                <param name="SECTOR" value="global.$TSE_ShipsCurrentSectorTable.{$_Ship}"/>
                <param name="STATION" value="$_CandidateStation"/>
             </run_script>
+            <do_if value="$_UpdateResult == 'success' or $_UpdateResult == 'already_current'">
+               <set_value name="$_CycleMadeProgress" exact="true"/>
+            </do_if>
             <do_if value="$DEBUG gt 0">
                <set_value name="$_TraceUpdateReason" exact="if $_UpdateResult == 'target_invalid' then 'invalid_target' else if $_UpdateResult == 'target_disallowed' then 'access_denied' else if $_UpdateResult == 'no_valid_path' then 'no_known_path' else $_UpdateResult"/>
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_result result=%2 reason=%3 cycle=%4 candidate_index=%5 target=%6'.[$_Ship.idcode, $_UpdateResult, $_TraceUpdateReason, $_TraceCycle, $_TraceCandidateIndex, $_CandidateStation.idcode]"/>
@@ -269,6 +273,12 @@
          <do_if value="$DEBUG gt 0">
             <set_value name="$_TraceIdleReason" exact="if $_TraceFailed == $_FoundStations.count then 'all_candidates_failed' else 'all_candidates_processed'"/>
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_summary result=complete reason=%2 cycle=%3 candidate_count=%4 succeeded=%5 skipped=%6 failed=%7'.[$_Ship.idcode, $_TraceIdleReason, $_TraceCycle, $_FoundStations.count, $_TraceSucceeded, $_TraceSkipped, $_TraceFailed]"/>
+         </do_if>
+         <do_if value="$_CycleMadeProgress">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_restart result=continue reason=candidates_processed cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+            </do_if>
+            <resume label="SEARCH_LBL"/>
          </do_if>
          <resume label="IDLE_LBL"/>
 

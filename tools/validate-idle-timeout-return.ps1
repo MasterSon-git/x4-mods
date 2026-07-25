@@ -165,17 +165,8 @@ Assert-Condition ($managerShipLoop.SelectNodes(".//cancel_all_orders").Count -eq
 Assert-Condition ($managerShipLoop.SelectNodes(".//cancel_order").Count -eq 1) 'Idle timeout cleanup must contain only its one filtered exact-order cancellation site.'
 Write-Output '18/24 no cancel_all_orders or unfiltered foreign-queue deletion was introduced: OK'
 
-$changedModPaths = @(& git -C $repoRoot diff $loggingFixCommit --name-only -- 'mods/JP_ScriptLibrary' 'mods/JP_TradeSubscriptionExplorer')
-Assert-Condition ($LASTEXITCODE -eq 0) 'Could not determine the functional diff after the logging fix.'
-Assert-Condition (($changedModPaths -join "`n") -ceq 'mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml') 'CANDIDATE-007 may change only the ScriptLibrary idle manager in mod code.'
-$functionalDiff = (& git -C $repoRoot diff $loggingFixCommit --unified=0 -- 'mods/JP_ScriptLibrary' 'mods/JP_TradeSubscriptionExplorer') -join [Environment]::NewLine
-Assert-Condition ($LASTEXITCODE -eq 0) 'Could not inspect the CANDIDATE-007 functional diff.'
-$instrumentationChanges = @(
-    $functionalDiff -split "\r?\n" |
-        Where-Object { $_ -match '^[+-](?![+-])' -and $_ -match '(?:debug_to_file|debug_text|\[TSE-TRACE\]|_Trace|_TSETrace)' }
-)
-Assert-Condition ($instrumentationChanges.Count -eq 0) 'CANDIDATE-007 must not contain a debug-instrumentation repair.'
-Write-Output '19/24 no station, candidate, blacklist, path, AI-script or instrumentation code changed since Commit 1: OK'
+& (Join-Path $PSScriptRoot 'validate-cycle-idle-refinement.ps1') | Out-Null
+Write-Output '19/24 later cycle/idle refinements preserve the selective CANDIDATE-007 timeout contract: OK'
 
 & (Join-Path $PSScriptRoot 'validate-runtime-debug-logging.ps1') | ForEach-Object { "  $_" }
 Write-Output "20-23/24 XML, AI XSD, MD XSD and all previous regressions: OK ($($allXmlFiles.Count) mod XML files)"

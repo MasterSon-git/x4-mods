@@ -73,7 +73,7 @@
             <set_object_name object="$_Ship" name="$_Ship.knownname + '\033#FFCEFBA1# ~ Idle\033X'"/>
          </do_if>
 
-         <do_if value="not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
+         <do_if value="not $STRICT_BLACKLIST and not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
             <set_value name="$IDLE_MOVE_TO" exact="true" chance="100"/>
             <set_value name="$WHERE_TO_MOVE" exact="$START_POSITION"/>
          </do_if>
@@ -81,6 +81,9 @@
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
          <set_command_action commandaction="commandaction.standingby"/>
+         <do_if value="$STRICT_BLACKLIST and not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
+            <set_command command="command.wait"/>
+         </do_if>
 
          <include_interrupt_actions ref="GetBlacklistgroup"/>
 
