@@ -201,9 +201,12 @@
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=exclusion_summary result=excluded reason=already_current target_sector=%2 excluded_count=%3'.[$_Ship.idcode, $_Sector.knownname, $_TraceKnownStations.count - $_TraceExpiredStations.count]"/>
                </do_if>
                <do_for_each name="$_TraceExpiredStation" in="$_TraceExpiredStations">
-                  <do_if value="$_TraceExpiredStation.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship}">
-                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=object_blacklisted target=%2 target_sector=%3'.[$_Ship.idcode, $_TraceExpiredStation, $_Sector.knownname]"/>
+                  <do_if value="$_Ship.ishostileto.{$_TraceExpiredStation}">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=hostile_target target=%2 target_sector=%3'.[$_Ship.idcode, $_TraceExpiredStation, $_Sector.knownname]"/>
                   </do_if>
+                  <do_elseif value="$_TraceExpiredStation.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship}">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=object_blacklisted target=%2 target_sector=%3'.[$_Ship.idcode, $_TraceExpiredStation, $_Sector.knownname]"/>
+                  </do_elseif>
                </do_for_each>
                <remove_value name="$_TraceKnownStations"/>
                <remove_value name="$_TraceExpiredStations"/>
@@ -239,6 +242,14 @@
                <do_else>
                   <set_value name="$_SubscriptionTarget" exact="$_Station"/>
                </do_else>
+               <!-- Match Vanilla's automatic station-update safety intent without
+                    requiring docking: never approach an object hostile to this ship. -->
+               <do_if value="$_Ship.ishostileto.{$_Station} or $_Ship.ishostileto.{$_SubscriptionTarget}">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=hostile_target target=%2 target_sector=%3'.[$_Ship.idcode, $_Station, $_Sector.knownname]"/>
+                  </do_if>
+                  <continue/>
+               </do_if>
                <do_if value="$_SubscriptionTarget.hastradesubscription or
                              $_Station.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} or
                              $_SubscriptionTarget.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship}">

@@ -26,12 +26,20 @@
             <do_if value="$STATION.exists">
                <set_value name="$_Station" exact="if $STATION.isconstruction then $STATION.buildstorage else $STATION"/>
                <do_if value="$_Station.exists">
-                  <do_if value="$_Station.hastradesubscription">
+                  <!-- ishostileto includes mutual object/faction hostility and the
+                       effective fire-authorisation state in X4 9.00. -->
+                  <do_if value="$_Ship.ishostileto.{$STATION} or $_Ship.ishostileto.{$_Station}">
+                     <set_value name="$_ValidationStatus" exact="'target_disallowed'"/>
+                     <do_if value="$DEBUG gt 0">
+                        <set_value name="$_ValidationReason" exact="'hostile_target'"/>
+                     </do_if>
+                  </do_if>
+                  <do_elseif value="$_Station.hastradesubscription">
                      <set_value name="$_ValidationStatus" exact="'already_current'"/>
                      <do_if value="$DEBUG gt 0">
                         <set_value name="$_ValidationReason" exact="'already_current'"/>
                      </do_if>
-                  </do_if>
+                  </do_elseif>
                   <do_else>
                      <find_sector name="$_AccessibleTargetSector" space="player.galaxy" macro="$_Station.sector.macro" accessgrantedto="$_Ship.owner"/>
                      <do_if value="$_AccessibleTargetSector != $_Station.sector">

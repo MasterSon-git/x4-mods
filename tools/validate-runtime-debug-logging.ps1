@@ -11,6 +11,7 @@ $postLoggingFunctionalPaths = @(
     'mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml',
     'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml',
     'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml',
+    'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml',
     'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml',
     'mods/JP_TradeSubscriptionExplorer/libraries/experiences.xml',
     'mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml',
@@ -623,6 +624,7 @@ $existingRegressions = @(
     'validate-experience-skill-contract.ps1'
     'validate-runtime-visibility.ps1'
     'validate-log-session-format.ps1'
+    'validate-hostile-station-filter.ps1'
 )
 foreach ($regression in $existingRegressions) {
     & (Join-Path $PSScriptRoot $regression) | Out-Null
