@@ -95,7 +95,7 @@
          </param>
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       </params>
-      <skill min="45"/>
+      <skill min="40"/>
       <requires>
          <match shiptype="shiptype.lasertower" negate="true"/>
       </requires>

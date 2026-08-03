@@ -65,10 +65,12 @@ Write-Output '2/5 Vanilla 9.00 Update Stations has no experience award; discover
 $sectorSkill = $sector.SelectSingleNode('/aiscript/order/skill').GetAttribute('min')
 $galaxySkill = $galaxy.SelectSingleNode('/aiscript/order/skill').GetAttribute('min')
 $updateSkill = $vanillaUpdate.SelectSingleNode('/aiscript/order/skill').GetAttribute('min')
+$reconSkill = $vanillaRecon.SelectSingleNode('/aiscript/order/skill').GetAttribute('min')
 Assert-Condition ($sectorSkill -eq '20') 'TSE-S required skill must remain 20.'
-Assert-Condition ($galaxySkill -eq '45') 'TSE-G required skill must remain the established custom value 45.'
+Assert-Condition ($galaxySkill -eq '40') 'TSE-G required skill must remain the visible two-star value 40.'
 Assert-Condition ($updateSkill -eq '20') 'Vanilla ExploreUpdate comparison must require skill 20.'
-Write-Output '3/5 TSE-S/TSE-G required skills remain 20/45; Vanilla ExploreUpdate comparison remains 20: OK'
+Assert-Condition ($reconSkill -eq '40') 'Vanilla Recon comparison must require skill 40.'
+Write-Output '3/5 TSE-S/TSE-G use visible one-/two-star thresholds 20/40, matching Vanilla Update/Recon thresholds: OK'
 
 $assistTarget = $vanillaAssist.SelectSingleNode("//do_if[@value=`"`$orderdef.`$id == 'SupplyFleet'`"]")
 $skillGuard = $assistTarget.SelectSingleNode(
