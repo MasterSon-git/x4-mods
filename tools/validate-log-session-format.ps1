@@ -16,6 +16,13 @@ function Assert-Condition {
     }
 }
 
+function Get-RepoRelativePath {
+    param([Parameter(Mandatory)] [string] $Path)
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    return $fullPath.Substring($repoRoot.Length).TrimStart('\', '/')
+}
+
 function Read-XmlDocument {
     param([Parameter(Mandatory)] [string] $Path)
 
@@ -45,7 +52,7 @@ Assert-Condition ($debugRecords.Count -gt 0) 'No custom debug output was found.'
 Assert-Condition ($traceRecords.Count -gt 0) 'No structured TSE runtime traces were found.'
 
 foreach ($record in $debugRecords) {
-    $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $record.File.FullName)
+    $relativePath = Get-RepoRelativePath $record.File.FullName
     $expectedType = if ($relativePath -like 'mods\JP_TradeSubscriptionExplorer\aiscripts\*') {
         'TSEAI '
     }
@@ -72,7 +79,7 @@ foreach ($record in $debugRecords) {
 Write-Output "1/5 all $($debugRecords.Count) custom debug actions use the source-specific six-character type, player.age, function and one-line ASCII output: OK"
 
 foreach ($record in $traceRecords) {
-    $relativePath = [System.IO.Path]::GetRelativePath($repoRoot, $record.File.FullName)
+    $relativePath = Get-RepoRelativePath $record.File.FullName
     foreach ($key in @('source=', 'ship=', 'phase=', 'event=')) {
         Assert-Condition ($record.Text.Contains($key)) "$relativePath trace is missing $key."
     }
@@ -82,7 +89,7 @@ Write-Output "Structured payload contract remains present on all $($traceRecords
 $sessionMarkers = @($traceRecords | Where-Object { $_.Text -match 'phase=session event=session_start' })
 Assert-Condition ($sessionMarkers.Count -eq 1) "Expected one session marker, got $($sessionMarkers.Count)."
 $sessionMarker = $sessionMarkers[0]
-$sessionRelativePath = [System.IO.Path]::GetRelativePath($repoRoot, $sessionMarker.File.FullName)
+$sessionRelativePath = Get-RepoRelativePath $sessionMarker.File.FullName
 Assert-Condition ($sessionRelativePath -eq 'mods\JP_TradeSubscriptionExplorer\md\jp.TradeSubscriptionExplorer.md.xml') 'The session marker must be owned by the central TSE MD setup.'
 Assert-Condition ($sessionMarker.Node.LocalName -eq 'debug_to_file') 'The session marker must write to the custom runtime file.'
 Assert-Condition ($sessionMarker.Node.GetAttribute('directory') -eq "'JP_TradeSubscriptionExplorer.logs'") 'The session marker uses the wrong directory.'
@@ -116,7 +123,7 @@ Write-Output '4/5 starting additional ships, cycles, Mimic or Idle cannot create
 
 $aiUnguarded = @(
     foreach ($record in $traceRecords | Where-Object {
-        [System.IO.Path]::GetRelativePath($repoRoot, $_.File.FullName) -like '*\aiscripts\*'
+        (Get-RepoRelativePath $_.File.FullName) -like '*\aiscripts\*'
     }) {
         $ancestor = $record.Node.ParentNode
         $guarded = $false

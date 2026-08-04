@@ -549,6 +549,16 @@ $simulatedAiFiles = @(
         $diffDocument = $documents[(Join-Path $repoRoot $mapping.Key)]
         $vanillaDocument = Read-XmlDocument -Path (Join-Path $repoRoot $mapping.Value)
         $applied = Apply-XmlDiff -VanillaDocument $vanillaDocument -DiffDocument $diffDocument -DiffPath $mapping.Key
+        # XmlDocument.Save emits literal attribute CR/LF as character
+        # references. Xerces preserves those references instead of applying
+        # the whitespace normalization that the original Vanilla XML receives,
+        # which can make an unchanged multi-line expression fail its pattern.
+        # Normalize only line breaks, matching XML attribute parsing.
+        foreach ($attribute in @($applied.SelectNodes('//@*'))) {
+            if ($attribute.Value -match '[\r\n]') {
+                $attribute.Value = $attribute.Value -replace '[\r\n]+', ' '
+            }
+        }
         $outputName = ($mapping.Key -replace '[^A-Za-z0-9._-]', '_') + '.xml'
         $outputPath = Join-Path $validationTempRoot $outputName
         $applied.Save($outputPath)
@@ -632,7 +642,7 @@ foreach ($regression in $existingRegressions) {
 }
 Write-Output "19/20 existing regressions: OK ($($existingRegressions.Count) scripts)"
 
-$diffCheck = & git -C $repoRoot diff $baselineCommit --check -- 2>&1
+$diffCheck = & git -c core.autocrlf=false -C $repoRoot diff $baselineCommit --check -- 2>&1
 Assert-Condition ($LASTEXITCODE -eq 0) ("git diff --check failed: " + ($diffCheck -join ' | '))
 Write-Output '20/20 git diff --check: OK'
 Write-Output 'Structured TSE runtime debug logging validation: PASS'

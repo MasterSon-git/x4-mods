@@ -116,6 +116,9 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$_Ship" exact="this.ship"/>
       <add_to_group groupname="global.$TSE_ShipsGroup" object="$_Ship"/>
+      <!-- Stable 0-4 second scheduler offset.  The configured idle time
+           remains the semantic base duration. -->
+      <set_value name="$_WakeOffset" exact="(abs($_Ship.seed) % 5) * 1s"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <do_if value="$DEBUG gt 0">
          <set_value name="$_DebugFolderName" exact="$DEBUG_FOLDER_NAME"/>
@@ -256,6 +259,9 @@
             </run_script>
             <do_if value="$_UpdateResult == 'success' or $_UpdateResult == 'already_current'">
                <set_value name="$_CycleMadeProgress" exact="true"/>
+               <do_if value="global.$TSE_GalaxyCandidateStations?">
+                  <remove_from_list name="global.$TSE_GalaxyCandidateStations" exact="$_CandidateStation"/>
+               </do_if>
             </do_if>
             <do_if value="$DEBUG gt 0">
                <set_value name="$_TraceUpdateReason" exact="if $_UpdateResult == 'target_invalid' then 'invalid_target' else if $_UpdateResult == 'target_disallowed' then 'access_denied' else if $_UpdateResult == 'no_valid_path' then 'no_known_path' else $_UpdateResult"/>
@@ -294,7 +300,7 @@
 
          <!-- I will switch to idle mode and try again later. -->
          <create_order object="$_Ship" id="'JP_lib_IdleReturnHome'" immediate="true">
-            <param name="IDLE_TIME"      value="$IDLE_TIME"/>
+            <param name="IDLE_TIME"      value="$IDLE_TIME + $_WakeOffset"/>
             <param name="IDLE_MOVE_TO"   value="$IDLE_MOVE_TO"/>
             <param name="WHERE_TO_MOVE"  value="$WHERE_TO_MOVE"/>
             <param name="START_POSITION" value="$START_POSITION"/>

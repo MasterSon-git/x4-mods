@@ -133,8 +133,9 @@ $sectorCandidateCall = $sector.SelectSingleNode("//run_script[@name=`"'jp.lib.TS
 $galaxyCandidateCall = $galaxy.SelectSingleNode("//run_script[@name=`"'jp.lib.TSE.GetTradesubscriptionsToUpdate'`"]")
 Assert-Condition ($null -ne $sectorCandidateCall.SelectSingleNode("./param[@name='SECTOR' and @value='`$SECTOR']")) 'TSE-S candidate search must remain limited to its configured sector.'
 Assert-Condition ($null -eq $galaxyCandidateCall.SelectSingleNode("./param[@name='SECTOR']")) 'TSE-G candidate search must not be limited to the current or idle-dock sector.'
-$galaxySectorSearch = $targets.SelectSingleNode("//find_sector[@name='`$_Sectors' and @space='player.galaxy' and @multiple='true']")
-Assert-Condition ($null -ne $galaxySectorSearch) 'TSE-G helper must retain its galaxy-wide sector search.'
+$galaxySectorSearch = $targets.SelectSingleNode("//do_if[@value='`$SECTOR == null']//find_sector[@name='`$_BuildSectors' and @space='player.galaxy' and @multiple='true']")
+$cachedSectorSelection = $targets.SelectSingleNode("//do_if[@value='`$SECTOR == null']//append_to_list[@name='`$_Sectors' and @exact='`$_CachedStation.sector']")
+Assert-Condition ($null -ne $galaxySectorSearch -and $null -ne $cachedSectorSelection) 'TSE-G helper must retain cached galaxy-wide discovery.'
 Assert-Condition ($null -ne $targets.SelectSingleNode("//run_script[@name=`"'jp.lib.SortByEstimatedTravelTime'`" and param[@name='LIST' and @value='`$_ReachableSectors']]")) 'TSE-G must retain travel-time ranking of reachable sectors.'
 Assert-Condition ($null -ne $targets.SelectSingleNode("//do_if[@value='`$_FoundStations.count']/set_value[@name='`$SECTOR' and @exact='`$_Sector']")) 'TSE-G must continue deriving the selected sector from actual station candidates.'
 Write-Output '9-11/24 TSE-S remains sector-bound; TSE-G remains galaxy-wide and may select another candidate sector: OK'
@@ -171,7 +172,7 @@ Write-Output '19/24 later cycle/idle refinements preserve the selective CANDIDAT
 & (Join-Path $PSScriptRoot 'validate-runtime-debug-logging.ps1') | ForEach-Object { "  $_" }
 Write-Output "20-23/24 XML, AI XSD, MD XSD and all previous regressions: OK ($($allXmlFiles.Count) mod XML files)"
 
-$diffCheck = & git -C $repoRoot diff $loggingFixCommit --check -- 2>&1
+$diffCheck = & git -c core.autocrlf=false -C $repoRoot diff $loggingFixCommit --check -- 2>&1
 Assert-Condition ($LASTEXITCODE -eq 0) ("git diff --check failed: " + ($diffCheck -join ' | '))
 Write-Output '24/24 git diff --check: OK'
 Write-Output 'TSE idle timeout return validation: PASS'

@@ -86,7 +86,8 @@ foreach ($comparison in @(
     Assert-Condition ($null -ne $idle.SelectSingleNode("//do_if[contains(@value, '$comparison')]")) "Idle access result must still be compared with its intended target: $comparison."
 }
 
-Assert-Condition ($null -ne $getTargets.SelectSingleNode("//find_sector[@name='`$_Sectors' and @space='player.galaxy' and @multiple='true' and @accessgrantedto='`$_Ship.owner']/match[@knownto='`$_Ship.owner']")) 'The known-sector galaxy search and its access filter must remain intact.'
+Assert-Condition ($null -ne $getTargets.SelectSingleNode("//do_if[@value='`$SECTOR == null']//find_sector[@name='`$_BuildSectors' and @space='player.galaxy' and @multiple='true']/match[@knownto='`$_Ship.owner']")) 'The shared known-sector galaxy discovery must remain intact.'
+Assert-Condition ($null -ne $getTargets.SelectSingleNode("//find_sector[@name='`$_AccessibleSector' and @accessgrantedto='`$_Ship.owner']")) 'Shared discovery must remain subject to the exact per-ship access check.'
 Assert-Condition ($null -ne $getTargets.SelectSingleNode("//find_object[@name='`$_Stations']/match[@tradesknownto='`$_Ship.owner' and @negate='true']")) 'The expired-trade-information station filter must remain intact.'
 
 $interSectorMove = $updateTarget.SelectSingleNode("//run_script[contains(@name, 'move.generic') and param[@name='destination' and @value='`$_Station.sector']]")

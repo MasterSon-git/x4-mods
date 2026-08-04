@@ -77,14 +77,17 @@ $galaxySearch = $galaxy.SelectSingleNode(
     "//run_script[@name=`"'jp.lib.TSE.GetTradesubscriptionsToUpdate'`"]/param[@name='SECTOR']"
 )
 $galaxyFinder = $targets.SelectSingleNode(
-    "//find_sector[@name='`$_Sectors' and @space='player.galaxy' and @multiple='true']"
+    "//do_if[@value='`$SECTOR == null']//find_sector[@name='`$_BuildSectors' and @space='player.galaxy' and @multiple='true']"
+)
+$galaxySnapshotSectors = $targets.SelectSingleNode(
+    "//do_if[@value='`$SECTOR == null']//append_to_list[@name='`$_Sectors' and @exact='`$_CachedStation.sector']"
 )
 $oneSectorBreak = $targets.SelectSingleNode(
     "//do_if[@value='`$_FoundStations.count']/set_value[@name='`$SECTOR' and @exact='`$_Sector']/following-sibling::break"
 )
 Assert-Condition ($null -ne $sectorSearch) 'TSE-S must remain bound to its configured sector.'
 Assert-Condition ($null -eq $galaxySearch) 'TSE-G must continue to invoke a galaxy-wide finder.'
-Assert-Condition ($null -ne $galaxyFinder -and $null -ne $oneSectorBreak) 'TSE-G must retain its galaxy search and one selected sector group per finder call.'
+Assert-Condition ($null -ne $galaxyFinder -and $null -ne $galaxySnapshotSectors -and $null -ne $oneSectorBreak) 'TSE-G must retain cached galaxy discovery and one selected sector group per finder call.'
 Write-Output '2/5 TSE-S remains sector-bound and TSE-G can choose a new galaxy sector on the fresh pass: OK'
 
 $legacyFallback = $idle.SelectSingleNode(

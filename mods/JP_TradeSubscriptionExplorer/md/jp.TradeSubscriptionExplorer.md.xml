@@ -87,6 +87,21 @@
             <add_to_group groupname="global.$TSE_SectorsBlacklistGroup" group="$_RebuiltSectorsBlacklistGroup" replace="true"/>
             <debug_text filter="scripts" text="'[TSEMD ] ' + player.age + ' *** JP_TradeSubscriptionExplorer_MD:' + '[TSE-TRACE] source=tse_setup_md ship=none phase=reconstruction event=reservations_rebuilt result=complete reason=success reservation_count=%1 discarded_count=%2 sector_count=%3'.[global.$TSE_ShipsCurrentSectorTable.keys.count, $_TracePreviousReservationCount - global.$TSE_ShipsCurrentSectorTable.keys.count, global.$TSE_SectorsBlacklistGroup.count]"/>
 
+            <!-- A local AI builder cannot be trusted across extension setup or
+                 load.  Advance the epoch and invalidate incomplete/published
+                 cache data; the first active TSE-G worker rebuilds it. -->
+            <set_value name="global.$TSE_GalaxyCandidateEpoch" exact="if global.$TSE_GalaxyCandidateEpoch? then global.$TSE_GalaxyCandidateEpoch + 1 else 1"/>
+            <set_value name="global.$TSE_GalaxyCandidateGeneration" exact="0" chance="if not global.$TSE_GalaxyCandidateGeneration? then 100 else 0"/>
+            <set_value name="global.$TSE_GalaxyCandidateState" exact="'invalid'"/>
+            <set_value name="global.$TSE_GalaxyCandidateStations" exact="[]"/>
+            <remove_value name="global.$TSE_GalaxyCandidateBuilder" chance="if global.$TSE_GalaxyCandidateBuilder? then 100 else 0"/>
+            <remove_value name="global.$TSE_GalaxyCandidateBuildStart" chance="if global.$TSE_GalaxyCandidateBuildStart? then 100 else 0"/>
+            <remove_value name="global.$TSE_GalaxyCandidateReadyTime" chance="if global.$TSE_GalaxyCandidateReadyTime? then 100 else 0"/>
+            <remove_value name="global.$TSE_GalaxyCandidateScanOwner" chance="if global.$TSE_GalaxyCandidateScanOwner? then 100 else 0"/>
+            <remove_value name="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing" chance="if global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing? then 100 else 0"/>
+            <remove_value name="global.$TSEGetTradesubscriptionsToUpdateStarted" chance="if global.$TSEGetTradesubscriptionsToUpdateStarted? then 100 else 0"/>
+            <set_value name="global.$TSEGalaxyScanWaitingWorkers" exact="0"/>
+
             <remove_value name="$_Sector" chance="if $_Sector? then 100 else 0"/>
             <remove_value name="$_RebuiltSectorsBlacklistGroup"/>
             <remove_value name="$_RebuiltShipsCurrentSectorTable"/>
