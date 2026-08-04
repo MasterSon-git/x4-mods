@@ -133,6 +133,12 @@
       <actions>
 
          <label name="INIT_LBL"/>
+         <!-- Ships can briefly have no sector while changing spaces.  Wait for
+              the transition to finish before evaluating sector properties. -->
+         <do_if value="not @$_Ship.sector.exists">
+            <wait exact="1s"/>
+            <resume label="INIT_LBL"/>
+         </do_if>
          <do_if value="$DEBUG gt 0">
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=lifecycle event=script_start result=active mode=galaxy debug=%2 current_sector=%3'.[$_Ship.idcode, $DEBUG, $_Ship.sector.knownname]"/>
             <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=order event=order_start result=active mode=galaxy'.[$_Ship.idcode]"/>
@@ -179,6 +185,10 @@
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
          <label name="SEARCH_LBL"/>
+         <do_if value="not @$_Ship.sector.exists">
+            <wait exact="1s"/>
+            <resume label="SEARCH_LBL"/>
+         </do_if>
          <set_command command="command.investigate"/>
          <set_command_action commandaction="commandaction.calculating"/>
          <do_if value="$DEBUG gt 0">

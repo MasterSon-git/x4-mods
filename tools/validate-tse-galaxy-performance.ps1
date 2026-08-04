@@ -10,6 +10,7 @@ $helperPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\jp.li
 $galaxyPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\JP_TradeSubscriptionExplorerG.xml'
 $sectorPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\JP_TradeSubscriptionExplorerS.xml'
 $updatePath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\jp.lib.TSE.UpdateSubscription.xml'
+$idlePath = Join-Path $repo 'mods\JP_ScriptLibrary\aiscripts\jp.lib.IdleReturnHome.xml'
 $mdPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\md\jp.TradeSubscriptionExplorer.md.xml'
 $aiSchemaPath = Join-Path $repo 'x4-reference\x4-9.00\base\libraries\aiscripts.xsd'
 $mdSchemaPath = Join-Path $repo 'x4-reference\x4-9.00\base\libraries\md.xsd'
@@ -39,11 +40,13 @@ $helper = Read-Xml $helperPath
 $galaxy = Read-Xml $galaxyPath
 $sector = Read-Xml $sectorPath
 $update = Read-Xml $updatePath
+$idle = Read-Xml $idlePath
 $md = Read-Xml $mdPath
 $helperText = Get-Content -Raw -LiteralPath $helperPath
 $galaxyText = Get-Content -Raw -LiteralPath $galaxyPath
 $sectorText = Get-Content -Raw -LiteralPath $sectorPath
 $updateText = Get-Content -Raw -LiteralPath $updatePath
+$idleText = Get-Content -Raw -LiteralPath $idlePath
 $mdText = Get-Content -Raw -LiteralPath $mdPath
 
 # 1-6: shared discovery and coordinator state.
@@ -55,6 +58,9 @@ $coordinatorWait = $helper.SelectSingleNode("//label[@name='RESUME_LBL']/followi
 Assert-True ($null -ne $coordinatorWait -and -not ($helperText -match '<wait exact="1ms"\s*/>\s*<resume label="RESUME_LBL"')) 'coordinator waiting is bounded and not a 1 ms polling loop'
 $buildYield = $helper.SelectSingleNode("//do_for_each[@name='`$_BuildSector' and @in='`$_BuildSectors']/wait[@exact='`$CACHE_BUILD_YIELD']")
 Assert-True ($null -ne $buildYield) 'incremental sector work has an explicit scheduler yield'
+Assert-True ($null -ne $helper.SelectSingleNode("//param[@name='CACHE_BUILD_YIELD' and @default='1s']") -and
+    $null -ne $helper.SelectSingleNode("//param[@name='COORDINATOR_WAIT' and @default='5s']") -and
+    $null -ne $helper.SelectSingleNode("//param[@name='CACHE_BUILD_TIMEOUT' and @default='5min']")) 'cache rebuild and waiting work are paced across game ticks with recovery margin'
 foreach ($state in @('invalid', 'building', 'ready')) {
     Assert-True ($helperText.Contains("'$state'") -and
         ($state -ne 'invalid' -or $mdText.Contains("'invalid'"))) "cache state $state is represented or initialized"
@@ -72,6 +78,14 @@ Assert-True ($mdText.Contains('global.$TSE_GalaxyCandidateEpoch + 1') -and
 Assert-True ($helperText.Contains('$_CachedSubscriptionTarget.hastradesubscription') -and
     $helperText.Contains('$_Ship.ishostileto') -and
     $updateText.Contains('ValidateTarget')) 'cache entries remain subject to current target validation'
+$cachedTargetGuard = $helper.SelectSingleNode("//do_for_each[@name='`$_CachedStation' and @in='`$_CandidateSnapshot']/do_if[@value='not `$_CachedSubscriptionTarget.exists']")
+$cachedTargetSubscription = $helper.SelectSingleNode("//do_for_each[@name='`$_CachedStation' and @in='`$_CandidateSnapshot']/do_if[@value='`$_CachedSubscriptionTarget.hastradesubscription']")
+$cachedWreckGuard = $helper.SelectSingleNode("//do_for_each[@name='`$_CachedStation' and @in='`$_CandidateSnapshot']/do_if[@value='`$_CachedStation.iswreck']")
+Assert-True ($null -ne $cachedTargetGuard -and
+    $null -ne $cachedTargetSubscription -and
+    $null -ne $cachedWreckGuard -and
+    -not $helperText.Contains('not $_CachedSubscriptionTarget.exists or $_CachedSubscriptionTarget.hastradesubscription')) 'optional cached subscription targets are guarded before property lookup'
+Assert-True ($updateText.Contains('$STATION.exists and not @$STATION.iswreck')) 'wrecked targets are rejected again by final update validation'
 
 # 10-14: per-ship policy and reservations.
 Assert-True ($helperText.Contains('blacklisttype.sectoractivity') -and
@@ -103,12 +117,27 @@ Assert-True ($galaxyText.Contains('abs($_Ship.seed) % 5') -and
     $galaxyText.Contains('$IDLE_TIME + $_WakeOffset')) 'Galaxy worker wakeups use a bounded stable offset'
 Assert-True (-not ($galaxyText -match '\[\$IDLE_TIME,\s*[^\]]+\]\.max') -and
     -not ($galaxyText -match 'IDLE_TIME"\s+value="[0-9]+min')) 'configured idle time is not replaced by a large minimum'
+Assert-True ($helperText.Contains('if @$_DefaultOrderParamRef.$IDLE_TIME then $_DefaultOrderParamRef.$IDLE_TIME else $CACHE_TTL') -and
+    $helperText.Contains('$_CacheAge lt $_CacheTTL') -and
+    -not $helperText.Contains('default="15s"')) 'cache reuse follows the effective configured idle interval'
+$strictIdleDockSearch = $idle.SelectSingleNode("//do_if[@value='`$IDLE_DOCKING and not `$FAILED_DOCK']/do_if[@value='not `$_IdleDockAllowed and `$FIND_STATION']")
+Assert-True ($null -ne $strictIdleDockSearch -and
+    $null -ne $strictIdleDockSearch.SelectSingleNode("find_station[@space='player.galaxy' and @sortbygatedistancefrom='`$_Ship' and @sortlimit='`$IDLE_DOCK_CANDIDATE_LIMIT']") -and
+    $null -eq $strictIdleDockSearch.SelectSingleNode("run_script[@name=`"'jp.lib.SortByEstimatedTravelTime'`"]") -and
+    $null -ne $strictIdleDockSearch.SelectSingleNode(".//do_if[@value='`$_IdlePathDistance ge 0']/break")) 'strict idle docking uses gate-distance order and stops after the first fully valid station'
+Assert-True ($null -ne $idle.SelectSingleNode("//param[@name='IDLE_DOCK_CANDIDATE_LIMIT' and @default='10']")) 'strict idle docking caps path checks to ten nearby candidates per idle cycle'
+Assert-True ($idleText.Contains('[TSE-PERF] event=idle_dock') -and
+    $idleText.Contains('candidates_checked=') -and
+    $idleText.Contains('path_checks=')) 'idle docking reports bounded candidate work'
 
 # 21-24: mode boundaries and retained contracts.
 $sectorCacheNodes = $sector.SelectNodes("//*[contains(@name, 'GalaxyCandidate') or contains(@exact, 'WakeOffset')]")
 Assert-True ($sectorCacheNodes.Count -eq 0 -and $helperText.Contains('<do_if value="$SECTOR == null">')) 'TSE-S remains outside the galaxy cache path'
 Assert-True ($helperText.Contains("defaultorder.id == 'Assist'") -and
     $galaxyText.Contains('global.$TSE_GalaxyCandidateStations')) 'Mimic workers use the same coordinator contract'
+foreach ($script in @($galaxy, $sector)) {
+    Assert-True ($script.SelectNodes("//do_if[@value='not @`$_Ship.sector.exists']/wait[@exact='1s']").Count -eq 2) 'TSE waits through transient no-sector transitions before property access'
+}
 $idleManagerPath = Join-Path $repo 'mods\JP_ScriptLibrary\md\jp.ScriptLibrary.md.xml'
 $idleManagerText = Get-Content -Raw -LiteralPath $idleManagerPath
 Assert-True ($idleManagerText.Contains('$_Ship.orders.clone') -and
@@ -120,6 +149,7 @@ Assert-True (-not (($galaxyText + $sectorText + $helperText + $updateText) -matc
 # 25: XML well-formedness was established by Read-Xml.
 Assert-True ($null -ne $helper.aiscript -and $null -ne $galaxy.aiscript -and
     $null -ne $sector.aiscript -and $null -ne $update.aiscript -and
+    $null -ne $idle.aiscript -and
     $null -ne $md.mdscript) 'all directly changed/reached XML files are well formed'
 
 # Performance summary contract.
@@ -128,17 +158,30 @@ $requiredFields = @(
     'sectors_considered=', 'sectors_accepted=', 'stations_considered=',
     'stations_stale=', 'path_checks=', 'travel_time_checks=',
     'candidates_returned=', 'cache_hit=', 'cache_miss=', 'cache_age=',
-    'worker_count=', 'waiting_workers='
+    'cache_ttl=', 'worker_count=', 'waiting_workers='
 )
-Assert-True (([regex]::Matches($helperText, '\[TSE-PERF\]')).Count -eq 1) 'exactly one bounded performance summary action exists'
+$performanceNodes = @($helper.SelectNodes("//debug_to_file[contains(@text, '[TSE-PERF]')]"))
+Assert-True ($performanceNodes.Count -eq 2) 'exactly two bounded performance summary actions exist'
 foreach ($field in $requiredFields) {
     Assert-True ($helperText.Contains($field)) "performance summary contains $field"
 }
+foreach ($performanceNode in $performanceNodes) {
+    $placeholderIndexes = @([regex]::Matches($performanceNode.GetAttribute('text'), '%(\d+)') | ForEach-Object {
+        [int] $_.Groups[1].Value
+    })
+    Assert-True (($placeholderIndexes | Measure-Object -Maximum).Maximum -le 9) 'performance summary uses only X4 single-digit positional placeholders'
+}
+$idlePerformanceNodes = @($idle.SelectNodes("//debug_to_file[contains(@text, '[TSE-PERF]')]"))
+Assert-True ($idlePerformanceNodes.Count -eq 1) 'exactly one bounded idle-dock performance summary action exists'
+$idlePlaceholderIndexes = @([regex]::Matches($idlePerformanceNodes[0].GetAttribute('text'), '%(\d+)') | ForEach-Object {
+    [int] $_.Groups[1].Value
+})
+Assert-True (($idlePlaceholderIndexes | Measure-Object -Maximum).Maximum -le 9) 'idle-dock performance summary uses only X4 single-digit positional placeholders'
 
 # 26-27: recursive XSD validation through the JDK validator.
 $jshell = Get-Command jshell -ErrorAction SilentlyContinue
 Assert-True ($null -ne $jshell) 'jshell is available for recursive Vanilla XSD validation'
-$aiFiles = @($helperPath, $galaxyPath, $sectorPath, $updatePath)
+$aiFiles = @($helperPath, $galaxyPath, $sectorPath, $updatePath, $idlePath)
 $aiStatements = ($aiFiles | ForEach-Object {
     "validator.validate(new StreamSource(new File(`"$(ConvertTo-JavaPath $_)`")));"
 }) -join [Environment]::NewLine

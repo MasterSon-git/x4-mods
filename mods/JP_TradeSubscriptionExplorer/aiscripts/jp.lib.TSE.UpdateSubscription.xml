@@ -23,7 +23,9 @@
             <do_if value="$DEBUG gt 0">
                <set_value name="$_ValidationReason" exact="'invalid_target'"/>
             </do_if>
-            <do_if value="$STATION.exists">
+            <!-- A destroyed station remains an existing wreck component, but
+                 no longer exposes container trade properties. -->
+            <do_if value="$STATION.exists and not @$STATION.iswreck">
                <set_value name="$_Station" exact="if $STATION.isconstruction then $STATION.buildstorage else $STATION"/>
                <do_if value="$_Station.exists">
                   <!-- ishostileto includes mutual object/faction hostility and the
