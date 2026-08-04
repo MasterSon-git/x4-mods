@@ -40,6 +40,16 @@
          <set_value name="$_DebugFileName" exact="'TSE_Runtime.log'"/>
          <set_value name="$_TraceSectorIndex" exact="0"/>
          <set_value name="$_TraceCandidateIndex" exact="0"/>
+         <set_value name="$_PerfScanStartTime" exact="player.age"/>
+         <set_value name="$_PerfGalaxyScan" exact="$SECTOR == null"/>
+         <set_value name="$_PerfSectorsConsidered" exact="0"/>
+         <set_value name="$_PerfSectorsAccepted" exact="0"/>
+         <set_value name="$_PerfStationsConsidered" exact="0"/>
+         <set_value name="$_PerfStationsStale" exact="0"/>
+         <set_value name="$_PerfPathChecks" exact="0"/>
+         <set_value name="$_PerfTravelTimeChecks" exact="0"/>
+         <set_value name="$_PerfRegisteredWaiting" exact="false"/>
+         <set_value name="global.$TSEGalaxyScanWaitingWorkers" exact="0" chance="if not global.$TSEGalaxyScanWaitingWorkers? then 100 else 0"/>
       </do_if>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
    </init>
@@ -60,8 +70,16 @@
          <label name="RESUME_LBL"/>
 
          <do_if value="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing?">
+            <do_if value="$DEBUG gt 0 and not $_PerfRegisteredWaiting">
+               <set_value name="global.$TSEGalaxyScanWaitingWorkers" operation="add" exact="1"/>
+               <set_value name="$_PerfRegisteredWaiting" exact="true"/>
+            </do_if>
             <wait exact="1ms"/>
             <resume label="RESUME_LBL"/>
+         </do_if>
+         <do_if value="$DEBUG gt 0 and $_PerfRegisteredWaiting">
+            <set_value name="global.$TSEGalaxyScanWaitingWorkers" operation="subtract" exact="1"/>
+            <set_value name="$_PerfRegisteredWaiting" exact="false"/>
          </do_if>
          <set_value name="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing"/>
 
@@ -105,12 +123,18 @@
                <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
             </find_sector>
             <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfSectorsConsidered" operation="add" exact="$_Sectors.count"/>
+            </do_if>
+            <do_if value="$DEBUG gt 0">
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=search_result result=complete mode=galaxy candidate_count=%2'.[$_Ship.idcode, $_Sectors.count]"/>
             </do_if>
 
             <!-- Stage 1: retain only paths that use this ship's effective travel blacklist and known sectors. -->
             <create_list name="$_ReachableSectors"/>
             <do_for_each name="$_CandidateSector" in="$_Sectors">
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_PerfPathChecks" operation="add" exact="1"/>
+               </do_if>
                <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
                                 useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
                   <start object="$_Ship"/>
@@ -133,6 +157,9 @@
             <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_Sectors">
                <param name="LIST" value="$_ReachableSectors"/>
             </run_script>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfTravelTimeChecks" operation="add" exact="$_ReachableSectors.count"/>
+            </do_if>
             <do_if value="$DEBUG gt 0">
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_sort event=sort_result result=complete candidate_count=%2'.[$_Ship.idcode, $_Sectors.count]"/>
             </do_if>
@@ -165,6 +192,9 @@
                <start object="$_Ship"/>
                <end object="$_Sector"/>
             </get_global_path>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfPathChecks" operation="add" exact="1"/>
+            </do_if>
             <do_if value="$_PathDistance lt 0">
                <do_if value="$DEBUG gt 0">
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_excluded result=excluded reason=no_known_path candidate_index=%2 target_sector=%3 path_distance=%4'.[$_Ship.idcode, $_TraceSectorIndex, $_Sector.knownname, $_PathDistance]"/>
@@ -184,6 +214,10 @@
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_excluded result=excluded reason=ownerless_disabled candidate_index=%2 target_sector=%3'.[$_Ship.idcode, $_TraceSectorIndex, $_Sector.knownname]"/>
                </do_if>
                <continue/>
+            </do_if>
+
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfSectorsAccepted" operation="add" exact="1"/>
             </do_if>
 
             <do_if value="$DEBUG gt 0">
@@ -219,6 +253,10 @@
                <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
                <match_use_blacklist object="$_Ship" type="blacklisttype.objectactivity" group="$blacklistgroup"/>
             </find_object>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfStationsConsidered" operation="add" exact="$_Stations.count"/>
+               <set_value name="$_PerfStationsStale" operation="add" exact="$_Stations.count"/>
+            </do_if>
             <do_if value="$DEBUG gt 0">
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_search event=search_result result=complete target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $_Sector.knownname, $_Stations.count]"/>
             </do_if>
@@ -287,6 +325,9 @@
                   <start object="$_Ship"/>
                   <end object="$_SubscriptionTarget"/>
                </get_global_path>
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_PerfPathChecks" operation="add" exact="1"/>
+               </do_if>
                <do_if value="$_PathDistance ge 0">
                   <append_to_list name="$_ReachableStations" exact="$_Station"/>
                   <do_if value="$DEBUG gt 0">
@@ -308,6 +349,9 @@
                <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_FoundStations">
                   <param name="LIST" value="$_ReachableStations"/>
                </run_script>
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_PerfTravelTimeChecks" operation="add" exact="$_ReachableStations.count"/>
+               </do_if>
                <do_if value="$DEBUG gt 0">
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_sort event=sort_result result=complete target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $_Sector.knownname, $_FoundStations.count]"/>
                </do_if>
@@ -364,6 +408,9 @@
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
          <label name="END_LBL"/>
+         <do_if value="$DEBUG gt 0 and $_PerfGalaxyScan">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-PERF] scan_generation=0 scan_owner=%1 scan_start_time=%2 scan_end_time=%3 sectors_considered=%4 sectors_accepted=%5 stations_considered=%6 stations_stale=%7 path_checks=%8 travel_time_checks=%9 candidates_returned=%10 cache_hit=false cache_miss=true cache_age=-1 worker_count=%11 waiting_workers=%12'.[$_Ship.idcode, $_PerfScanStartTime, player.age, $_PerfSectorsConsidered, $_PerfSectorsAccepted, $_PerfStationsConsidered, $_PerfStationsStale, $_PerfPathChecks, $_PerfTravelTimeChecks, $_FoundStations.count, @global.$TSE_ShipsGroup.count, @global.$TSEGalaxyScanWaitingWorkers]"/>
+         </do_if>
          <do_if value="$DEBUG gt 0">
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 mode=%4 candidate_count=%5 target_sector=%6'.[$_Ship.idcode, if $_FoundStations.count then 'success' else 'no_candidates', if $_FoundStations.count then 'success' else 'no_candidates', if $SECTOR == null then 'galaxy' else 'sector', $_FoundStations.count, if $SECTOR == null then 'none' else $SECTOR.knownname]"/>
          </do_if>
@@ -374,6 +421,9 @@
    </attention>
 
    <on_abort>
+      <do_if value="$DEBUG gt 0 and $_PerfRegisteredWaiting">
+         <set_value name="global.$TSEGalaxyScanWaitingWorkers" operation="subtract" exact="1"/>
+      </do_if>
       <do_if value="$DEBUG gt 0">
          <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
       </do_if>
