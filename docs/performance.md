@@ -51,6 +51,11 @@ stations ordered by gate distance. It retains docking permission, access,
 blacklist and known-path checks and stops at the first fully valid result. It
 does not estimate travel time for the complete galaxy station list.
 
+When automatic idle docking has no explicit destination, a TSE ship retains
+its current station if that station remains operational, non-hostile,
+accessible and permitted by its blacklists. The bounded station search runs
+only when the current station no longer qualifies.
+
 ## Diagnostic counters
 
 With the Advanced `DEBUG` order parameter set to `100`, `[TSE-PERF]` records

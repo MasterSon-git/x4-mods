@@ -49,7 +49,7 @@ $idle = Read-XmlDocument -Path $idlePath
 
 $documents = @($getTargets, $updateTarget, $idle)
 $allFindSectorNodes = @($documents | ForEach-Object { $_.SelectNodes("//find_sector[not(contains(@name, 'Trace'))]") })
-Assert-Condition ($allFindSectorNodes.Count -eq 7) 'The three affected scripts must retain exactly their seven reviewed find_sector actions.'
+Assert-Condition ($allFindSectorNodes.Count -eq 8) 'The three affected scripts must retain exactly their eight reviewed find_sector actions.'
 foreach ($node in $allFindSectorNodes) {
     Assert-Condition ($node.GetAttribute('space') -eq 'player.galaxy') "find_sector '$($node.GetAttribute('name'))' must use player.galaxy as its containing search space."
 }
@@ -59,6 +59,7 @@ $expectedAccessChecks = @(
     @{ Document = $updateTarget; Name = '$_AccessibleTargetSector'; Macro = '$_Station.sector.macro'; Count = 1 },
     @{ Document = $idle; Name = '$_AccessibleIdleMoveSector'; Macro = '$WHERE_TO_MOVE.{1}.macro'; Count = 1 },
     @{ Document = $idle; Name = '$_AccessibleIdleFollowSector'; Macro = '$WHO_TO_FOLLOW.sector.macro'; Count = 1 },
+    @{ Document = $idle; Name = '$_AccessibleIdleDockSector'; Macro = '$_CurrentIdleDock.sector.macro'; Count = 1 },
     @{ Document = $idle; Name = '$_AccessibleIdleDockSector'; Macro = '$WHERE_TO_DOCK.sector.macro'; Count = 1 },
     @{ Document = $idle; Name = '$_AccessibleIdleDockSector'; Macro = '$_FoundStation.sector.macro'; Count = 1 }
 )
@@ -69,7 +70,7 @@ foreach ($check in $expectedAccessChecks) {
 }
 
 $accessChecks = @($documents | ForEach-Object { $_.SelectNodes("//find_sector[starts-with(@name, '`$_Accessible')]") })
-Assert-Condition ($accessChecks.Count -eq 6) 'Exactly six reviewed exact-sector access checks must exist.'
+Assert-Condition ($accessChecks.Count -eq 7) 'Exactly seven reviewed exact-sector access checks must exist.'
 foreach ($node in $accessChecks) {
     Assert-Condition ($node.HasAttribute('macro')) "Access check '$($node.GetAttribute('name'))' must retain an exact sector macro filter."
     Assert-Condition ($node.GetAttribute('accessgrantedto') -eq '$_Ship.owner') "Access check '$($node.GetAttribute('name'))' must retain the ship-owner access filter."
@@ -77,6 +78,7 @@ foreach ($node in $accessChecks) {
 
 Assert-Condition ($null -ne $getTargets.SelectSingleNode("//do_if[@value='`$_AccessibleSector != `$_Sector']")) 'Candidate selection must reject a sector not returned by its exact access check.'
 Assert-Condition ($null -ne $updateTarget.SelectSingleNode("//do_if[@value='`$_AccessibleTargetSector != `$_Station.sector']")) 'Target validation must reject a sector not returned by its exact access check.'
+Assert-Condition ($null -ne $idle.SelectSingleNode("//set_value[@name='`$_IdleDockAllowed' and contains(@exact, '`$_AccessibleIdleDockSector == `$_CurrentIdleDock.sector')]")) 'Current idle dock access must be compared with the current station sector.'
 foreach ($comparison in @(
     '$_AccessibleIdleMoveSector == $WHERE_TO_MOVE.{1}',
     '$_AccessibleIdleFollowSector == $WHO_TO_FOLLOW.sector',
@@ -134,7 +136,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Output 'AI XSD validation: OK (3 AI files)'
 Write-Output 'find_sector containing-space invariants: OK'
-Write-Output 'Exact target-sector access filters and identity comparisons: OK (6 checks)'
+Write-Output 'Exact target-sector access filters and identity comparisons: OK (7 checks)'
 Write-Output 'Known-sector and expired-trade-information filters: OK'
 Write-Output 'Sector-destination move.generic parameters: OK'
 Write-Output 'TSE debug parameters remain advanced-only: OK'

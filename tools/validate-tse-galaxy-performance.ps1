@@ -129,6 +129,13 @@ Assert-True ($null -ne $idle.SelectSingleNode("//param[@name='IDLE_DOCK_CANDIDAT
 Assert-True ($idleText.Contains('[TSE-PERF] event=idle_dock') -and
     $idleText.Contains('candidates_checked=') -and
     $idleText.Contains('path_checks=')) 'idle docking reports bounded candidate work'
+$strictIdleDock = $idle.SelectSingleNode("//do_if[@value='`$IDLE_DOCKING and not `$FAILED_DOCK']")
+$currentDockReuse = $strictIdleDock.SelectSingleNode("do_if[contains(@value, 'not @`$WHERE_TO_DOCK.exists') and contains(@value, '@`$_Ship.dock.container.exists') and contains(@value, '`$_Ship.dock.container.isclass.station')]")
+Assert-True ($null -ne $currentDockReuse -and
+    $null -ne $currentDockReuse.SelectSingleNode("set_value[@name='`$_IdleDockAllowed' and contains(@exact, '`$_CurrentIdleDock.isoperational') and contains(@exact, 'not `$_Ship.ishostileto.{`$_CurrentIdleDock}') and contains(@exact, 'blacklisttype.objectactivity') and contains(@exact, 'blacklisttype.sectoractivity') and contains(@exact, 'blacklisttype.sectortravel') and contains(@exact, '`$_AccessibleIdleDockSector == `$_CurrentIdleDock.sector')]") -and
+    $null -ne $currentDockReuse.SelectSingleNode("do_if[@value='`$_IdleDockAllowed']/set_value[@name='`$WHERE_TO_DOCK' and @exact='`$_CurrentIdleDock']")) 'automatic idle docking retains a valid current station without a replacement search'
+Assert-True ($null -ne $strictIdleDock.SelectSingleNode("do_if[@value='not `$_IdleDockAllowed and `$FIND_STATION']") -and
+    $idleText.Contains('not $_Ship.ishostileto.{$_FoundStation}')) 'invalid or hostile current docks fall back to the bounded non-hostile station search'
 
 # 21-24: mode boundaries and retained contracts.
 $sectorCacheNodes = $sector.SelectNodes("//*[contains(@name, 'GalaxyCandidate') or contains(@exact, 'WakeOffset')]")
