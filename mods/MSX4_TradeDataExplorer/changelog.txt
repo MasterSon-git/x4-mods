@@ -1,0 +1,8 @@
+# Trade Data Explorer
+
+v1.0.0
+~ Created an independent MSX4 namespace for the X4 9.00 maintenance line.
+~ Ported sector, galaxy and Mimic operation to the X4 9.00 runtime contracts.
+~ Added hostile-station filtering, resilient travel and idle handling, and staggered galaxy discovery.
+~ Renamed visible orders, ship tags, AI scripts, MD state, text pages, icons and diagnostics.
+~ Preserved JanPanthera's original MIT attribution and upstream changelog.

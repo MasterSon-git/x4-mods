@@ -2,9 +2,9 @@
 <!-- Traditional Chinese ~~ 繁體中文-->
 
 <language>
-   <page id="8888888" voice="no">
+   <page id="975210" voice="no">
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <!-- JP_ScriptLibrary -->
+      <!-- MSX4_ScriptLibrary -->
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="1">跳躍門？</t>
       <t id="2">活躍的跳躍門？</t>

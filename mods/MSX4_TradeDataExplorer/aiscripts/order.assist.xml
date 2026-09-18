@@ -4,13 +4,13 @@
 
    <!-- Vanilla 9.00 initializes $orderdef from $order before entering this compatibility chain. -->
    <add sel="//do_if[@value=&quot;$orderdef.$id == 'SupplyFleet'&quot;]" pos="before">
-      <do_if value="$orderdef.$id == 'JP_TradeSubscriptionExplorerG'">
+      <do_if value="$orderdef.$id == 'MSX4_TradeDataExplorerG'">
          <set_value name="$added"/>
-         <set_value name="$_TSETraceDebug" exact="if $createdefaultorder? then @$orderdef.$DEBUG else @$order.$DEBUG"/>
-         <do_if value="$_TSETraceDebug gt 0">
-            <set_value name="$_TSETraceFile" exact="'TSE_Runtime.log'"/>
-            <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=branch_enter result=active commander=%2 subordinate=%1 order=JP_TradeSubscriptionExplorerG path=%3'.[this.assignedcontrolled.idcode, @$commander.idcode, if $createdefaultorder? then 'create' else 'run']"/>
-            <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=order event=branch_enter result=active commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
+         <set_value name="$_TDETraceDebug" exact="if $createdefaultorder? then @$orderdef.$DEBUG else @$order.$DEBUG"/>
+         <do_if value="$_TDETraceDebug gt 0">
+            <set_value name="$_TDETraceFile" exact="'MSX4_TradeDataExplorer_Runtime.log'"/>
+            <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=branch_enter result=active commander=%2 subordinate=%1 order=MSX4_TradeDataExplorerG path=%3'.[this.assignedcontrolled.idcode, @$commander.idcode, if $createdefaultorder? then 'create' else 'run']"/>
+            <debug_text filter="scripts" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=order event=branch_enter result=active commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
          </do_if>
          <do_if value="@this.assignedcontrolled.order.isrunning">
             <clear_order_failure order="this.assignedcontrolled.order"/>
@@ -18,12 +18,12 @@
 
          <!-- Recreate the inherited default order after promotion using the values saved below. -->
          <do_if value="$createdefaultorder?">
-            <do_if value="$_TSETraceDebug gt 0">
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=movement idle_time=%2 idle_move=%3 idle_follow=%4 idle_dock=%5'.[this.assignedcontrolled.idcode, $orderdef.$IDLE_TIME, $orderdef.$IDLE_MOVE_TO, $orderdef.$IDLE_FOLLOW, $orderdef.$IDLE_DOCKING]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=idle_targets where_to_move=%2 start_position=%3 who_to_follow=%4 find_station=%5 where_to_dock=%6'.[this.assignedcontrolled.idcode, $orderdef.$WHERE_TO_MOVE, $orderdef.$START_POSITION, $orderdef.$WHO_TO_FOLLOW, $orderdef.$FIND_STATION, $orderdef.$WHERE_TO_DOCK]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=station_categories ownerless=%2 wharfs=%3 shipyards=%4 equipmentdocks=%5 trading_stations=%6 pirate_bases=%7 recycling=%8 defence=%9'.[this.assignedcontrolled.idcode, $orderdef.$OWNERLESS_SECTORS, $orderdef.$WHARFS, $orderdef.$SHIPYARDS, $orderdef.$EQUIPMENTDOCKS, $orderdef.$TRADING_STATIONS, $orderdef.$PIRATE_BASES, $orderdef.$RECYCLING_FACILITIES, $orderdef.$DEFENCE_STATIONS]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=station_categories_special headquarters=%2 factories=%3 construction=%4'.[this.assignedcontrolled.idcode, $orderdef.$FACTION_HEADQUARTERS, $orderdef.$NON_SPECIAL_STATIONS, $orderdef.$CONSTRUCTION_SITES]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=messages_debug show_messages=%2 write_to_log=%3 add_order_tag=%4 debug=%5'.[this.assignedcontrolled.idcode, $orderdef.$SHOW_MESSAGES, $orderdef.$WRITE_TO_LOG, $orderdef.$ADD_ORDER_TAG, $orderdef.$DEBUG]"/>
+            <do_if value="$_TDETraceDebug gt 0">
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=movement idle_time=%2 idle_move=%3 idle_follow=%4 idle_dock=%5'.[this.assignedcontrolled.idcode, $orderdef.$IDLE_TIME, $orderdef.$IDLE_MOVE_TO, $orderdef.$IDLE_FOLLOW, $orderdef.$IDLE_DOCKING]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=idle_targets where_to_move=%2 start_position=%3 who_to_follow=%4 find_station=%5 where_to_dock=%6'.[this.assignedcontrolled.idcode, $orderdef.$WHERE_TO_MOVE, $orderdef.$START_POSITION, $orderdef.$WHO_TO_FOLLOW, $orderdef.$FIND_STATION, $orderdef.$WHERE_TO_DOCK]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=station_categories ownerless=%2 wharfs=%3 shipyards=%4 equipmentdocks=%5 trading_stations=%6 pirate_bases=%7 recycling=%8 defence=%9'.[this.assignedcontrolled.idcode, $orderdef.$OWNERLESS_SECTORS, $orderdef.$WHARFS, $orderdef.$SHIPYARDS, $orderdef.$EQUIPMENTDOCKS, $orderdef.$TRADING_STATIONS, $orderdef.$PIRATE_BASES, $orderdef.$RECYCLING_FACILITIES, $orderdef.$DEFENCE_STATIONS]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=station_categories_special headquarters=%2 factories=%3 construction=%4'.[this.assignedcontrolled.idcode, $orderdef.$FACTION_HEADQUARTERS, $orderdef.$NON_SPECIAL_STATIONS, $orderdef.$CONSTRUCTION_SITES]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=messages_debug show_messages=%2 write_to_log=%3 add_order_tag=%4 debug=%5'.[this.assignedcontrolled.idcode, $orderdef.$SHOW_MESSAGES, $orderdef.$WRITE_TO_LOG, $orderdef.$ADD_ORDER_TAG, $orderdef.$DEBUG]"/>
             </do_if>
             <create_order id="$orderdef.$id" object="this.assignedcontrolled" default="true">
                <param name="OWNERLESS_SECTORS" value="$orderdef.$OWNERLESS_SECTORS"/>
@@ -51,8 +51,8 @@
                <param name="ADD_ORDER_TAG" value="$orderdef.$ADD_ORDER_TAG"/>
                <param name="DEBUG" value="$orderdef.$DEBUG"/>
             </create_order>
-            <do_if value="$_TSETraceDebug gt 0">
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=default_order_created result=success reason=success commander=%2 subordinate=%1 order=JP_TradeSubscriptionExplorerG'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
+            <do_if value="$_TDETraceDebug gt 0">
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=default_order_created result=success reason=success commander=%2 subordinate=%1 order=MSX4_TradeDataExplorerG'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
             </do_if>
          </do_if>
          <do_else>
@@ -82,13 +82,13 @@
             <set_value name="$orderdef.$ADD_ORDER_TAG" exact="$order.$ADD_ORDER_TAG"/>
             <set_value name="$orderdef.$DEBUG" exact="$order.$DEBUG"/>
 
-            <do_if value="$_TSETraceDebug gt 0">
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=movement idle_time=%2 idle_move=%3 idle_follow=%4 idle_dock=%5'.[this.assignedcontrolled.idcode, $order.$IDLE_TIME, $order.$IDLE_MOVE_TO, $order.$IDLE_FOLLOW, $order.$IDLE_DOCKING]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=idle_targets where_to_move=%2 start_position=%3 who_to_follow=%4 find_station=%5 where_to_dock=%6'.[this.assignedcontrolled.idcode, $order.$WHERE_TO_MOVE, [this.ship.sector, this.ship.position], $order.$WHO_TO_FOLLOW, $order.$FIND_STATION, $order.$WHERE_TO_DOCK]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=station_categories ownerless=%2 wharfs=%3 shipyards=%4 equipmentdocks=%5 trading_stations=%6 pirate_bases=%7 recycling=%8 defence=%9'.[this.assignedcontrolled.idcode, $order.$OWNERLESS_SECTORS, $order.$WHARFS, $order.$SHIPYARDS, $order.$EQUIPMENTDOCKS, $order.$TRADING_STATIONS, $order.$PIRATE_BASES, $order.$RECYCLING_FACILITIES, $order.$DEFENCE_STATIONS]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=station_categories_special headquarters=%2 factories=%3 construction=%4'.[this.assignedcontrolled.idcode, $order.$FACTION_HEADQUARTERS, $order.$NON_SPECIAL_STATIONS, $order.$CONSTRUCTION_SITES]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=messages_debug show_messages=%2 write_to_log=%3 add_order_tag=%4 debug=%5'.[this.assignedcontrolled.idcode, $order.$SHOW_MESSAGES, $order.$WRITE_TO_LOG, $order.$ADD_ORDER_TAG, $order.$DEBUG]"/>
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=inherited_script_start result=pending commander=%2 subordinate=%1 order=JP_TradeSubscriptionExplorerG'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
+            <do_if value="$_TDETraceDebug gt 0">
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=movement idle_time=%2 idle_move=%3 idle_follow=%4 idle_dock=%5'.[this.assignedcontrolled.idcode, $order.$IDLE_TIME, $order.$IDLE_MOVE_TO, $order.$IDLE_FOLLOW, $order.$IDLE_DOCKING]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=idle_targets where_to_move=%2 start_position=%3 who_to_follow=%4 find_station=%5 where_to_dock=%6'.[this.assignedcontrolled.idcode, $order.$WHERE_TO_MOVE, [this.ship.sector, this.ship.position], $order.$WHO_TO_FOLLOW, $order.$FIND_STATION, $order.$WHERE_TO_DOCK]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=station_categories ownerless=%2 wharfs=%3 shipyards=%4 equipmentdocks=%5 trading_stations=%6 pirate_bases=%7 recycling=%8 defence=%9'.[this.assignedcontrolled.idcode, $order.$OWNERLESS_SECTORS, $order.$WHARFS, $order.$SHIPYARDS, $order.$EQUIPMENTDOCKS, $order.$TRADING_STATIONS, $order.$PIRATE_BASES, $order.$RECYCLING_FACILITIES, $order.$DEFENCE_STATIONS]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=station_categories_special headquarters=%2 factories=%3 construction=%4'.[this.assignedcontrolled.idcode, $order.$FACTION_HEADQUARTERS, $order.$NON_SPECIAL_STATIONS, $order.$CONSTRUCTION_SITES]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=messages_debug show_messages=%2 write_to_log=%3 add_order_tag=%4 debug=%5'.[this.assignedcontrolled.idcode, $order.$SHOW_MESSAGES, $order.$WRITE_TO_LOG, $order.$ADD_ORDER_TAG, $order.$DEBUG]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=inherited_script_start result=pending commander=%2 subordinate=%1 order=MSX4_TradeDataExplorerG'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
             </do_if>
             <run_script name="$scriptname">
                <param name="OWNERLESS_SECTORS" value="$order.$OWNERLESS_SECTORS"/>
@@ -116,41 +116,41 @@
                <param name="ADD_ORDER_TAG" value="$order.$ADD_ORDER_TAG"/>
                <param name="DEBUG" value="$order.$DEBUG"/>
             </run_script>
-            <do_if value="$_TSETraceDebug gt 0">
-               <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="$_TSETraceFile" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=inherit event=inherited_script_return result=complete reason=order_changed commander=%2 subordinate=%1 order=JP_TradeSubscriptionExplorerG'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
+            <do_if value="$_TDETraceDebug gt 0">
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=inherited_script_return result=complete reason=order_changed commander=%2 subordinate=%1 order=MSX4_TradeDataExplorerG'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
             </do_if>
          </do_else>
       </do_if>
    </add>
 
    <add sel="//handler[@comment='unable to continue. finish.']/actions/abort_called_scripts" pos="before">
-      <do_if value="@$orderdef.$id == 'JP_TradeSubscriptionExplorerG' and @$orderdef.$DEBUG gt 0">
-         <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="'TSE_Runtime.log'" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=interrupt event=commander_lost result=aborted reason=commander_lost commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @this.assignedcontrolled.commander.idcode]"/>
-         <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=order event=commander_lost result=aborted reason=commander_lost'.[this.assignedcontrolled.idcode]"/>
+      <do_if value="@$orderdef.$id == 'MSX4_TradeDataExplorerG' and @$orderdef.$DEBUG gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=interrupt event=commander_lost result=aborted reason=commander_lost commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @this.assignedcontrolled.commander.idcode]"/>
+         <debug_text filter="scripts" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=order event=commander_lost result=aborted reason=commander_lost'.[this.assignedcontrolled.idcode]"/>
       </do_if>
    </add>
 
    <add sel="//handler[@comment='redirect to init.']/actions/abort_called_scripts" pos="before">
-      <do_if value="@$orderdef.$id == 'JP_TradeSubscriptionExplorerG' and @$orderdef.$DEBUG gt 0">
-         <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="'TSE_Runtime.log'" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=interrupt event=conditions_changed result=restart reason=order_changed commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @this.assignedcontrolled.commander.idcode]"/>
+      <do_if value="@$orderdef.$id == 'MSX4_TradeDataExplorerG' and @$orderdef.$DEBUG gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=interrupt event=conditions_changed result=restart reason=order_changed commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @this.assignedcontrolled.commander.idcode]"/>
       </do_if>
    </add>
 
    <add sel="//do_if[@value=&quot;@$orderdef.$id and not this.assignedcontrolled.commander.isoperational&quot;]" pos="before">
-      <do_if value="@$orderdef.$id == 'JP_TradeSubscriptionExplorerG' and @$orderdef.$DEBUG gt 0">
-         <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="'TSE_Runtime.log'" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=promotion event=commander_lost result=promotion_pending reason=commander_lost subordinate=%1 order=JP_TradeSubscriptionExplorerG'.[this.assignedcontrolled.idcode]"/>
+      <do_if value="@$orderdef.$id == 'MSX4_TradeDataExplorerG' and @$orderdef.$DEBUG gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=promotion event=commander_lost result=promotion_pending reason=commander_lost subordinate=%1 order=MSX4_TradeDataExplorerG'.[this.assignedcontrolled.idcode]"/>
       </do_if>
    </add>
 
    <add sel="//label[@name='processresult']/following-sibling::do_if[@value='not $added?']/run_script[@name=&quot;'order.move.follow'&quot;]" pos="before">
-      <do_if value="@$orderdef.$id == 'JP_TradeSubscriptionExplorerG' and @$orderdef.$DEBUG gt 0">
-         <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="'TSE_Runtime.log'" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=fallback event=normal_assist_fallback result=selected reason=unknown commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
+      <do_if value="@$orderdef.$id == 'MSX4_TradeDataExplorerG' and @$orderdef.$DEBUG gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=fallback event=normal_assist_fallback result=selected reason=unknown commander=%2 subordinate=%1'.[this.assignedcontrolled.idcode, @$commander.idcode]"/>
       </do_if>
    </add>
 
    <add sel="//label[@name='finish']" pos="before">
-      <do_if value="@$orderdef.$id == 'JP_TradeSubscriptionExplorerG' and @$orderdef.$DEBUG gt 0">
-         <debug_to_file directory="'JP_TradeSubscriptionExplorer.logs'" name="'TSE_Runtime.log'" text="'[TSEAI ] ' + player.age + ' *** order.assist:' + '[TSE-TRACE] source=assist_tse_g ship=%1 phase=lifecycle event=assist_finish result=complete reason=%2 commander=%3 subordinate=%1'.[this.assignedcontrolled.idcode, if $removeassignment? then 'subordinate_removed' else 'order_changed', @$commander.idcode]"/>
+      <do_if value="@$orderdef.$id == 'MSX4_TradeDataExplorerG' and @$orderdef.$DEBUG gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=lifecycle event=assist_finish result=complete reason=%2 commander=%3 subordinate=%1'.[this.assignedcontrolled.idcode, if $removeassignment? then 'subordinate_removed' else 'order_changed', @$commander.idcode]"/>
       </do_if>
    </add>
 

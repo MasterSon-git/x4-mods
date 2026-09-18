@@ -2,9 +2,9 @@
 <!-- French ~~ Français -->
 
 <language>
-   <page id="8888888" voice="no">
+   <page id="975210" voice="no">
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <!-- JP_ScriptLibrary -->
+      <!-- MSX4_ScriptLibrary -->
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="1">Portes de saut ?</t>
       <t id="2">Portes de saut actives ?</t>

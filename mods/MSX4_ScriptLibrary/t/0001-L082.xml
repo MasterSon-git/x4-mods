@@ -2,9 +2,9 @@
 <!-- Korean ~~ 한국인 -->
 
 <language>
-   <page id="8888888" voice="no">
+   <page id="975210" voice="no">
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <!-- JP_ScriptLibrary -->
+      <!-- MSX4_ScriptLibrary -->
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="1">점프 게이트?</t>
       <t id="2">활성화된 점프 게이트?</t>

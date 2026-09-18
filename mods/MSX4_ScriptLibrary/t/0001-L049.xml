@@ -2,9 +2,9 @@
 <!-- German ~~ Deutsch -->
 
 <language>
-   <page id="8888888" voice="no">
+   <page id="975210" voice="no">
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <!-- JP_ScriptLibrary -->
+      <!-- MSX4_ScriptLibrary -->
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="1">Sprungtore?</t>
       <t id="2">Aktive Sprungtore?</t>

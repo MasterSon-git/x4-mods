@@ -4,8 +4,8 @@ This repository contains independently maintained mods for X4: Foundations.
 
 ## Repository layout
 
-- Distributable extensions live below `mods/JP_X4Mods/`.
-- `JP_TradeSubscriptionExplorer` requires `JP_ScriptLibrary`.
+- Distributable extensions live directly below `mods/`.
+- `MSX4_TradeDataExplorer` requires `MSX4_ScriptLibrary`.
 - Regression and deployment scripts live in `tools/`.
 - Public maintenance records live in `docs/`.
 
@@ -34,7 +34,7 @@ evidence from behavior that still requires an in-game test.
   credentials or absolute user paths.
 - Preserve extension IDs, AI script/order IDs and saved parameter contracts
   unless a migration is explicitly designed and tested.
-- Keep Vanilla order diffs narrowly guarded by TSE order IDs or internal
+- Keep Vanilla order diffs narrowly guarded by Trade Data Explorer order IDs or internal
   parameters so unrelated ships retain Vanilla behavior.
 - Do not add station reveal, module scanning, information-point scanning,
   permanent trade subscriptions or economy changes unless the requested

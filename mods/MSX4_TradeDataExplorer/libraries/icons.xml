@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <icons>
-   <icon name="order_jp_tradesubscriptionexplorers" texture="assets\textures\ui\order\order_recon.tga" height="32" width="32"></icon>
-   <icon name="order_jp_tradesubscriptionexplorerg" texture="assets\textures\ui\order\order_recon.tga" height="32" width="32"></icon>
-   <icon name="order_jp_lib_tse_updatesubscription" texture="assets\textures\ui\order\order_exploreupdate.tga" height="32" width="32"></icon>
+   <icon name="order_msx4_tradedataexplorers" texture="assets\textures\ui\order\order_recon.tga" height="32" width="32"></icon>
+   <icon name="order_msx4_tradedataexplorerg" texture="assets\textures\ui\order\order_recon.tga" height="32" width="32"></icon>
+   <icon name="order_msx4_tde_updatetradedata" texture="assets\textures\ui\order\order_exploreupdate.tga" height="32" width="32"></icon>
 </icons>

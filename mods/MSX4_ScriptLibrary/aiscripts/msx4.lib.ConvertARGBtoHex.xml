@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<aiscript name="jp.lib.ConvertARGBtoHex" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd" version="1">
+<aiscript name="msx4.lib.ConvertARGBtoHex" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd" version="1">
 
    <params>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -22,7 +22,7 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <do_if value="$DEBUG gt 0">
          <set_value name="$_DebugFolderName" exact="@$_DefaultOrderParamRef.$DEBUG_FOLDER_NAME"/>
-         <set_value name="$_DebugScriptName" exact="'jp.lib.ConvertARGBtoHex'"/>
+         <set_value name="$_DebugScriptName" exact="'msx4.lib.ConvertARGBtoHex'"/>
          <set_value name="$_DebugFileName" exact="$_Ship.idcode + '.' + $_DebugScriptName + '.xml.log'"/>
       </do_if>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -33,8 +33,8 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.ConvertARGBtoHex:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.ConvertARGBtoHex:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.ConvertARGBtoHex:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.ConvertARGBtoHex:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -94,8 +94,8 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.ConvertARGBtoHex:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.ConvertARGBtoHex:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.ConvertARGBtoHex:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.ConvertARGBtoHex:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
          </do_if>
 
          <return value="$_HexColorString"/>

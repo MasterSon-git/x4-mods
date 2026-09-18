@@ -35,9 +35,16 @@ authorship and later maintenance are mixed together.
 | `417b67a` | Prevent a Tide escape by the commander from recalling the distributed TSE fleet |
 | `6164995` | Group the maintained JP mods under `mods/JP_X4Mods` and keep tools/history-aware validators working |
 
+Issue #6 introduces the independent `MSX4_ScriptLibrary` and
+`MSX4_TradeDataExplorer` product namespace. It preserves the attributed MIT
+baseline and the behavior developed above while replacing extension, order,
+script, Mission Director, text-page and diagnostic identifiers. The new
+extensions are standalone replacements; compatibility with the original JP
+identifiers or third-party compatibility patches is not claimed.
+
 ## Current execution model
 
-### TSE Sector
+### Trade Data Explorer Sector
 
 The sector behavior repeatedly:
 
@@ -51,16 +58,16 @@ The sector behavior repeatedly:
 8. starts a fresh search after productive work, or enters the configured idle
    fallback when the pass is empty or exhausted.
 
-### TSE Galaxy and Mimic fleets
+### Trade Data Explorer Galaxy and Mimic fleets
 
-TSE Galaxy uses the same final per-ship validation. A shared coarse snapshot
+The Galaxy behavior uses the same final per-ship validation. A shared coarse snapshot
 only discovers potentially stale stations; it never stores a final assignment
 or a per-ship permission decision. One builder constructs a generation and
 workers reuse it until the shortest effective idle interval expires. Existing
 sector reservations prevent multiple workers from choosing the same work area.
 
 Mimic remains integrated through Vanilla `order.assist`. Vanilla first checks
-the subordinate's combined skill. Eligible ships receive the TSE Galaxy
+the subordinate's combined skill. Eligible ships receive the Galaxy
 parameters, including their individual blacklist context; ineligible ships
 use Vanilla's normal follow fallback.
 
@@ -75,7 +82,7 @@ inside a forbidden one. Station work never uses that relaxation.
 ### Idle behavior
 
 Idle Move, Follow and Dock are optional fallback actions. A timeout removes
-only the exact idle stack owned by TSE, exposing the suspended TSE default
+only the exact idle stack owned by Trade Data Explorer, exposing the suspended default
 behavior so it can run a new full search. If no idle action is enabled, the
 ship simply waits. Dock-target search is bounded to the ten nearest
 gate-distance candidates and retains per-ship final checks.
@@ -91,7 +98,7 @@ The port does not:
 - award custom pilot or crew experience;
 - bypass Vanilla Mimic skill checks;
 - cancel arbitrary queued orders;
-- alter travel rules for ships outside the guarded TSE/idle paths;
+- alter travel rules for ships outside the guarded Trade Data Explorer/idle paths;
 - hardcode Kha'ak, Xenon or any other hostile faction.
 
 These boundaries are enforced by the static validators where the XML contract

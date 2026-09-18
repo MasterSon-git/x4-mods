@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<aiscript name="jp.lib.MessageLog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd" version="1">
+<aiscript name="msx4.lib.MessageLog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd" version="1">
 
    <params>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -35,6 +35,12 @@
       <do_if value="$GENERATE_TITLE and $TITLE == ''">
          <set_value name="$TITLE" exact="'%1 ~ %2 [%3]'.[$_DefaultOrderParamRef.name, $_Ship.knownname, $_Ship.idcode]"/>
          <substitute_text source="$TITLE" text="$TITLE">
+            <replace string="'\033#FFA95908#[TSE]\033X '" with="''"/>
+            <replace string="'\033#FFA95908##TSE-S\033X ~ '" with="''"/>
+            <replace string="'\033#FFA95908##TSE-G\033X ~ '" with="''"/>
+            <replace string="'\033#FFA95908#[TDE]\033X '" with="''"/>
+            <replace string="'\033#FFA95908##TDE-S\033X ~ '" with="''"/>
+            <replace string="'\033#FFA95908##TDE-G\033X ~ '" with="''"/>
             <replace string="'\033#FFCEFBA1# ~ Idle\033X'"   with="''"/>
             <replace string="'\033#FFA95908##ASE-G\033X ~ '" with="''"/>
             <replace string="'\033#FFA95908##AE-S\033X ~ '"  with="''"/>
@@ -46,8 +52,8 @@
             <replace string="'\033#FFA95908##SD-G\033X ~ '"  with="''"/>
             <replace string="'\033#FFA95908##SE-S\033X ~ '"  with="''"/>
             <replace string="'\033#FFA95908##SE-G\033X ~ '"  with="''"/>
-            <replace string="'\033#FFA95908##TSE-S\033X ~ '" with="''"/>
-            <replace string="'\033#FFA95908##TSE-G\033X ~ '" with="''"/>
+            <replace string="'\033#FFA95908##MSX4-TDE-S\033X ~ '" with="''"/>
+            <replace string="'\033#FFA95908##MSX4-TDE-G\033X ~ '" with="''"/>
          </substitute_text>
       </do_if>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -57,7 +63,7 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <do_if value="$DEBUG gt 0">
          <set_value name="$_DebugFolderName" exact="@$_DefaultOrderParamRef.$DEBUG_FOLDER_NAME"/>
-         <set_value name="$_DebugScriptName" exact="'jp.lib.MessageLog'"/>
+         <set_value name="$_DebugScriptName" exact="'msx4.lib.MessageLog'"/>
          <set_value name="$_DebugFileName" exact="$_Ship.idcode + '.' + $_DebugScriptName + '.xml.log'"/>
       </do_if>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -68,8 +74,8 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MessageLog:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MessageLog:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.MessageLog:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.MessageLog:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + ''"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -132,8 +138,8 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MessageLog:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.MessageLog:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.MessageLog:' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.MessageLog:' + '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'"/>
          </do_if>
 
       </actions>

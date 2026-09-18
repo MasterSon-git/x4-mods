@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<aiscript name="jp.lib.SortByEstimatedTravelTime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+<aiscript name="msx4.lib.SortByEstimatedTravelTime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
 
    <params>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -20,8 +20,8 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <do_if value="$DEBUG gt 0">
          <set_value name="$_DebugFolderName" exact="@$_DefaultOrderParamRef.$DEBUG_FOLDER_NAME"/>
-         <set_value name="$_DebugScriptName" exact="'jp.lib.SortByEstimatedTravelTime'"/>
-         <set_value name="$_DebugFileName" exact="'TSE_Runtime.log'"/>
+         <set_value name="$_DebugScriptName" exact="'msx4.lib.SortByEstimatedTravelTime'"/>
+         <set_value name="$_DebugFileName" exact="'MSX4_TradeDataExplorer_Runtime.log'"/>
          <set_value name="$_TraceTargetIndex" exact="0"/>
       </do_if>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -32,7 +32,7 @@
 
          <label name="INIT_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.SortByEstimatedTravelTime:' + '[TSE-TRACE] source=sort_travel_time ship=%1 phase=lifecycle event=script_start result=active candidate_count=%2 reverse=%3'.[$_Ship.idcode, $LIST.count, $REVERSE]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.SortByEstimatedTravelTime:' + '[MSX4-SLIB-TRACE] source=sort_travel_time ship=%1 phase=lifecycle event=script_start result=active candidate_count=%2 reverse=%3'.[$_Ship.idcode, $LIST.count, $REVERSE]"/>
          </do_if>
 
          <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -46,7 +46,7 @@
             </do_if>
             <estimate_travel_time ship="$_Ship" start="$_Ship" target="$_ListEntry" result="$_TravelTime"/>
             <do_if value="$DEBUG gt 0">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.SortByEstimatedTravelTime:' + '[TSE-TRACE] source=sort_travel_time ship=%1 phase=estimate event=target_result result=%2 reason=%3 candidate_index=%4 target=%5 target_type=%6 travel_time=%7'.[$_Ship.idcode, if $_TravelTime ge 0 then 'accepted' else 'excluded', if $_TravelTime ge 0 then 'success' else 'no_known_path', $_TraceTargetIndex, $_ListEntry, if $_ListEntry.isclass.sector then 'sector' else 'object', $_TravelTime]"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.SortByEstimatedTravelTime:' + '[MSX4-SLIB-TRACE] source=sort_travel_time ship=%1 phase=estimate event=target_result result=%2 reason=%3 candidate_index=%4 target=%5 target_type=%6 travel_time=%7'.[$_Ship.idcode, if $_TravelTime ge 0 then 'accepted' else 'excluded', if $_TravelTime ge 0 then 'success' else 'no_known_path', $_TraceTargetIndex, $_ListEntry, if $_ListEntry.isclass.sector then 'sector' else 'object', $_TravelTime]"/>
             </do_if>
             <!-- X4 9.00 defines a negative result as no path; do not rank it before valid times. -->
             <do_if value="$_TravelTime ge 0">
@@ -80,7 +80,7 @@
             <set_value name="$_TraceTargetIndex" exact="0"/>
             <do_for_each name="$_TraceSortedTarget" in="$LIST">
                <set_value name="$_TraceTargetIndex" operation="add" exact="1"/>
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.SortByEstimatedTravelTime:' + '[TSE-TRACE] source=sort_travel_time ship=%1 phase=sort event=result_entry result=ordered reason=success candidate_index=%2 target=%3 target_type=%4'.[$_Ship.idcode, $_TraceTargetIndex, $_TraceSortedTarget, if $_TraceSortedTarget.isclass.sector then 'sector' else 'object']"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.SortByEstimatedTravelTime:' + '[MSX4-SLIB-TRACE] source=sort_travel_time ship=%1 phase=sort event=result_entry result=ordered reason=success candidate_index=%2 target=%3 target_type=%4'.[$_Ship.idcode, $_TraceTargetIndex, $_TraceSortedTarget, if $_TraceSortedTarget.isclass.sector then 'sector' else 'object']"/>
             </do_for_each>
          </do_if>
 
@@ -88,7 +88,7 @@
 
          <label name="END_LBL"/>
          <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.SortByEstimatedTravelTime:' + '[TSE-TRACE] source=sort_travel_time ship=%1 phase=lifecycle event=script_end result=success reason=success candidate_count=%2'.[$_Ship.idcode, $LIST.count]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.SortByEstimatedTravelTime:' + '[MSX4-SLIB-TRACE] source=sort_travel_time ship=%1 phase=lifecycle event=script_end result=success reason=success candidate_count=%2'.[$_Ship.idcode, $LIST.count]"/>
          </do_if>
 
          <return value="$LIST"/>

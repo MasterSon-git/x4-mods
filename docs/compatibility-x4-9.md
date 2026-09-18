@@ -34,8 +34,8 @@ Official releases after that baseline created concrete review targets:
   gates and order integration rather than assuming the 6.20 scripts remained
   compatible.
 - [X4 8.00](https://www.egosoft.com/news/archive/2025September_en.php) added
-  dynamic diplomacy, including changing alliances, wars and ceasefires. TSE
-  therefore revalidates access, blacklist and hostility conditions instead of
+  dynamic diplomacy, including changing alliances, wars and ceasefires. Trade
+  Data Explorer therefore revalidates access, blacklist and hostility conditions instead of
   treating candidate selection as permanent.
 - [X4 9.00](https://www.egosoft.com/news/archive/2026June_en.php) introduced
   Priority Orders, substantial AI and capital-movement work, more elaborate
@@ -71,15 +71,15 @@ economy edits or permanent trade subscriptions.
 ### Order and save-state integration
 
 - The original `order.assist.xml` diff selector no longer matched the X4 9.00
-  control tree. The port anchors its TSE branch at the current, unique
+  control tree. The port anchors its Trade Data Explorer branch at the current, unique
   `SupplyFleet` branch and preserves Vanilla's required-skill guard. See
-  `mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml`
+  `mods/MSX4_TradeDataExplorer/aiscripts/order.assist.xml`
   and Vanilla `aiscripts/order.assist.xml`.
-- Top-level MD listeners could evaluate `global.$SL_PlayerShips` and
-  `global.$TSE_ShipsGroup` before those groups existed when loading a save.
+- Top-level MD listeners could evaluate the legacy `global.$SL_PlayerShips`
+  and `global.$TSE_ShipsGroup` before those groups existed when loading a save.
   Setup now creates or reconciles state before child listeners become active.
   See both mod files under `md/` and commit `b6e161e`.
-- A ready-event race could cancel a newly selected TSE order during
+- A ready-event race could cancel a newly selected Trade Data Explorer order during
   activation. Cleanup now remains tied to leaving or changing the applicable
   order. See commit `c9684b9`.
 
@@ -87,14 +87,14 @@ economy edits or permanent trade subscriptions.
 
 - X4 9.00 requires a valid containing space for the affected sector lookup.
   The target and access queries now use the current 9.00 finder contract. See
-  `jp.lib.TSE.GetTradesubscriptionsToUpdate.xml` and commit `6520da1`.
+  `aiscripts/msx4.tde.GetTradeDataToUpdate.xml` and commit `6520da1`.
 - The original custom gate-by-gate movement conflicted with current movement
-  behavior. Normal TSE travel now delegates sector travel to Vanilla
+  behavior. Normal Trade Data Explorer travel now delegates sector travel to Vanilla
   `move.generic`, with a known-path and effective travel-blacklist contract.
-- A dedicated escape helper is the only TSE path allowed to relax the travel
+- A dedicated escape helper is the only Trade Data Explorer path allowed to relax the travel
   blacklist, and only to leave an already blacklisted current sector for a
   known, reachable, allowed sector. It then returns to normal strict target
-  selection. See `JP_ScriptLibrary/aiscripts/jp.lib.EscapeTravelBlacklist.xml`
+  selection. See `mods/MSX4_ScriptLibrary/aiscripts/msx4.lib.EscapeTravelBlacklist.xml`
   and commits `bbbc2ba` and `7afc74d`.
 - Candidate selection and final movement revalidate sector access, sector
   activity, object activity, travel blacklist and known path. This prevents a
@@ -121,29 +121,29 @@ economy edits or permanent trade subscriptions.
 ### Idle, fleet and special-event behavior
 
 - The idle timeout previously removed only the top immediate child, causing
-  `IdleReturnHome` to restart without returning to a TSE search. The manager
-  now cancels the exact TSE idle parent and only children explicitly tagged as
+  `IdleReturnHome` to restart without returning to a Trade Data Explorer search. The manager
+  now cancels the exact Trade Data Explorer idle parent and only children explicitly tagged as
   belonging to it. Foreign queue orders are not removed. See commit `9f211f6`.
 - Productive completion starts a fresh candidate search; empty or failed work
   still uses the configured idle backoff. With all optional idle actions off,
   the ship waits instead of performing an invented movement. See commit
   `8c6c7d6`.
 - Vanilla Tide escape docking can pass `dockfollowers=true` even with
-  `recallsubordinates=false`. A narrow TSE diff disables that follower recall
-  only when a ship currently has the TSE Galaxy default behavior and has
+  `recallsubordinates=false`. A narrow Trade Data Explorer diff disables that follower recall
+  only when a ship currently has the Galaxy default behavior and has
   subordinates. Other Vanilla behaviors are unchanged. See
-  `JP_TradeSubscriptionExplorer/aiscripts/order.dock.xml`, Vanilla
+  `mods/MSX4_TradeDataExplorer/aiscripts/order.dock.xml`, Vanilla
   `aiscripts/move.flee.dock.xml` and commit `417b67a`.
 
 ### User-facing contracts
 
 - Obsolete icon texture paths were replaced with paths present in the X4 9.00
   icon library. See commit `60db63e`.
-- TSE Sector requires combined skill 20. TSE Galaxy requires combined skill
+- Trade Data Explorer Sector requires combined skill 20. Galaxy requires combined skill
   40, the visible two-star boundary used by current Vanilla order definitions.
   The original value 45 rendered as the same two stars while rejecting some
   captains shown as eligible. Vanilla's Mimic skill check remains authoritative.
-- Custom TSE experience awards were removed. Vanilla's station-update path
+- Custom experience awards were removed. Vanilla's station-update path
   does not provide a matching award, while discovery experience belongs to a
   different recon path. This avoids creating a non-Vanilla training shortcut.
 
@@ -154,12 +154,12 @@ specific order scripts:
 
 - ScriptLibrary forwards internal idle parameters through Dock, DockAndWait
   and Follow only for its own idle stack.
-- TSE adds its Mimic branch to Assist for the custom TSE Galaxy order.
-- TSE suppresses follower docking only for an active TSE Galaxy commander in
+- Trade Data Explorer adds its Mimic branch to Assist for its custom Galaxy order.
+- Trade Data Explorer suppresses follower docking only for an active Galaxy commander in
   the two relevant docking paths.
 
 Every guard includes the custom order ID or an internal parameter supplied by
-this mod. Ships not using these TSE/ScriptLibrary paths retain the Vanilla
+this mod. Ships not using these Trade Data Explorer/MSX4 Script Library paths retain the Vanilla
 branches. Diff selectors are applied against a simulated X4 9.00 target tree
 by the regression suite.
 
@@ -180,3 +180,8 @@ The following cannot be proven by XML validation alone:
 - interactions with third-party mods that patch the same Vanilla order files.
 
 These are tracked as test boundaries, not described as known failures.
+
+No compatibility is claimed with the original `JP_ScriptLibrary`, the
+original `JP_TradeSubscriptionExplorer`, or compatibility patches targeting
+their identifiers. The MSX4 extensions are intended to replace that pair, not
+to run beside it.

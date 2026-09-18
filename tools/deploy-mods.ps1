@@ -3,8 +3,8 @@ param(
     [string] $DestinationRoot,
 
     [string[]] $ModNames = @(
-        'JP_ScriptLibrary',
-        'JP_TradeSubscriptionExplorer'
+        'MSX4_ScriptLibrary',
+        'MSX4_TradeDataExplorer'
     ),
 
     [switch] $DryRun
@@ -14,7 +14,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$sourceRoot = Join-Path $repoRoot 'mods\JP_X4Mods'
+$sourceRoot = Join-Path $repoRoot 'mods'
 
 if ([string]::IsNullOrWhiteSpace($DestinationRoot)) {
     $documentsRoot = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)

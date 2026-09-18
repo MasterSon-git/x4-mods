@@ -1,12 +1,12 @@
 # X4: Foundations mods
 
-This repository contains an independently maintained X4 9.00 port of two
-mods originally created by Jan Görl / JanPanthera:
+This repository contains two independently maintained X4 9.00 extensions
+derived from mods originally created by Jan Görl / JanPanthera:
 
-- `JP_ScriptLibrary`
-- `JP_TradeSubscriptionExplorer`
+- `MSX4_ScriptLibrary`
+- `MSX4_TradeDataExplorer`
 
-Trade Subscription Explorer sends player-owned ships to known stations whose
+Trade Data Explorer sends player-owned ships to known stations whose
 trade information has expired. The ships approach closely enough to receive
 normal radar-based trade updates, skip stations whose information is already
 current, and do not scan station modules or information points. It can work in
@@ -15,7 +15,8 @@ X4's Mimic assignment.
 
 The current state has passed the repository's static X4 9.00 contract suite.
 Its core behavior and performance design also received sustained manual play
-with a 15-ship TSE Galaxy fleet; the last narrowly scoped approach and Tide
+with a 15-ship Trade Data Explorer Galaxy fleet; the last narrowly scoped
+approach and Tide
 guards remain separately identified as targeted test gaps. This is evidence
 for the tested paths, not a claim that every X4 9.00 game state or mod
 combination is compatible. See
@@ -27,8 +28,8 @@ combination is compatible. See
 Copy both extension directories into the X4 user extension directory:
 
 ```text
-mods/JP_X4Mods/JP_ScriptLibrary
-mods/JP_X4Mods/JP_TradeSubscriptionExplorer
+mods/MSX4_ScriptLibrary
+mods/MSX4_TradeDataExplorer
 ```
 
 On Windows this is normally below:
@@ -37,9 +38,14 @@ On Windows this is normally below:
 %USERPROFILE%\Documents\Egosoft\X4\<profile-id>\extensions
 ```
 
-The directory names inside `extensions` must remain `JP_ScriptLibrary` and
-`JP_TradeSubscriptionExplorer`. TSE declares ScriptLibrary as a required
-dependency.
+The directory names inside `extensions` must remain `MSX4_ScriptLibrary` and
+`MSX4_TradeDataExplorer`. Trade Data Explorer declares MSX4 Script Library as
+a required dependency. It does not depend on the original Workshop extensions
+or a third-party compatibility patch.
+
+Do not install the original JP extensions alongside these replacements. If
+upgrading from an earlier development build, follow the
+[migration guide](docs/migration.md) before loading your only save.
 
 For development, run the VS Code task `X4: Deploy mods`, or preview it with
 `X4: Preview deployment`. The PowerShell script mirrors only these two named
@@ -48,7 +54,7 @@ explicit `-DestinationRoot` to `tools/deploy-mods.ps1`.
 
 ## Repository layout
 
-- `mods/JP_X4Mods/` contains the distributable extensions.
+- `mods/` contains the independently distributable extension directories.
 - `tools/` contains deployment and regression scripts.
 - `docs/` records the port, compatibility evidence, tests, diagnostics and
   performance work.
@@ -66,6 +72,7 @@ ignored by Git and must never be published from this repository.
 - [Testing and remaining runtime coverage](docs/testing.md)
 - [Performance architecture](docs/performance.md)
 - [Runtime debugging](docs/runtime-debugging.md)
+- [Migration from the JP-namespaced development build](docs/migration.md)
 - [Third-party notices and provenance](THIRD_PARTY_NOTICES.md)
 
 ## Provenance and license
@@ -77,5 +84,7 @@ X4 9.00 maintenance work, so the public history shows the boundary between
 upstream code and this port.
 
 The upstream GitHub source is MIT-licensed. Its original copyright notice is
-retained in [LICENSE](LICENSE), together with the notice for later maintenance
+retained in [LICENSE](LICENSE), in both distributed extensions, and together
+with the notice for later maintenance work. The new names identify this
+maintenance fork; they do not transfer or obscure authorship of the original
 work. This repository is not an official Egosoft or JanPanthera release.

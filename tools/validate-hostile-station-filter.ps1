@@ -36,8 +36,8 @@ function Get-ElementIndex {
     return [array]::IndexOf($elements, $Target)
 }
 
-$targetsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
-$updatePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml'
+$targetsPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.GetTradeDataToUpdate.xml'
+$updatePath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.UpdateTradeData.xml'
 $vanillaReconPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/aiscripts/order.move.recon.xml'
 $propertiesPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/scriptproperties.xml'
 
@@ -90,10 +90,10 @@ Assert-Condition ($validationCalls.Count -eq 4) "Expected four target revalidati
 Assert-Condition ($null -ne $waitValidation) 'The subscription wait loop does not re-check dynamic hostility.'
 Write-Output '4/5 hostility is revalidated before travel, after travel, after approach and during the subscription wait: OK'
 
-$modFiles = @(Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer') -Recurse -File -Filter '*.xml')
+$modFiles = @(Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer') -Recurse -File -Filter '*.xml')
 $hardcodedHostileFactions = @($modFiles | Select-String -Pattern 'faction\.(?:khaak|xenon)' -CaseSensitive)
 $forbiddenActions = @($modFiles | Select-String -Pattern '<(?:scan_|reveal_|set_trade_subscription|add_trade_subscription|subscribe_)')
 Assert-Condition ($hardcodedHostileFactions.Count -eq 0) 'The fix hardcodes Khaak or Xenon instead of applying the hostility contract uniformly.'
 Assert-Condition ($forbiddenActions.Count -eq 0) 'The fix introduced scanning, reveal, or permanent trade-subscription behavior.'
 Write-Output '5/5 the rule is faction-agnostic and adds no scan, reveal, economy, or permanent-subscription action: OK'
-Write-Output 'TSE hostile station target validation: PASS'
+Write-Output 'TDE hostile station target validation: PASS'

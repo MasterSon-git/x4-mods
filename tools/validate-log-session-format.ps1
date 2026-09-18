@@ -3,7 +3,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$modsRoot = Join-Path $repoRoot 'mods/JP_X4Mods'
+$modsRoot = Join-Path $repoRoot 'mods'
 
 function Assert-Condition {
     param(
@@ -34,8 +34,8 @@ function Read-XmlDocument {
 
 $debugRecords = @(
     foreach ($file in Get-ChildItem -LiteralPath @(
-        (Join-Path $modsRoot 'JP_TradeSubscriptionExplorer'),
-        (Join-Path $modsRoot 'JP_ScriptLibrary')
+        (Join-Path $modsRoot 'MSX4_TradeDataExplorer'),
+        (Join-Path $modsRoot 'MSX4_ScriptLibrary')
     ) -Recurse -File -Filter '*.xml') {
         $document = Read-XmlDocument $file.FullName
         foreach ($node in $document.SelectNodes("//*[self::debug_to_file or self::debug_text]")) {
@@ -47,28 +47,28 @@ $debugRecords = @(
         }
     }
 )
-$traceRecords = @($debugRecords | Where-Object { $_.Text.Contains('[TSE-TRACE]') })
+$traceRecords = @($debugRecords | Where-Object { $_.Text.Contains('[MSX4-TDE-TRACE]') })
 Assert-Condition ($debugRecords.Count -gt 0) 'No custom debug output was found.'
-Assert-Condition ($traceRecords.Count -gt 0) 'No structured TSE runtime traces were found.'
+Assert-Condition ($traceRecords.Count -gt 0) 'No structured TDE runtime traces were found.'
 
 foreach ($record in $debugRecords) {
     $relativePath = Get-RepoRelativePath $record.File.FullName
-    $expectedType = if ($relativePath -like 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\aiscripts\*') {
-        'TSEAI '
+    $expectedType = if ($relativePath -like 'mods\MSX4_TradeDataExplorer\aiscripts\*') {
+        'MSX4-TDE-AI'
     }
-    elseif ($relativePath -like 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\md\*') {
-        'TSEMD '
+    elseif ($relativePath -like 'mods\MSX4_TradeDataExplorer\md\*') {
+        'MSX4-TDE-MD'
     }
-    elseif ($relativePath -like 'mods\JP_X4Mods\JP_ScriptLibrary\aiscripts\*') {
-        'SLIBAI'
+    elseif ($relativePath -like 'mods\MSX4_ScriptLibrary\aiscripts\*') {
+        'MSX4-SLIB-AI'
     }
     else {
-        'SLIBMD'
+        'MSX4-SLIB-MD'
     }
 
     $match = [regex]::Match(
         $record.Text,
-        "^'\[(?<type>.{6})\] ' \+ player\.age \+ ' \*\*\* (?<function>[A-Za-z0-9_.]+):' \+ "
+        "^'\[(?<type>[A-Z0-9-]+)\] ' \+ player\.age \+ ' \*\*\* (?<function>[A-Za-z0-9_.]+):' \+ "
     )
     Assert-Condition ($match.Success) "$relativePath has an invalid log envelope."
     Assert-Condition ($match.Groups['type'].Value -ceq $expectedType) "$relativePath uses type '$($match.Groups['type'].Value)' instead of '$expectedType'."
@@ -76,7 +76,7 @@ foreach ($record in $debugRecords) {
     Assert-Condition ($record.Text -cmatch '^[\x00-\x7F]+$') "$relativePath has a non-ASCII custom log template."
     Assert-Condition ($record.Text -notmatch 'player\.systemtime') "$relativePath uses system time instead of Universe time."
 }
-Write-Output "1/5 all $($debugRecords.Count) custom debug actions use the source-specific six-character type, player.age, function and one-line ASCII output: OK"
+Write-Output "1/5 all $($debugRecords.Count) custom debug actions use the source-specific MSX4 type, player.age, function and one-line ASCII output: OK"
 
 foreach ($record in $traceRecords) {
     $relativePath = Get-RepoRelativePath $record.File.FullName
@@ -84,24 +84,24 @@ foreach ($record in $traceRecords) {
         Assert-Condition ($record.Text.Contains($key)) "$relativePath trace is missing $key."
     }
 }
-Write-Output "Structured payload contract remains present on all $($traceRecords.Count) TSE traces: OK"
+Write-Output "Structured payload contract remains present on all $($traceRecords.Count) TDE traces: OK"
 
 $sessionMarkers = @($traceRecords | Where-Object { $_.Text -match 'phase=session event=session_start' })
 Assert-Condition ($sessionMarkers.Count -eq 1) "Expected one session marker, got $($sessionMarkers.Count)."
 $sessionMarker = $sessionMarkers[0]
 $sessionRelativePath = Get-RepoRelativePath $sessionMarker.File.FullName
-Assert-Condition ($sessionRelativePath -eq 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\md\jp.TradeSubscriptionExplorer.md.xml') 'The session marker must be owned by the central TSE MD setup.'
+Assert-Condition ($sessionRelativePath -eq 'mods\MSX4_TradeDataExplorer\md\msx4.TradeDataExplorer.md.xml') 'The session marker must be owned by the central TDE MD setup.'
 Assert-Condition ($sessionMarker.Node.LocalName -eq 'debug_to_file') 'The session marker must write to the custom runtime file.'
-Assert-Condition ($sessionMarker.Node.GetAttribute('directory') -eq "'JP_TradeSubscriptionExplorer.logs'") 'The session marker uses the wrong directory.'
-Assert-Condition ($sessionMarker.Node.GetAttribute('name') -eq "'TSE_Runtime.log'") 'The session marker uses the wrong file.'
+Assert-Condition ($sessionMarker.Node.GetAttribute('directory') -eq "'MSX4_TradeDataExplorer.logs'") 'The session marker uses the wrong directory.'
+Assert-Condition ($sessionMarker.Node.GetAttribute('name') -eq "'MSX4_TradeDataExplorer_Runtime.log'") 'The session marker uses the wrong file.'
 Assert-Condition ($sessionMarker.Node.GetAttribute('append') -eq 'true') 'The safe session boundary must append instead of racing to overwrite existing output.'
-Assert-Condition ($null -ne $sessionMarker.Node.SelectSingleNode("ancestor::cue[@name='TSE_Setup_MD']")) 'The session marker must be at the low-frequency game start/load setup boundary.'
-Write-Output '2/5 exactly one append-only session marker is owned by TSE_Setup_MD: OK'
+Assert-Condition ($null -ne $sessionMarker.Node.SelectSingleNode("ancestor::cue[@name='TDE_Setup_MD']")) 'The session marker must be at the low-frequency game start/load setup boundary.'
+Write-Output '2/5 exactly one append-only session marker is owned by TDE_Setup_MD: OK'
 
 $runtimeWriters = @(
     foreach ($record in $traceRecords) {
         if ($record.Node.LocalName -eq 'debug_to_file' -and
-            $record.Node.GetAttribute('name') -match 'TSE_Runtime\.log') {
+            $record.Node.GetAttribute('name') -match 'MSX4_TradeDataExplorer_Runtime\.log') {
             $record
         }
     }
@@ -109,12 +109,12 @@ $runtimeWriters = @(
 $overwritingRuntimeWriters = @(
     $runtimeWriters | Where-Object { $_.Node.GetAttribute('append') -eq 'false' }
 )
-Assert-Condition ($overwritingRuntimeWriters.Count -eq 0) 'A ship, cycle, Mimic, idle, or setup path can overwrite TSE_Runtime.log.'
+Assert-Condition ($overwritingRuntimeWriters.Count -eq 0) 'A ship, cycle, Mimic, idle, or setup path can overwrite MSX4_TradeDataExplorer_Runtime.log.'
 Write-Output '3/5 no structured runtime writer can erase entries from this or an earlier session: OK'
 
 $sessionMarkersOutsideSetup = @(
     $sessionMarkers | Where-Object {
-        $null -eq $_.Node.SelectSingleNode("ancestor::cue[@name='TSE_Setup_MD']")
+        $null -eq $_.Node.SelectSingleNode("ancestor::cue[@name='TDE_Setup_MD']")
     }
 )
 Assert-Condition ($sessionMarkersOutsideSetup.Count -eq 0) 'A per-ship or polling session marker exists.'
@@ -129,7 +129,7 @@ $aiUnguarded = @(
         $guarded = $false
         while ($null -ne $ancestor) {
             if ($ancestor.LocalName -in @('do_if', 'do_elseif') -and
-                $ancestor.GetAttribute('value') -match '(?:\$DEBUG|TSETraceDebug|\.?\$DEBUG).*gt 0') {
+                $ancestor.GetAttribute('value') -match '(?:\$DEBUG|TDETraceDebug|\.?\$DEBUG).*gt 0') {
                 $guarded = $true
                 break
             }
@@ -142,4 +142,4 @@ $aiUnguarded = @(
 )
 Assert-Condition ($aiUnguarded.Count -eq 0) 'An AI detail trace is active at DEBUG=0.'
 Write-Output '5/5 AI detail tracing remains inert at DEBUG=0; the central session marker is the documented file-only exception: OK'
-Write-Output 'TSE log session and format validation: PASS'
+Write-Output 'TDE log session and format validation: PASS'

@@ -10,38 +10,41 @@ For script diagnostics, start X4 with:
 
 `-debug scripts` enables script diagnostics, `-logfile` selects the central
 debug log, and `-scriptlogfiles` permits `debug_to_file` output. These command
-line flags do not themselves enable detailed TSE tracing.
+line flags do not themselves enable detailed Trade Data Explorer tracing.
 
-TSE Sector and TSE Galaxy retain X4's standard Advanced order parameter named
+Trade Data Explorer Sector and Galaxy retain X4's standard Advanced order parameter named
 `Debug`, with values `0` or `100`. If the current debug/inspection UI exposes
 Advanced order parameters, set it to `100` before confirming the behavior.
-Mimic workers inherit the value through the TSE Assist parameter contract.
+Mimic workers inherit the value through the Trade Data Explorer Assist parameter contract.
 Normal play should use `0`.
 
 No custom settings menu or always-on diagnostic switch was added.
 
 ## Output
 
-Detailed TSE traces are written below X4's script-log location in:
+Detailed traces are written below X4's script-log location in:
 
 ```text
-JP_TradeSubscriptionExplorer.logs/TSE_Runtime.log
+MSX4_TradeDataExplorer.logs/MSX4_TradeDataExplorer_Runtime.log
 ```
 
 The setup MD writes one append-only `session_start` marker for each new/load
 session. It does not erase older sessions. Starting another ship or another
 cycle cannot reset the log.
 
-Custom records use one line with a six-character source type, `player.age`,
-the function and the payload. Structured behavioral records carry the
-`[TSE-TRACE]` marker; performance summaries carry `[TSE-PERF]`.
+Custom records use one line with a namespaced source marker, `player.age`, the
+function and the payload. Structured behavioral records carry a `TRACE`
+marker; performance summaries carry `PERF`.
 
 Useful source types are:
 
-- `TSEAI ` — TradeSubscriptionExplorer AI scripts;
-- `TSEMD ` — TradeSubscriptionExplorer Mission Director setup and cleanup;
-- `SLIBAI` — ScriptLibrary AI helpers;
-- `SLIBMD` — ScriptLibrary Mission Director management.
+- `[MSX4-TDE-AI]` — Trade Data Explorer AI scripts;
+- `[MSX4-TDE-MD]` — Trade Data Explorer Mission Director setup and cleanup;
+- `[MSX4-SLIB-AI]` — MSX4 Script Library AI helpers;
+- `[MSX4-SLIB-MD]` — MSX4 Script Library Mission Director management.
+
+The corresponding structured markers are `[MSX4-TDE-TRACE]`,
+`[MSX4-TDE-PERF]`, `[MSX4-SLIB-TRACE]` and `[MSX4-SLIB-PERF]`.
 
 ## Important trace boundaries
 
@@ -67,7 +70,7 @@ normal consequences of revalidation.
 When `DEBUG=0`, AI detail traces and their diagnostic-only finders/counters are
 inactive. The central append-only session marker is the documented file-only
 exception. Instrumentation is guarded against optional parameters so unrelated
-Vanilla Dock, DockAndWait and Follow orders do not evaluate TSE-only state.
+Vanilla Dock, DockAndWait and Follow orders do not evaluate mod-only state.
 
 Run `tools/validate-runtime-debug-logging.ps1` after editing trace code. It
 checks the line envelope, placeholders, mandatory fields, guards, Assist

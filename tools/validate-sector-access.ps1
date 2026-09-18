@@ -5,11 +5,11 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $modsRoot = Join-Path $repoRoot 'mods'
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'
-$getTargetsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
-$updateTargetPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml'
-$idlePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml'
-$galaxyOrderPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'
-$sectorOrderPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml'
+$getTargetsPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.GetTradeDataToUpdate.xml'
+$updateTargetPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.UpdateTradeData.xml'
+$idlePath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/msx4.lib.IdleReturnHome.xml'
+$galaxyOrderPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerG.xml'
+$sectorOrderPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerS.xml'
 
 function Assert-Condition {
     param(
@@ -93,16 +93,16 @@ Assert-Condition ($null -ne $getTargets.SelectSingleNode("//find_sector[@name='`
 Assert-Condition ($null -ne $getTargets.SelectSingleNode("//find_object[@name='`$_Stations']/match[@tradesknownto='`$_Ship.owner' and @negate='true']")) 'The expired-trade-information station filter must remain intact.'
 
 $interSectorMove = $updateTarget.SelectSingleNode("//run_script[contains(@name, 'move.generic') and param[@name='destination' and @value='`$_Station.sector']]")
-Assert-Condition ($null -ne $interSectorMove) 'TSE must retain the reviewed Vanilla move.generic call to the target sector.'
-Assert-Condition ($null -eq $interSectorMove.SelectSingleNode("./param[@name='endintargetsector']")) 'A sector destination must not also set endintargetsector; Vanilla 9.00 otherwise reports immediate success outside the target sector.'
+Assert-Condition ($null -ne $interSectorMove) 'TDE must retain the reviewed Vanilla move.generic call to the target sector.'
+Assert-Condition ($null -eq $interSectorMove.SelectSingleNode("./param[@name='endintargetdector']")) 'A sector destination must not also set endintargetdector; Vanilla 9.00 otherwise reports immediate success outside the target sector.'
 Assert-Condition ($null -ne $interSectorMove.SelectSingleNode("./param[@name='strictblacklist' and @value='true']")) 'The inter-sector move must remain strict-blacklist aware.'
 Assert-Condition ($null -ne $interSectorMove.SelectSingleNode("./param[@name='useknownpath' and @value='true']")) 'The inter-sector move must remain restricted to a known path.'
 
 foreach ($orderPath in @($galaxyOrderPath, $sectorOrderPath)) {
     $orderDocument = Read-XmlDocument -Path $orderPath
     $debugParam = $orderDocument.SelectSingleNode("/aiscript/order/params/param[@name='DEBUG']")
-    Assert-Condition ($null -ne $debugParam) "The existing TSE DEBUG parameter must remain present in $orderPath."
-    Assert-Condition ($debugParam.GetAttribute('advanced') -eq 'true') "The TSE DEBUG parameter must remain an advanced-only parameter in $orderPath."
+    Assert-Condition ($null -ne $debugParam) "The existing TDE DEBUG parameter must remain present in $orderPath."
+    Assert-Condition ($debugParam.GetAttribute('advanced') -eq 'true') "The TDE DEBUG parameter must remain an advanced-only parameter in $orderPath."
 }
 
 $jshell = Get-Command 'jshell' -ErrorAction SilentlyContinue
@@ -139,4 +139,4 @@ Write-Output 'find_sector containing-space invariants: OK'
 Write-Output 'Exact target-sector access filters and identity comparisons: OK (7 checks)'
 Write-Output 'Known-sector and expired-trade-information filters: OK'
 Write-Output 'Sector-destination move.generic parameters: OK'
-Write-Output 'TSE debug parameters remain advanced-only: OK'
+Write-Output 'TDE debug parameters remain advanced-only: OK'

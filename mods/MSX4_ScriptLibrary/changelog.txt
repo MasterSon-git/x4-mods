@@ -1,0 +1,7 @@
+# MSX4 Script Library
+
+v1.0.0
+~ Created an independent MSX4 namespace for the X4 9.00 maintenance line.
+~ Retained only the runtime helpers required and validated by Trade Data Explorer.
+~ Renamed AI scripts, internal orders, MD state, text pages, icons and diagnostics.
+~ Preserved JanPanthera's original MIT attribution and upstream changelog.

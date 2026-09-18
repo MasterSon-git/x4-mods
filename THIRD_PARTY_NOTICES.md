@@ -16,6 +16,14 @@ commit and the archived GitHub source used to start the port. The first mod
 import commit intentionally contains the unmodified mod baseline; the
 subsequent history contains the maintenance work.
 
+The maintained derivatives are distributed as `MSX4_ScriptLibrary` and
+`MSX4_TradeDataExplorer`. Their new names, identifiers and namespaces avoid
+presenting this maintenance fork as an official continuation by JanPanthera.
+The rename does not alter the original authorship or MIT attribution. These
+extensions are standalone replacements and make no compatibility claim for
+the original JP-namespaced extensions or third-party patches built around
+them.
+
 The upstream repository includes an MIT License with this notice:
 
 ```text
