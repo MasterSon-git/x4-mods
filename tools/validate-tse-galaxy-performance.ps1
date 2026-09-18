@@ -6,12 +6,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
-$helperPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
-$galaxyPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\JP_TradeSubscriptionExplorerG.xml'
-$sectorPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\JP_TradeSubscriptionExplorerS.xml'
-$updatePath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\aiscripts\jp.lib.TSE.UpdateSubscription.xml'
-$idlePath = Join-Path $repo 'mods\JP_ScriptLibrary\aiscripts\jp.lib.IdleReturnHome.xml'
-$mdPath = Join-Path $repo 'mods\JP_TradeSubscriptionExplorer\md\jp.TradeSubscriptionExplorer.md.xml'
+$helperPath = Join-Path $repo 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\aiscripts\jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
+$galaxyPath = Join-Path $repo 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\aiscripts\JP_TradeSubscriptionExplorerG.xml'
+$sectorPath = Join-Path $repo 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\aiscripts\JP_TradeSubscriptionExplorerS.xml'
+$updatePath = Join-Path $repo 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\aiscripts\jp.lib.TSE.UpdateSubscription.xml'
+$idlePath = Join-Path $repo 'mods\JP_X4Mods\JP_ScriptLibrary\aiscripts\jp.lib.IdleReturnHome.xml'
+$mdPath = Join-Path $repo 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\md\jp.TradeSubscriptionExplorer.md.xml'
 $aiSchemaPath = Join-Path $repo 'x4-reference\x4-9.00\base\libraries\aiscripts.xsd'
 $mdSchemaPath = Join-Path $repo 'x4-reference\x4-9.00\base\libraries\md.xsd'
 
@@ -138,7 +138,7 @@ Assert-True ($helperText.Contains("defaultorder.id == 'Assist'") -and
 foreach ($script in @($galaxy, $sector)) {
     Assert-True ($script.SelectNodes("//do_if[@value='not @`$_Ship.sector.exists']/wait[@exact='1s']").Count -eq 2) 'TSE waits through transient no-sector transitions before property access'
 }
-$idleManagerPath = Join-Path $repo 'mods\JP_ScriptLibrary\md\jp.ScriptLibrary.md.xml'
+$idleManagerPath = Join-Path $repo 'mods\JP_X4Mods\JP_ScriptLibrary\md\jp.ScriptLibrary.md.xml'
 $idleManagerText = Get-Content -Raw -LiteralPath $idleManagerPath
 Assert-True ($idleManagerText.Contains('$_Ship.orders.clone') -and
     $idleManagerText.Contains('<cancel_order order="$_Order"/>') -and
@@ -223,13 +223,29 @@ if (-not $SkipExistingRegressions) {
 }
 
 # 30-31: whitespace and commit-object checks.
-& git -c core.autocrlf=false -C $repo diff --check
-Assert-True ($LASTEXITCODE -eq 0) 'git diff --check passes'
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+    $ErrorActionPreference = 'SilentlyContinue'
+    & git -c core.autocrlf=false -C $repo diff --check 2>$null
+    $gitExitCode = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+}
+Assert-True ($gitExitCode -eq 0) 'git diff --check passes'
 if (-not $SkipGitCommitChecks) {
-    & git -C $repo show --check --oneline --stat HEAD
-    Assert-True ($LASTEXITCODE -eq 0) 'git show --check passes for optimization commit'
-    & git -C $repo show --check --oneline --stat HEAD^
-    Assert-True ($LASTEXITCODE -eq 0) 'git show --check passes for diagnostics commit'
+    try {
+        $ErrorActionPreference = 'SilentlyContinue'
+        & git -C $repo show --check --oneline --stat HEAD 2>$null
+        $headExitCode = $LASTEXITCODE
+        & git -C $repo show --check --oneline --stat HEAD^ 2>$null
+        $parentExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    Assert-True ($headExitCode -eq 0) 'git show --check passes for optimization commit'
+    Assert-True ($parentExitCode -eq 0) 'git show --check passes for diagnostics commit'
 }
 
 Write-Host 'TSE Galaxy performance regression: PASS'

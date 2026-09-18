@@ -3,19 +3,19 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$modsRoot = Join-Path $repoRoot 'mods'
-$baselineCommit = 'f7f70dec53eaf01a11fe2979080e0e470a4a5b06'
-$loggingFixCommit = '016b7544c1225f25ee249e9339627d2fdbf4140b'
+$modsRoot = Join-Path $repoRoot 'mods/JP_X4Mods'
+$baselineCommit = '68d17b530d83b6a706f463fcb6710bd5f06806a8'
+$loggingFixCommit = '326107189620a293deef6c432246d35977bc754d'
 $postLoggingFunctionalPaths = @(
-    'mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml',
-    'mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml',
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml',
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml',
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml',
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml',
-    'mods/JP_TradeSubscriptionExplorer/libraries/experiences.xml',
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml',
-    'mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
+    'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml',
+    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/libraries/experiences.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
 )
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'
 $mdSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/md.xsd'
@@ -46,6 +46,18 @@ function ConvertTo-JavaPath {
     return ([System.IO.Path]::GetFullPath($Path) -replace '\\', '/') -replace '"', '\"'
 }
 
+function ConvertTo-HistoricalModPath {
+    param([Parameter(Mandatory)] [string] $Path)
+
+    return $Path -replace '^mods/JP_X4Mods/', 'mods/'
+}
+
+function ConvertTo-CurrentModPath {
+    param([Parameter(Mandatory)] [string] $Path)
+
+    return $Path -replace '^mods/JP_', 'mods/JP_X4Mods/JP_'
+}
+
 function Test-DebugGuard {
     param([Parameter(Mandatory)] [System.Xml.XmlNode] $Node)
 
@@ -67,9 +79,21 @@ function Get-GitContent {
         [Parameter(Mandatory)] [string] $Path
     )
 
-    $content = & git -C $repoRoot show "${Revision}:$Path" 2>$null
-    Assert-Condition ($LASTEXITCODE -eq 0) "Could not read $Path at $Revision."
-    return ($content -join [Environment]::NewLine)
+    foreach ($candidate in @($Path, (ConvertTo-HistoricalModPath -Path $Path)) | Select-Object -Unique) {
+        $previousErrorActionPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'SilentlyContinue'
+            $content = & git -C $repoRoot show "${Revision}:$candidate" 2>$null
+            $gitExitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        if ($gitExitCode -eq 0) {
+            return ($content -join [Environment]::NewLine)
+        }
+    }
+    throw "Could not read $Path at $Revision."
 }
 
 function Get-ContractSignature {
@@ -299,9 +323,9 @@ $ambiguousPlaceholders = @(
 Assert-Condition ($ambiguousPlaceholders.Count -eq 0) ("Ambiguous multi-digit format placeholders remain: " + ($ambiguousPlaceholders -join ' | '))
 
 $optionalContextDiffs = @(
-    Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/order.dock.xml'
-    Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml'
-    Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml'
+    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.xml'
+    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml'
+    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml'
 )
 foreach ($path in $optionalContextDiffs) {
     $document = $documents[$path]
@@ -321,7 +345,7 @@ foreach ($path in $optionalContextDiffs) {
 }
 Write-Output 'Trace placeholders and optional TSE context: OK'
 
-$assistPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml'
+$assistPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml'
 $assistDocument = $documents[$assistPath]
 $expectedAssistParams = @(
     'OWNERLESS_SECTORS', 'WHARFS', 'SHIPYARDS', 'EQUIPMENTDOCKS',
@@ -446,8 +470,8 @@ $globalTraceState = @(
 Assert-Condition ($globalTraceState.Count -eq 0) 'A new global trace state variable was introduced.'
 
 $orderFiles = @(
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml',
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml',
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'
 )
 foreach ($relativePath in $orderFiles) {
     $current = $documents[(Join-Path $repoRoot $relativePath)]
@@ -468,7 +492,7 @@ Write-Output '10-11/20 no new UI setting; existing advanced DEBUG default retain
 $allModText = ($xmlFiles | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join [Environment]::NewLine
 Assert-Condition ($allModText -notmatch '\[TSE-(?:DIAG|AUDIT)\]') 'A retired TSE-DIAG or TSE-AUDIT marker was introduced.'
 
-$diffText = (& git -C $repoRoot diff $baselineCommit --unified=0 -- 'mods/JP_TradeSubscriptionExplorer' 'mods/JP_ScriptLibrary') -join [Environment]::NewLine
+$diffText = (& git -C $repoRoot diff --find-renames=20% $baselineCommit --unified=0 -- 'mods/JP_TradeSubscriptionExplorer' 'mods/JP_ScriptLibrary' 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer' 'mods/JP_X4Mods/JP_ScriptLibrary') -join [Environment]::NewLine
 Assert-Condition ($LASTEXITCODE -eq 0) 'Could not obtain the logging diff.'
 $addedLines = @(
     $diffText -split "\r?\n" |
@@ -493,16 +517,17 @@ Assert-Condition (@($forbiddenDiagnostics).Count -eq 0) 'A scan, reveal, or perm
 Write-Output '12-14/20 retired markers, unproven Sector.idcode, scan/reveal/subscription additions: absent'
 
 $diffMappings = @{
-    'mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
-    'mods/JP_ScriptLibrary/aiscripts/order.dock.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.xml'
-    'mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.move.follow.xml'
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.assist.xml'
-    'mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
+    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
+    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.xml'
+    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.move.follow.xml'
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.assist.xml'
+    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
 }
 
 $changedCodePaths = @(
-    & git -C $repoRoot diff $baselineCommit --name-only -- 'mods/JP_TradeSubscriptionExplorer' 'mods/JP_ScriptLibrary' |
-        Where-Object { $_ -match '\.xml$' }
+    & git -C $repoRoot diff $baselineCommit $loggingFixCommit --name-only -- 'mods/JP_TradeSubscriptionExplorer' 'mods/JP_ScriptLibrary' |
+        Where-Object { $_ -match '\.xml$' } |
+        ForEach-Object { ConvertTo-CurrentModPath -Path $_ }
 )
 foreach ($relativePath in $changedCodePaths) {
     $baselineText = Get-GitContent -Revision $baselineCommit -Path $relativePath
@@ -574,8 +599,8 @@ $completeAiFiles = @(
     }
 ) + $simulatedAiFiles
 $mdFiles = @(
-    Join-Path $repoRoot 'mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
-    Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
+    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
+    Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
 )
 $jshell = Get-Command 'jshell' -ErrorAction SilentlyContinue
 Assert-Condition ($null -ne $jshell) 'jshell is required for recursive Vanilla XSD validation.'
@@ -642,7 +667,15 @@ foreach ($regression in $existingRegressions) {
 }
 Write-Output "19/20 existing regressions: OK ($($existingRegressions.Count) scripts)"
 
-$diffCheck = & git -c core.autocrlf=false -C $repoRoot diff $baselineCommit --check -- 2>&1
-Assert-Condition ($LASTEXITCODE -eq 0) ("git diff --check failed: " + ($diffCheck -join ' | '))
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+    $ErrorActionPreference = 'SilentlyContinue'
+    $diffCheck = & git -c core.autocrlf=false -C $repoRoot diff $baselineCommit --check -- 2>&1
+    $gitExitCode = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+}
+Assert-Condition ($gitExitCode -eq 0) ("git diff --check failed: " + ($diffCheck -join ' | '))
 Write-Output '20/20 git diff --check: OK'
 Write-Output 'Structured TSE runtime debug logging validation: PASS'

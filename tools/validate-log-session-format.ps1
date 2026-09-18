@@ -3,7 +3,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$modsRoot = Join-Path $repoRoot 'mods'
+$modsRoot = Join-Path $repoRoot 'mods/JP_X4Mods'
 
 function Assert-Condition {
     param(
@@ -53,13 +53,13 @@ Assert-Condition ($traceRecords.Count -gt 0) 'No structured TSE runtime traces w
 
 foreach ($record in $debugRecords) {
     $relativePath = Get-RepoRelativePath $record.File.FullName
-    $expectedType = if ($relativePath -like 'mods\JP_TradeSubscriptionExplorer\aiscripts\*') {
+    $expectedType = if ($relativePath -like 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\aiscripts\*') {
         'TSEAI '
     }
-    elseif ($relativePath -like 'mods\JP_TradeSubscriptionExplorer\md\*') {
+    elseif ($relativePath -like 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\md\*') {
         'TSEMD '
     }
-    elseif ($relativePath -like 'mods\JP_ScriptLibrary\aiscripts\*') {
+    elseif ($relativePath -like 'mods\JP_X4Mods\JP_ScriptLibrary\aiscripts\*') {
         'SLIBAI'
     }
     else {
@@ -90,7 +90,7 @@ $sessionMarkers = @($traceRecords | Where-Object { $_.Text -match 'phase=session
 Assert-Condition ($sessionMarkers.Count -eq 1) "Expected one session marker, got $($sessionMarkers.Count)."
 $sessionMarker = $sessionMarkers[0]
 $sessionRelativePath = Get-RepoRelativePath $sessionMarker.File.FullName
-Assert-Condition ($sessionRelativePath -eq 'mods\JP_TradeSubscriptionExplorer\md\jp.TradeSubscriptionExplorer.md.xml') 'The session marker must be owned by the central TSE MD setup.'
+Assert-Condition ($sessionRelativePath -eq 'mods\JP_X4Mods\JP_TradeSubscriptionExplorer\md\jp.TradeSubscriptionExplorer.md.xml') 'The session marker must be owned by the central TSE MD setup.'
 Assert-Condition ($sessionMarker.Node.LocalName -eq 'debug_to_file') 'The session marker must write to the custom runtime file.'
 Assert-Condition ($sessionMarker.Node.GetAttribute('directory') -eq "'JP_TradeSubscriptionExplorer.logs'") 'The session marker uses the wrong directory.'
 Assert-Condition ($sessionMarker.Node.GetAttribute('name') -eq "'TSE_Runtime.log'") 'The session marker uses the wrong file.'

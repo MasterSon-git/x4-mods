@@ -3,8 +3,8 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$tseIconsPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/libraries/icons.xml'
-$scriptLibraryIconsPath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/libraries/icons.xml'
+$tseIconsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/libraries/icons.xml'
+$scriptLibraryIconsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/libraries/icons.xml'
 $vanillaIconsPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/icons.xml'
 $expectedPrefix = 'assets\textures\ui\order\'
 $obsoletePrefix = 'assets\fx\gui\textures\order\'
@@ -65,8 +65,8 @@ foreach ($fileName in $fileNames) {
 }
 
 $modXmlFiles = @(
-    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer') -Recurse -File -Filter '*.xml'
-    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/JP_ScriptLibrary') -Recurse -File -Filter '*.xml'
+    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer') -Recurse -File -Filter '*.xml'
+    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary') -Recurse -File -Filter '*.xml'
 )
 $obsoleteReferences = @($modXmlFiles | Select-String -SimpleMatch $obsoletePrefix)
 Assert-Condition ($obsoleteReferences.Count -eq 0) 'The obsolete assets\fx\gui\textures\order prefix must not remain in either extension.'

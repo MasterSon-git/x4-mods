@@ -24,7 +24,7 @@ function Read-XmlDocument {
     return $document
 }
 
-$modsRoot = Join-Path $repoRoot 'mods'
+$modsRoot = Join-Path $repoRoot 'mods/JP_X4Mods'
 $tseRoot = Join-Path $modsRoot 'JP_TradeSubscriptionExplorer'
 $sector = Read-XmlDocument (Join-Path $tseRoot 'aiscripts/JP_TradeSubscriptionExplorerS.xml')
 $galaxy = Read-XmlDocument (Join-Path $tseRoot 'aiscripts/JP_TradeSubscriptionExplorerG.xml')

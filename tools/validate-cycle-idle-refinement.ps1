@@ -24,11 +24,11 @@ function Read-XmlDocument {
     return $document
 }
 
-$sector = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml')
-$galaxy = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml')
-$targets = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml')
-$idle = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml')
-$manager = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml')
+$sector = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml')
+$galaxy = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml')
+$targets = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml')
+$idle = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml')
+$manager = Read-XmlDocument (Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml')
 
 function Assert-MainCycle {
     param(
@@ -119,9 +119,9 @@ Assert-Condition ($null -ne $targetedCleanup -and $broadCleanup.Count -eq 0) 'Bu
 Write-Output '4/5 Bugfix 008 selective timeout cleanup and foreign queue preservation remain intact: OK'
 
 $forbidden = Select-String -Path @(
-    (Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml'),
-    (Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'),
-    (Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml')
+    (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml'),
+    (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'),
+    (Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml')
 ) -Pattern '<(?:scan_|reveal_|set_trade_subscription|add_trade_subscription|subscribe_)'
 Assert-Condition (@($forbidden).Count -eq 0) 'Cycle/idle refinement introduced a forbidden scan, reveal, or permanent subscription action.'
 Write-Output '5/5 no scan, reveal or permanent subscription action was introduced: OK'

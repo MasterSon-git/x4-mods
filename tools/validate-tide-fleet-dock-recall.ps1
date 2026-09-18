@@ -28,8 +28,8 @@ function ConvertTo-JavaPath {
     return [System.IO.Path]::GetFullPath($Path).Replace('\', '/').Replace('"', '\"')
 }
 
-$diffPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.xml'
-$existingWaitDiffPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.wait.xml'
+$diffPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.xml'
+$existingWaitDiffPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.wait.xml'
 $vanillaDockPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/aiscripts/order.dock.xml'
 $vanillaFleeDockPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/aiscripts/move.flee.dock.xml'
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'

@@ -5,10 +5,10 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $modsRoot = Join-Path $repoRoot 'mods'
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'
-$escapePath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/jp.lib.EscapeTravelBlacklist.xml'
-$updatePath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml'
-$idlePath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml'
-$getTargetsPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
+$escapePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.EscapeTravelBlacklist.xml'
+$updatePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml'
+$idlePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml'
+$getTargetsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
 
 function Assert-Condition {
     param(

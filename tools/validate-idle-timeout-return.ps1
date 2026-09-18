@@ -4,17 +4,17 @@ param()
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $modsRoot = Join-Path $repoRoot 'mods'
-$loggingFixCommit = '016b7544c1225f25ee249e9339627d2fdbf4140b'
+$loggingFixCommit = '326107189620a293deef6c432246d35977bc754d'
 
-$managerPath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
-$idlePath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml'
-$dockWaitDiffPath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml'
-$dockDiffPath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/order.dock.xml'
-$followDiffPath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml'
-$sectorPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml'
-$galaxyPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'
-$targetsPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
-$escapePath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/aiscripts/jp.lib.EscapeTravelBlacklist.xml'
+$managerPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
+$idlePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml'
+$dockWaitDiffPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml'
+$dockDiffPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.xml'
+$followDiffPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml'
+$sectorPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml'
+$galaxyPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'
+$targetsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
+$escapePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.EscapeTravelBlacklist.xml'
 
 function Assert-Condition {
     param(
@@ -172,7 +172,15 @@ Write-Output '19/24 later cycle/idle refinements preserve the selective CANDIDAT
 & (Join-Path $PSScriptRoot 'validate-runtime-debug-logging.ps1') | ForEach-Object { "  $_" }
 Write-Output "20-23/24 XML, AI XSD, MD XSD and all previous regressions: OK ($($allXmlFiles.Count) mod XML files)"
 
-$diffCheck = & git -c core.autocrlf=false -C $repoRoot diff $loggingFixCommit --check -- 2>&1
-Assert-Condition ($LASTEXITCODE -eq 0) ("git diff --check failed: " + ($diffCheck -join ' | '))
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+    $ErrorActionPreference = 'SilentlyContinue'
+    $diffCheck = & git -c core.autocrlf=false -C $repoRoot diff $loggingFixCommit --check -- 2>&1
+    $gitExitCode = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+}
+Assert-Condition ($gitExitCode -eq 0) ("git diff --check failed: " + ($diffCheck -join ' | '))
 Write-Output '24/24 git diff --check: OK'
 Write-Output 'TSE idle timeout return validation: PASS'

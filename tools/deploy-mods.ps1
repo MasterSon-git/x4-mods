@@ -14,7 +14,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$sourceRoot = Join-Path $repoRoot 'mods'
+$sourceRoot = Join-Path $repoRoot 'mods\JP_X4Mods'
 
 if ([string]::IsNullOrWhiteSpace($DestinationRoot)) {
     $documentsRoot = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
@@ -69,8 +69,8 @@ foreach ($modName in $ModNames) {
     }
 
     $destinationPath = [System.IO.Path]::GetFullPath((Join-Path $destinationRootPath $modName))
-    $relativeDestination = [System.IO.Path]::GetRelativePath($destinationRootPath, $destinationPath)
-    if ($relativeDestination.StartsWith('..') -or [System.IO.Path]::IsPathRooted($relativeDestination)) {
+    $destinationRootPrefix = $destinationRootPath.TrimEnd([char[]] @('\', '/')) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $destinationPath.StartsWith($destinationRootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Resolved extension target escapes the configured destination root: $destinationPath"
     }
 

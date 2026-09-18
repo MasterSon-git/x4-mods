@@ -3,10 +3,10 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$scriptLibraryPath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
-$tsePath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
-$scriptLibraryContentPath = Join-Path $repoRoot 'mods/JP_ScriptLibrary/content.xml'
-$tseContentPath = Join-Path $repoRoot 'mods/JP_TradeSubscriptionExplorer/content.xml'
+$scriptLibraryPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
+$tsePath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
+$scriptLibraryContentPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/content.xml'
+$tseContentPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/content.xml'
 $mdSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/md.xsd'
 
 function Assert-Condition {
