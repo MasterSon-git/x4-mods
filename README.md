@@ -60,6 +60,7 @@ ignored by Git and must never be published from this repository.
 
 ## Documentation
 
+- [Contributing](CONTRIBUTING.md)
 - [Compatibility with X4 9.00](docs/compatibility-x4-9.md)
 - [Porting and maintenance history](docs/porting-history.md)
 - [Testing and remaining runtime coverage](docs/testing.md)
