@@ -12,6 +12,10 @@ This repository contains independently maintained mods for X4: Foundations.
 Keep repository-maintained documentation, code comments and commit messages in
 English. Localization files remain in their respective languages.
 
+Follow the public issue, branch and pull-request workflow in
+`CONTRIBUTING.md`. In particular, issue-linked branches use GitHub's
+`<issue-number>-<short-kebab-case-title>` format.
+
 ## X4 reference files
 
 Local Vanilla X4 9.00 files are expected below `x4-reference/x4-9.00/`.
