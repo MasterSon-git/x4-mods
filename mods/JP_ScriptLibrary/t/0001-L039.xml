@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Italian ~~ Italiano -->
+
+<language>
+   <page id="8888888" voice="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <!-- JP_ScriptLibrary -->
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="1">Portali di salto?</t>
+      <t id="2">Portali di salto attivi?</t>
+      <t id="3">Portali di salto inattivi?</t>
+      <t id="4">Acceleratori?</t>
+      <t id="5">Acceleratori attivi?</t>
+      <t id="6">Acceleratori inattivi?</t>
+      <t id="7">Superstrade?</t>
+      <t id="8">Superstrade attive?</t>
+      <t id="9">Superstrade inattive?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="10">Stazioni?</t>
+      <t id="11">Moli?</t>
+      <t id="12">Cantieri navali?</t>
+      <t id="13">Moli di attrezzatura?</t>
+      <t id="14">Stazioni di commercio?</t>
+      <t id="15">Basi dei pirati?</t>
+      <t id="16">Impianti di lavorazione dei rottami?</t>
+      <t id="17">Stazioni di difesa?</t>
+      <t id="18">Quartier generale delle fazioni?</t>
+      <t id="19">Fabbriche?</t>
+      <t id="20">Cantieri edili?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="30">Settori senza proprietario?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="40">Inattivo</t>
+      <t id="41">Muoversi nel settore</t>
+      <t id="42">Muoversi nella posizione</t>
+      <t id="43">Muoversi verso l'oggetto</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="50">Al momento, non ci sono stazioni disponibili dove potremmo rifornire la nostra attrezzatura desiderata.</t>
+      <t id="51">Al momento, tutte le stazioni disponibili mancano delle risorse necessarie per produrre l'attrezzatura necessaria.\nAndrò alla stazione più vicina, farò una richiesta di rifornimento, e poi aspetterò il prossimo rifornimento di risorse.</t>
+      <t id="52">Manciamo dei fondi necessari per rifornire l'attrezzatura desiderata.</t>
+      <t id="53">Il processo di creazione dell'ordine di rifornimento è fallito.</t>
+      <t id="54">L'ordine di rifornimento di attrezzature è fallito. Più dettagli sono disponibili nel registro.</t>
+      <t id="55">Passerò in modalità inattiva e proverò di nuovo più tardi.</t>
+      <t id="56">Andrò a cambiare la mia attrezzatura a:\nStazione: %5%1 [%2]\033X\nRelazione: %6%3\033X\nSettore: %7%4\033X\n</t>
+      <t id="57">\nCosto del cambio di attrezzatura: %1\n</t>
+      <t id="58">\nVendo attrezzatura per %1</t>
+      <t id="59">\nCompro attrezzatura per %1</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="60">\033#FFe27100#Fallimento nel cambio di equipaggiamento\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="80">Tempo di inattività</t>
+      <t id="81">Inattivo: Spostarsi a?</t>
+      <t id="82">Dove spostarsi?</t>
+      <t id="83">Inattivo: Seguire?</t>
+      <t id="84">Chi seguire?</t>
+      <t id="85">Inattivo: Attraccare?</t>
+      <t id="86">Trovare una Stazione?</t>
+      <t id="87">Dove attraccare?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="90">Mostrare i messaggi?</t>
+      <t id="91">Scrivere sul registro di bordo?</t>
+      <t id="92">Aggiungere il tag dell'ordine?</t>
+      <t id="93">Salvare le impostazioni dell'ordine?</t>
+      <t id="94">Reset delle impostazioni dell'ordine?</t>
+      <t id="95">Impostazioni dell'ordine salvate.</t>
+      <t id="96">Impostazioni dell'ordine ripristinate.</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="97">\033#B600CCCC#</t>
+      <t id="98">\033#FF00CC66#</t>
+      <t id="99">\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </page>
+</language>

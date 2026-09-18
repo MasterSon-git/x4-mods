@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Spanish ~~ Español -->
+
+<language>
+   <page id="8888888" voice="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <!-- JP_ScriptLibrary -->
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="1">¿Portales de salto?</t>
+      <t id="2">¿Portales de salto activos?</t>
+      <t id="3">¿Portales de salto inactivos?</t>
+      <t id="4">¿Aceleradores?</t>
+      <t id="5">¿Aceleradores activos?</t>
+      <t id="6">¿Aceleradores inactivos?</t>
+      <t id="7">¿Superautopistas?</t>
+      <t id="8">¿Superautopistas activas?</t>
+      <t id="9">¿Superautopistas inactivas?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="10">¿Estaciones?</t>
+      <t id="11">¿Astilleros?</t>
+      <t id="12">¿Varaderos?</t>
+      <t id="13">¿Muelles de equipo?</t>
+      <t id="14">¿Estaciones de comercio?</t>
+      <t id="15">¿Bases piratas?</t>
+      <t id="16">¿Instalaciones de procesamiento de chatarra?</t>
+      <t id="17">¿Estaciones de defensa?</t>
+      <t id="18">¿Sedes de facciones?</t>
+      <t id="19">¿Fábricas?</t>
+      <t id="20">¿Sitios de construcción?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="30">¿Sectores sin dueño?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="40">Inactivo</t>
+      <t id="41">Moverse al sector</t>
+      <t id="42">Moverse a la posición</t>
+      <t id="43">Moverse al objeto</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="50">Actualmente, no hay estaciones disponibles donde podríamos reabastecer nuestro equipo deseado.</t>
+      <t id="51">Actualmente, todas las estaciones disponibles carecen de los recursos necesarios para fabricar el equipo necesario.\nIré a la estación más cercana, haré una solicitud de reabastecimiento, y luego esperaré la próxima reposición de recursos.</t>
+      <t id="52">Nos faltan los fondos necesarios para reabastecer el equipo deseado.</t>
+      <t id="53">El proceso de creación del pedido de reabastecimiento ha fallado.</t>
+      <t id="54">El pedido de reabastecimiento de equipo ha fallado. Más detalles están disponibles en el registro.</t>
+      <t id="55">Voy a cambiar a modo inactivo y lo intentaré de nuevo más tarde.</t>
+      <t id="56">Voy a cambiar mi equipo en:\nEstación: %5%1 [%2]\033X\nRelación: %6%3\033X\nSector: %7%4\033X\n</t>
+      <t id="57">\nCosto de cambio de equipo: %1\n</t>
+      <t id="58">\nVendo equipo por %1</t>
+      <t id="59">\nCompro equipo por %1</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="60">\033#FFe27100#Fallo en el cambio de equipo\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="80">Tiempo de inactividad</t>
+      <t id="81">Inactivo: ¿Mover a?</t>
+      <t id="82">¿A dónde mover?</t>
+      <t id="83">Inactivo: ¿Seguir a?</t>
+      <t id="84">¿A quién seguir?</t>
+      <t id="85">Inactivo: ¿Acoplamiento?</t>
+      <t id="86">¿Encontrar una Estación?</t>
+      <t id="87">¿Dónde acoplar?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="90">¿Mostrar mensajes?</t>
+      <t id="91">¿Escribir en el libro de registro?</t>
+      <t id="92">¿Agregar etiqueta de orden?</t>
+      <t id="93">¿Guardar configuraciones de orden?</t>
+      <t id="94">¿Restablecer configuraciones de orden?</t>
+      <t id="95">Configuraciones de orden guardadas.</t>
+      <t id="96">Configuraciones de orden restablecidas.</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="97">\033#B600CCCC#</t>
+      <t id="98">\033#FF00CC66#</t>
+      <t id="99">\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </page>
+</language>

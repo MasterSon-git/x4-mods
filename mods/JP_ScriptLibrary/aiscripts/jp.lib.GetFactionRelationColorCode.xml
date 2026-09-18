@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="jp.lib.GetFactionRelationColorCode" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+   <params>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <param name="FACTION_RELATION" default="null"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <param name="debugchance" default="0"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </params>
+
+   <init>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$_Ship" exact="this.ship"/>
+      <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <do_if value="$DEBUG gt 0">
+         <set_value name="$_DebugFolderName" exact="@$_DefaultOrderParamRef.$DEBUG_FOLDER_NAME"/>
+         <set_value name="$_DebugScriptName" exact="'jp.lib.GetFactionRelationColorCode'"/>
+         <set_value name="$_DebugFileName" exact="$_Ship.idcode + '.' + $_DebugScriptName + '.xml.log'"/>
+      </do_if>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </init>
+
+   <attention min="unknown">
+      <actions>
+
+         <label name="INIT_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'" append="false"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_START ~~' + '\n'"/>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <set_command_action commandaction="commandaction.calculating"/>
+
+         <set_value name="$_Table" exact="table[]"/>
+         <set_value name="$_Table.{-30}" exact="[[255,   0,   0], [255,   0,   0], 30.0,  1.0]" comment="[Red     to Red,     Initial value: 30.0, Transition range:  1.0]"/>
+         <set_value name="$_Table.{-10}" exact="[[255,   0,   0], [255, 100, 100], 30.0, 20.0]" comment="[Red     to L.Red,   Initial value: 30.0, Transition range: 20.0]"/>
+         <set_value name="$_Table.{0}"   exact="[[255, 100, 100], [192, 192, 192], 10.0, 10.0]" comment="[L.Red   to Gray,    Initial value: 10.0, Transition range: 10.0]"/>
+         <set_value name="$_Table.{10}"  exact="[[192, 192, 192], [128, 255, 128],  0.0, 10.0]" comment="[Gray    to L.Green, Initial value:  0.0, Transition range: 10.0]"/>
+         <set_value name="$_Table.{15}"  exact="[[128, 255, 128], [0,   255,   0], 10.0,  5.0]" comment="[L.Green to Green,   Initial value: 10.0, Transition range:  5.0]"/>
+         <set_value name="$_Table.{30}"  exact="[[  0, 255,   0], [0,   136, 255], 15.0, 15.0]" comment="[Green   to Blue,    Initial value: 15.0, Transition range: 15.0]"/>
+
+         <do_for_each name="$_Key" valuename="$_Value" in="$_Table">
+            <do_if value="$FACTION_RELATION le $_Key">
+               <do_if value="$FACTION_RELATION le 0">
+                  <set_value name="$_BlendRatio" exact="(($FACTION_RELATION)f + $_Value.{3}) / $_Value.{4}"/>
+               </do_if>
+               <do_else>
+                  <set_value name="$_BlendRatio" exact="(($FACTION_RELATION)f - $_Value.{3}) / $_Value.{4}"/>
+               </do_else>
+               <set_value name="$_R" exact="($_Value.{1}.{1} * (1 - $_BlendRatio) + $_Value.{2}.{1} * $_BlendRatio)i"/>
+               <set_value name="$_G" exact="($_Value.{1}.{2} * (1 - $_BlendRatio) + $_Value.{2}.{2} * $_BlendRatio)i"/>
+               <set_value name="$_B" exact="($_Value.{1}.{3} * (1 - $_BlendRatio) + $_Value.{2}.{3} * $_BlendRatio)i"/>
+               <break/>
+            </do_if>
+         </do_for_each>
+
+         <run_script name="'jp.lib.ConvertARGBtoHex'" result="$_FactionRelationColorCode">
+            <param name="ALPHA" value="255"/>
+            <param name="RED" value="$_R"/>
+            <param name="GREEN" value="$_G"/>
+            <param name="BLUE" value="$_B"/>
+         </run_script>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <label name="END_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[' + player.systemtime.{'%F - %X'} + '] ' + '~~ ' + $_DebugScriptName + '.xml ~ SCRIPT_END ~~'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'"/>
+         </do_if>
+
+         <return value="$_FactionRelationColorCode"/>
+
+      </actions>
+   </attention>
+
+   <on_abort>
+   </on_abort>
+
+</aiscript>

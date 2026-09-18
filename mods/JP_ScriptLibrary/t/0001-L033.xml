@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- French ~~ Français -->
+
+<language>
+   <page id="8888888" voice="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <!-- JP_ScriptLibrary -->
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="1">Portes de saut ?</t>
+      <t id="2">Portes de saut actives ?</t>
+      <t id="3">Portes de saut inactives ?</t>
+      <t id="4">Accélérateurs ?</t>
+      <t id="5">Accélérateurs actifs ?</t>
+      <t id="6">Accélérateurs inactifs ?</t>
+      <t id="7">Super autoroutes ?</t>
+      <t id="8">Super autoroutes actives ?</t>
+      <t id="9">Super autoroutes inactives ?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="10">Stations ?</t>
+      <t id="11">Chantiers navals ?</t>
+      <t id="12">Cale sèche ?</t>
+      <t id="13">Docks d'équipement ?</t>
+      <t id="14">Stations de commerce ?</t>
+      <t id="15">Bases de pirates ?</t>
+      <t id="16">Installations de traitement des déchets ?</t>
+      <t id="17">Stations de défense ?</t>
+      <t id="18">Quartiers généraux de faction ?</t>
+      <t id="19">Usines?</t>
+      <t id="20">Chantiers de construction?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="30">Secteurs sans propriétaire?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="40">Inactif</t>
+      <t id="41">Se déplacer vers le secteur</t>
+      <t id="42">Se déplacer vers la position</t>
+      <t id="43">Se déplacer vers l'objet</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="50">Actuellement, il n'y a pas de stations disponibles où nous pourrions réapprovisionner notre équipement souhaité.</t>
+      <t id="51">Actuellement, toutes les stations disponibles manquent des ressources nécessaires pour fabriquer l'équipement nécessaire.\nJe vais à la station la plus proche, fais une demande de réapprovisionnement, puis attends le prochain réapprovisionnement en ressources.</t>
+      <t id="52">Nous manquons des fonds nécessaires pour réapprovisionner l'équipement souhaité.</t>
+      <t id="53">Le processus de création de la commande de réapprovisionnement a échoué.</t>
+      <t id="54">La commande de réapprovisionnement d'équipement a échoué. Plus de détails sont disponibles dans le journal de bord.</t>
+      <t id="55">Je vais passer en mode veille et réessayer plus tard.</t>
+      <t id="56">Je vais changer mon équipement à:\nStation: %5%1 [%2]\033X\nRelation: %6%3\033X\nSecteur: %7%4\033X\n</t>
+      <t id="57">\nCoût du changement d'équipement : %1\n</t>
+      <t id="58">\nJe vends de l'équipement pour %1</t>
+      <t id="59">\nJ'achète de l'équipement pour %1</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="60">\033#FFe27100#Échec du changement d'équipement\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="80">Temps d'inactivité</t>
+      <t id="81">Inactif: Déplacer vers?</t>
+      <t id="82">Où déplacer?</t>
+      <t id="83">Inactif: Suivre?</t>
+      <t id="84">Qui suivre?</t>
+      <t id="85">Inactif: Accostage?</t>
+      <t id="86">Trouver une station?</t>
+      <t id="87">Où accoster?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="90">Afficher les messages?</t>
+      <t id="91">Écrire dans le journal de bord?</t>
+      <t id="92">Ajouter une balise de commande?</t>
+      <t id="93">Sauvegarder les paramètres de commande?</t>
+      <t id="94">Réinitialiser les paramètres de commande?</t>
+      <t id="95">Paramètres de commande sauvegardés.</t>
+      <t id="96">Paramètres de commande réinitialisés.</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="97">\033#B600CCCC#</t>
+      <t id="98">\033#FF00CC66#</t>
+      <t id="99">\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </page>
+</language>
