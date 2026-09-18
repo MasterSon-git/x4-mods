@@ -198,12 +198,12 @@
          <do_if value="$DEBUG gt 0">
             <set_value name="$_TraceValidationPhase" exact="'before_radar_approach'"/>
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_snapshot result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=approach event=move_start result=pending target=%2 current_sector=%3 target_sector=%4 target_distance=%5 subscription=%6'.[$_Ship.idcode, $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, ($_Ship.maxradarrange * 0.75), $_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.UpdateSubscription:' + '[TSE-TRACE] source=update_subscription ship=%1 phase=approach event=move_start result=pending target=%2 current_sector=%3 target_sector=%4 target_distance=%5 subscription=%6'.[$_Ship.idcode, $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, ($_Ship.maxradarrange * 0.5), $_Station.hastradesubscription]"/>
          </do_if>
          <run_script name="'jp.lib.MoveToObject'" result="$_ApproachSuccess">
             <param name="OBJECT" value="$_Station"/>
             <param name="POSITION_SPACE" value="$_Ship"/>
-            <param name="DISTANCE_TO_OBJECT" value="($_Ship.maxradarrange * 0.75)"/>
+            <param name="DISTANCE_TO_OBJECT" value="($_Ship.maxradarrange * 0.5)"/>
             <param name="FORCE_POSITION" value="false"/>
             <param name="FINISH_ON_APPROACH" value="true"/>
             <param name="SKIP_SECTOR_CHECK" value="true"/>
