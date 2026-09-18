@@ -2,37 +2,38 @@
 
 ## Public-history design
 
-The repository history intentionally starts with an exact upstream source
-baseline and then applies the X4 9.00 work in reviewable steps. This avoids a
-single opaque import in which original authorship and later maintenance are
-mixed together.
+The repository retains its original empty scaffold commit. The next commit is
+an exact upstream mod-source baseline, followed by the X4 9.00 work in
+reviewable steps. This avoids a single opaque import in which original
+authorship and later maintenance are mixed together.
 
 | Commit | Change |
 | --- | --- |
-| `8714522` | Import the unmodified JanPanthera baseline |
-| `577426d` | Initial X4 9.00 port: current Assist anchor, Vanilla sector movement, strict path and blacklist handling, target revalidation and MD cleanup |
-| `752d83e` | Initialize MD groups deterministically before save-load listeners |
-| `9e530bb` | Add local Robocopy deployment tooling |
-| `ce169b4` | Correct the X4 9.00 sector access lookup space |
-| `6fa0c9c` | Replace obsolete icon texture paths |
-| `19e2335` | Remove the TSE order-ready activation race |
-| `2f92ac4` | Correct TSE Galaxy inter-sector travel |
-| `68d17b5` | Correct escape movement from a travel-blacklisted current sector |
-| `275d986` | Add structured runtime tracing |
-| `3261071` | Make diagnostics inert for unrelated Vanilla orders and correct their parameter formatting |
-| `caa76a1` | Return from an idle timeout to a full TSE cycle |
-| `986e2c1` | Refine productive-cycle and no-action idle behavior |
-| `ef4d9bb` | Remove unsupported custom crew experience and align skill/delay behavior |
-| `703a51f` | Improve visible behavior names, target context and optional ship tags |
-| `81cad8b` | Make runtime log sessions append-only and consistently formatted |
-| `3bbc2f1` | Exclude hostile stations and revalidate hostility during work |
-| `6c62cb8` | Align TSE Galaxy with the visible combined two-star threshold |
-| `ef751be` | Add bounded performance diagnostics |
-| `c512a8f` | Share coarse Galaxy discovery across multiple workers |
-| `8bd843a` | Spread cache work over time, bound idle docking, reject wrecks and handle transient no-sector states |
-| `5036366` | Move closer to stations for more reliable radar updates |
-| `b8c0f62` | Prevent a Tide escape by the commander from recalling the distributed TSE fleet |
-| `2828c66` | Group the maintained JP mods under `mods/JP_X4Mods` and keep tools/history-aware validators working |
+| `be2d0e1` | Create the initial repository scaffold |
+| `deead7b` | Import the unmodified JanPanthera baseline |
+| `748355f` | Initial X4 9.00 port: current Assist anchor, Vanilla sector movement, strict path and blacklist handling, target revalidation and MD cleanup |
+| `b6e161e` | Initialize MD groups deterministically before save-load listeners |
+| `b0f1eb5` | Add local Robocopy deployment tooling |
+| `6520da1` | Correct the X4 9.00 sector access lookup space |
+| `60db63e` | Replace obsolete icon texture paths |
+| `c9684b9` | Remove the TSE order-ready activation race |
+| `bbbc2ba` | Correct TSE Galaxy inter-sector travel |
+| `7afc74d` | Correct escape movement from a travel-blacklisted current sector |
+| `e57e2b0` | Add structured runtime tracing |
+| `f192803` | Make diagnostics inert for unrelated Vanilla orders and correct their parameter formatting |
+| `9f211f6` | Return from an idle timeout to a full TSE cycle |
+| `8c6c7d6` | Refine productive-cycle and no-action idle behavior |
+| `d2efdbd` | Remove unsupported custom crew experience and align skill/delay behavior |
+| `7c3ee49` | Improve visible behavior names, target context and optional ship tags |
+| `88c1854` | Make runtime log sessions append-only and consistently formatted |
+| `05f1764` | Exclude hostile stations and revalidate hostility during work |
+| `2b5016a` | Align TSE Galaxy with the visible combined two-star threshold |
+| `638192c` | Add bounded performance diagnostics |
+| `925bbab` | Share coarse Galaxy discovery across multiple workers |
+| `01632b7` | Spread cache work over time, bound idle docking, reject wrecks and handle transient no-sector states |
+| `1aa7a3b` | Move closer to stations for more reliable radar updates |
+| `417b67a` | Prevent a Tide escape by the commander from recalling the distributed TSE fleet |
+| `6164995` | Group the maintained JP mods under `mods/JP_X4Mods` and keep tools/history-aware validators working |
 
 ## Current execution model
 

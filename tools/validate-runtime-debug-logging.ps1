@@ -4,8 +4,8 @@ param()
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $modsRoot = Join-Path $repoRoot 'mods/JP_X4Mods'
-$baselineCommit = '68d17b530d83b6a706f463fcb6710bd5f06806a8'
-$loggingFixCommit = '326107189620a293deef6c432246d35977bc754d'
+$baselineCommit = '7afc74d2c94b537e0468019458578766e214d469'
+$loggingFixCommit = 'f192803581ec60476b8b5252f87ff4ca9e91875c'
 $postLoggingFunctionalPaths = @(
     'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml',
     'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml',

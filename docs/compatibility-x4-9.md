@@ -78,16 +78,16 @@ economy edits or permanent trade subscriptions.
 - Top-level MD listeners could evaluate `global.$SL_PlayerShips` and
   `global.$TSE_ShipsGroup` before those groups existed when loading a save.
   Setup now creates or reconciles state before child listeners become active.
-  See both mod files under `md/` and commit `752d83e`.
+  See both mod files under `md/` and commit `b6e161e`.
 - A ready-event race could cancel a newly selected TSE order during
   activation. Cleanup now remains tied to leaving or changing the applicable
-  order. See commit `19e2335`.
+  order. See commit `c9684b9`.
 
 ### Sector selection and movement
 
 - X4 9.00 requires a valid containing space for the affected sector lookup.
   The target and access queries now use the current 9.00 finder contract. See
-  `jp.lib.TSE.GetTradesubscriptionsToUpdate.xml` and commit `ce169b4`.
+  `jp.lib.TSE.GetTradesubscriptionsToUpdate.xml` and commit `6520da1`.
 - The original custom gate-by-gate movement conflicted with current movement
   behavior. Normal TSE travel now delegates sector travel to Vanilla
   `move.generic`, with a known-path and effective travel-blacklist contract.
@@ -95,12 +95,12 @@ economy edits or permanent trade subscriptions.
   blacklist, and only to leave an already blacklisted current sector for a
   known, reachable, allowed sector. It then returns to normal strict target
   selection. See `JP_ScriptLibrary/aiscripts/jp.lib.EscapeTravelBlacklist.xml`
-  and commits `2f92ac4` and `68d17b5`.
+  and commits `bbbc2ba` and `7afc74d`.
 - Candidate selection and final movement revalidate sector access, sector
   activity, object activity, travel blacklist and known path. This prevents a
   stale selection from silently bypassing a changed rule.
 - Short engine transitions in which a ship has no current sector are handled
-  by a scheduler wait before sector properties are read. See commit `8bd843a`.
+  by a scheduler wait before sector properties are read. See commit `01632b7`.
 
 ### Target validation
 
@@ -109,36 +109,36 @@ economy edits or permanent trade subscriptions.
 - Hostile stations and hostile resolved targets are rejected before path work
   and rechecked before travel, after travel, after approach and while waiting.
   This is faction-neutral and uses X4's `ishostileto` property. See commit
-  `3bbc2f1` and Vanilla `libraries/scriptproperties.xml`.
+  `05f1764` and Vanilla `libraries/scriptproperties.xml`.
 - Existing station wreck components are explicitly rejected before reading
   container trade properties. Construction sites remain supported. See commit
-  `8bd843a`.
+  `01632b7`.
 - The radar approach target was reduced from 75% to 50% of the ship's maximum
   radar range after a rare runtime case updated only when manually moved
   closer. This is a conservative observed workaround, not a documented engine
-  threshold. See commit `5036366`.
+  threshold. See commit `1aa7a3b`.
 
 ### Idle, fleet and special-event behavior
 
 - The idle timeout previously removed only the top immediate child, causing
   `IdleReturnHome` to restart without returning to a TSE search. The manager
   now cancels the exact TSE idle parent and only children explicitly tagged as
-  belonging to it. Foreign queue orders are not removed. See commit `caa76a1`.
+  belonging to it. Foreign queue orders are not removed. See commit `9f211f6`.
 - Productive completion starts a fresh candidate search; empty or failed work
   still uses the configured idle backoff. With all optional idle actions off,
   the ship waits instead of performing an invented movement. See commit
-  `986e2c1`.
+  `8c6c7d6`.
 - Vanilla Tide escape docking can pass `dockfollowers=true` even with
   `recallsubordinates=false`. A narrow TSE diff disables that follower recall
   only when a ship currently has the TSE Galaxy default behavior and has
   subordinates. Other Vanilla behaviors are unchanged. See
   `JP_TradeSubscriptionExplorer/aiscripts/order.dock.xml`, Vanilla
-  `aiscripts/move.flee.dock.xml` and commit `b8c0f62`.
+  `aiscripts/move.flee.dock.xml` and commit `417b67a`.
 
 ### User-facing contracts
 
 - Obsolete icon texture paths were replaced with paths present in the X4 9.00
-  icon library. See commit `6fa0c9c`.
+  icon library. See commit `60db63e`.
 - TSE Sector requires combined skill 20. TSE Galaxy requires combined skill
   40, the visible two-star boundary used by current Vanilla order definitions.
   The original value 45 rendered as the same two stars while rejecting some

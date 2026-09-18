@@ -69,7 +69,7 @@ ignored by Git and must never be published from this repository.
 
 ## Provenance and license
 
-The first commit preserves the original mod files imported from
+The first mod import commit preserves the original files imported from
 [JanPanthera/JP_X4Mods_2023](https://github.com/JanPanthera/JP_X4Mods_2023)
 at commit `fa2c795883890062d05c936bc0077c3d85438249`. Later commits contain the
 X4 9.00 maintenance work, so the public history shows the boundary between

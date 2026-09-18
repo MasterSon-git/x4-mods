@@ -84,7 +84,7 @@ Assert-Condition ($null -ne $idle.SelectSingleNode("//set_command[@command='comm
 Write-Output '4/6 active station target is visible in the child context and search/idle states carry no stale station target: OK'
 
 $newQueueOperations = @(
-    & git -C $repoRoot diff --find-renames=20% ef4d9bb0f296d90cc82b177af68d9af957b0173f --unified=0 -- 'mods/JP_TradeSubscriptionExplorer' 'mods/JP_ScriptLibrary' 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer' 'mods/JP_X4Mods/JP_ScriptLibrary' |
+    & git -C $repoRoot diff --find-renames=20% d2efdbda348179b465b4781948b0c9243e9fe2df --unified=0 -- 'mods/JP_TradeSubscriptionExplorer' 'mods/JP_ScriptLibrary' 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer' 'mods/JP_X4Mods/JP_ScriptLibrary' |
         Where-Object { $_ -match '^\+(?!\+\+).*<(?:create_order|cancel_order|cancel_all_orders)\b' }
 )
 Assert-Condition ($LASTEXITCODE -eq 0) 'Could not inspect queue changes since the Experience/Skill commit.'

@@ -9,12 +9,12 @@ Görl / JanPanthera. The source baseline in this repository was imported from:
 - upstream commit: `fa2c795883890062d05c936bc0077c3d85438249`
 - imported mod versions: ScriptLibrary 1.03 and TradeSubscriptionExplorer
   2.04, both dated 2023-07-19
-- local baseline commit: `8714522` (`Import original JanPanthera X4 mods`)
+- local baseline commit: `deead7b` (`Import original JanPanthera X4 mods`)
 
 The imported files were verified byte-for-byte against both that upstream
-commit and the archived GitHub source used to start the port. The first local
-commit intentionally contains the unmodified mod baseline; the subsequent
-history contains the maintenance work.
+commit and the archived GitHub source used to start the port. The first mod
+import commit intentionally contains the unmodified mod baseline; the
+subsequent history contains the maintenance work.
 
 The upstream repository includes an MIT License with this notice:
 
