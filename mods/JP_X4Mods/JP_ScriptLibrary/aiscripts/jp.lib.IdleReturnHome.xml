@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="jp.lib.IdleReturnHome" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+   <order id="JP_lib_IdleReturnHome" name="{8888888, 40}" category="internal" infinite="false" allowinloop="false" canplayercancel="true">
+      <params>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="IDLE_TIME"      type="internal" default="null"/>
+         <param name="IDLE_MOVE_TO"   type="internal" default="null"/>
+         <param name="WHERE_TO_MOVE"  type="internal" default="null"/>
+         <param name="START_POSITION" type="internal" default="null"/>
+         <param name="IDLE_FOLLOW"    type="internal" default="null"/>
+         <param name="WHO_TO_FOLLOW"  type="internal" default="null"/>
+         <param name="IDLE_DOCKING"   type="internal" default="null"/>
+         <param name="FIND_STATION"   type="internal" default="null"/>
+         <param name="WHERE_TO_DOCK"  type="internal" default="null"/>
+          <param name="STRICT_BLACKLIST" type="internal" default="false"/>
+          <param name="USE_KNOWN_PATH"   type="internal" default="this.ship.isplayerowned"/>
+          <param name="IDLE_DOCK_CANDIDATE_LIMIT" type="internal" default="10"/>
+          <param name="cannotdock"        type="internal" default="false"/>
+         <param name="FAILED_MOVE"       type="internal" default="false"/>
+         <param name="FAILED_FOLLOW"     type="internal" default="false"/>
+         <param name="FAILED_DOCK"       type="internal" default="false"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="debugchance" type="internal" default="0"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      </params>
+   </order>
+
+   <interrupts>
+      <handler comment="Handler to cancel IdleReturnHome Orders, add this also to all sub orders created by IdleReturnHome">
+         <conditions>
+            <event_object_signalled object="this.ship" param="'Cancel_IdleReturnHome'"/>
+         </conditions>
+         <actions>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=interrupt event=idle_interrupted result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
+            </do_if>
+            <cancel_order order="this.ship.order"/>
+         </actions>
+      </handler>
+   </interrupts>
+
+   <init>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$_Ship" exact="this.ship"/>
+      <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="global.$SL_IdleShips.{$_Ship}" exact="player.age"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <do_if value="$DEBUG gt 0">
+         <set_value name="$_DebugFolderName" exact="@$_DefaultOrderParamRef.$DEBUG_FOLDER_NAME"/>
+         <set_value name="$_DebugScriptName" exact="'jp.lib.IdleReturnHome'"/>
+         <set_value name="$_DebugFileName" exact="'TSE_Runtime.log'"/>
+      </do_if>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </init>
+
+   <attention min="unknown">
+      <actions>
+
+         <label name="INIT_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=lifecycle event=script_start result=active current_sector=%2 idle_time=%3 strictblacklist=%4 useknownpath=%5'.[$_Ship.idcode, $_Ship.sector.knownname, $IDLE_TIME, $STRICT_BLACKLIST, $USE_KNOWN_PATH]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=configuration event=priority result=move_follow_dock idle_move=%2 idle_follow=%3 idle_dock=%4 failed_move=%5 failed_follow=%6 failed_dock=%7 cannotdock=%8'.[$_Ship.idcode, $IDLE_MOVE_TO, $IDLE_FOLLOW, $IDLE_DOCKING, $FAILED_MOVE, $FAILED_FOLLOW, $FAILED_DOCK, $cannotdock]"/>
+         </do_if>
+
+         <do_if value="not $STRICT_BLACKLIST and not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
+            <set_value name="$IDLE_MOVE_TO" exact="true" chance="100"/>
+            <set_value name="$WHERE_TO_MOVE" exact="$START_POSITION"/>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <set_command_action commandaction="commandaction.standingby"/>
+         <do_if value="$STRICT_BLACKLIST and not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
+            <set_command command="command.wait"/>
+         </do_if>
+
+         <include_interrupt_actions ref="GetBlacklistgroup"/>
+
+         <do_if value="$STRICT_BLACKLIST">
+            <!-- Escape always precedes station, position, follow or dock targets.
+                 Pause the ordinary idle timer so a long multi-sector escape is
+                 not cancelled and restarted halfway through. -->
+            <do_if value="$_Ship.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=escape event=check_start result=pending reason=travel_blacklisted current_sector=%2'.[$_Ship.idcode, $_Ship.sector.knownname]"/>
+               </do_if>
+               <remove_value name="global.$SL_IdleShips.{$_Ship}"/>
+               <run_script name="'jp.lib.EscapeTravelBlacklist'" result="$_EscapeResult">
+                  <param name="USE_KNOWN_PATH" value="$USE_KNOWN_PATH"/>
+               </run_script>
+               <set_value name="global.$SL_IdleShips.{$_Ship}" exact="player.age"/>
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_TraceEscapeReason" exact="if $_EscapeResult == 'no_valid_path' then 'no_known_path' else $_EscapeResult"/>
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=escape event=check_result result=%2 reason=%3 current_sector=%4'.[$_Ship.idcode, $_EscapeResult, $_TraceEscapeReason, $_Ship.sector.knownname]"/>
+               </do_if>
+               <do_if value="$_EscapeResult != 'success'">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=backoff event=idle_full_backoff result=waiting reason=escape_failed idle_action=none'.[$_Ship.idcode]"/>
+                  </do_if>
+                  <wait exact="$IDLE_TIME"/>
+                  <resume label="END_LBL"/>
+               </do_if>
+            </do_if>
+
+            <set_value name="$_IdleActionFailed" exact="false"/>
+            <do_if value="$cannotdock">
+               <!-- Vanilla DockAt reports failure to this order through callerid. -->
+               <set_value name="$FAILED_DOCK" exact="true"/>
+               <set_value name="$cannotdock" exact="false"/>
+               <set_value name="$_IdleActionFailed" exact="true"/>
+               <edit_order_param order="this.assignedcontrolled.order" param="'FAILED_DOCK'" value="true"/>
+               <edit_order_param order="this.assignedcontrolled.order" param="'cannotdock'" value="false"/>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=child_failure_observed result=failed reason=cannotdock idle_action=dock failed_dock=true cannotdock=false'.[$_Ship.idcode]"/>
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_next_alternative result=continue reason=dock_failed'.[$_Ship.idcode]"/>
+               </do_if>
+            </do_if>
+
+            <!-- Idle Move: preflight and execution use the same effective policy. -->
+            <do_if value="$IDLE_MOVE_TO and not $FAILED_MOVE">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=move event=branch_check result=pending idle_action=move target_sector=%2 current_sector=%3'.[$_Ship.idcode, $WHERE_TO_MOVE.{1}.knownname, $_Ship.sector.knownname]"/>
+               </do_if>
+               <set_value name="$_IdleMoveAllowed" exact="false"/>
+               <find_sector name="$_AccessibleIdleMoveSector" space="player.galaxy" macro="$WHERE_TO_MOVE.{1}.macro" accessgrantedto="$_Ship.owner"/>
+               <do_if value="$_AccessibleIdleMoveSector == $WHERE_TO_MOVE.{1} and
+                             not $WHERE_TO_MOVE.{1}.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} and
+                             not $WHERE_TO_MOVE.{1}.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+                  <get_global_path component="$_IdlePathComponent" resultdistance="$_IdlePathDistance" refobject="$_Ship"
+                                   useblacklist="$blacklistgroup" useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
+                     <start object="$_Ship"/>
+                     <end object="$WHERE_TO_MOVE.{1}"/>
+                  </get_global_path>
+                  <set_value name="$_IdleMoveAllowed" exact="$_IdlePathDistance ge 0"/>
+               </do_if>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=move event=preflight_result result=%2 reason=%3 idle_action=move target_sector=%4 path_distance=%5'.[$_Ship.idcode, $_IdleMoveAllowed, if $_AccessibleIdleMoveSector != $WHERE_TO_MOVE.{1} then 'access_denied' else (if $WHERE_TO_MOVE.{1}.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship} then 'travel_blacklisted' else (if $WHERE_TO_MOVE.{1}.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} then 'activity_blacklisted' else (if not $_IdleMoveAllowed then 'no_known_path' else 'success'))), $WHERE_TO_MOVE.{1}.knownname, @$_IdlePathDistance]"/>
+               </do_if>
+               <do_if value="$_IdleMoveAllowed and $_Ship.distanceto.[$WHERE_TO_MOVE.{1}, $WHERE_TO_MOVE.{2}] gt 10km">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=move event=idle_move_selected result=selected reason=success target_sector=%2 position=%3'.[$_Ship.idcode, $WHERE_TO_MOVE.{1}.knownname, $WHERE_TO_MOVE.{2}]"/>
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=move event=move_start result=pending target_sector=%2 strictblacklist=true useknownpath=%3 recallsubordinates=false'.[$_Ship.idcode, $WHERE_TO_MOVE.{1}.knownname, $USE_KNOWN_PATH]"/>
+                  </do_if>
+                  <run_script name="'move.generic'" result="$_IdleMoveSuccess">
+                     <param name="destination" value="$WHERE_TO_MOVE.{1}"/>
+                     <param name="position" value="$WHERE_TO_MOVE.{2}"/>
+                     <param name="strictblacklist" value="true"/>
+                     <param name="useknownpath" value="$USE_KNOWN_PATH"/>
+                     <param name="recallsubordinates" value="false"/>
+                  </run_script>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=move event=move_return result=%2 reason=%3 current_sector=%4 target_sector=%5'.[$_Ship.idcode, $_IdleMoveSuccess, if $_IdleMoveSuccess then 'success' else 'move_failed', $_Ship.sector.knownname, $WHERE_TO_MOVE.{1}.knownname]"/>
+                  </do_if>
+                  <do_if value="$_IdleMoveSuccess">
+                     <resume label="END_LBL"/>
+                  </do_if>
+                  <set_value name="$FAILED_MOVE" exact="true"/>
+                  <set_value name="$_IdleActionFailed" exact="true"/>
+                  <edit_order_param order="this.assignedcontrolled.order" param="'FAILED_MOVE'" value="true"/>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_action_failed result=failed reason=move_failed idle_action=move'.[$_Ship.idcode]"/>
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_next_alternative result=continue reason=move_failed'.[$_Ship.idcode]"/>
+                  </do_if>
+               </do_if>
+               <do_elseif value="$DEBUG gt 0 and $_IdleMoveAllowed">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=move event=idle_action_unavailable result=skipped reason=not_required idle_action=move target_sector=%2'.[$_Ship.idcode, $WHERE_TO_MOVE.{1}.knownname]"/>
+               </do_elseif>
+            </do_if>
+
+            <!-- A successful Follow never returns.  Returning means the target
+                 became invalid or Vanilla movement failed, so another action may run. -->
+            <do_if value="$IDLE_FOLLOW and not $FAILED_FOLLOW">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=follow event=branch_check result=pending idle_action=follow target=%2'.[$_Ship.idcode, $WHO_TO_FOLLOW]"/>
+               </do_if>
+               <set_value name="$_IdleFollowAllowed" exact="false"/>
+               <do_if value="$WHO_TO_FOLLOW.exists and
+                             not $WHO_TO_FOLLOW.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} and
+                             not $WHO_TO_FOLLOW.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} and
+                             not $WHO_TO_FOLLOW.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+                  <find_sector name="$_AccessibleIdleFollowSector" space="player.galaxy" macro="$WHO_TO_FOLLOW.sector.macro" accessgrantedto="$_Ship.owner"/>
+                  <do_if value="$_AccessibleIdleFollowSector == $WHO_TO_FOLLOW.sector">
+                     <get_global_path component="$_IdlePathComponent" resultdistance="$_IdlePathDistance" refobject="$_Ship"
+                                      useblacklist="$blacklistgroup" useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
+                        <start object="$_Ship"/>
+                        <end object="$WHO_TO_FOLLOW"/>
+                     </get_global_path>
+                     <set_value name="$_IdleFollowAllowed" exact="$_IdlePathDistance ge 0"/>
+                  </do_if>
+               </do_if>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=follow event=preflight_result result=%2 reason=%3 idle_action=follow target=%4 target_sector=%5 path_distance=%6'.[$_Ship.idcode, $_IdleFollowAllowed, if not $WHO_TO_FOLLOW.exists then 'invalid_target' else (if $WHO_TO_FOLLOW.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} then 'object_blacklisted' else (if $WHO_TO_FOLLOW.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship} then 'travel_blacklisted' else (if $WHO_TO_FOLLOW.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} then 'activity_blacklisted' else (if $_AccessibleIdleFollowSector != $WHO_TO_FOLLOW.sector then 'access_denied' else (if not $_IdleFollowAllowed then 'no_known_path' else 'success'))))), $WHO_TO_FOLLOW, @$WHO_TO_FOLLOW.sector.knownname, @$_IdlePathDistance]"/>
+               </do_if>
+               <do_if value="$_IdleFollowAllowed">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=follow event=idle_follow_selected result=selected reason=success target=%2 target_sector=%3'.[$_Ship.idcode, $WHO_TO_FOLLOW, $WHO_TO_FOLLOW.sector.knownname]"/>
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=follow event=order_start result=pending target=%2 strictblacklist=true useknownpath=%3'.[$_Ship.idcode, $WHO_TO_FOLLOW, $USE_KNOWN_PATH]"/>
+                  </do_if>
+                  <run_script name="'order.move.follow'">
+                     <param name="IDLE_RETURN_HOME" value="true"/>
+                     <param name="target" value="$WHO_TO_FOLLOW"/>
+                     <param name="STRICT_BLACKLIST" value="true"/>
+                     <param name="USE_KNOWN_PATH" value="$USE_KNOWN_PATH"/>
+                  </run_script>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=follow event=order_return result=failed reason=follow_failed target=%2'.[$_Ship.idcode, $WHO_TO_FOLLOW]"/>
+                  </do_if>
+                  <set_value name="$FAILED_FOLLOW" exact="true"/>
+                  <set_value name="$_IdleActionFailed" exact="true"/>
+                  <edit_order_param order="this.assignedcontrolled.order" param="'FAILED_FOLLOW'" value="true"/>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_action_failed result=failed reason=follow_failed idle_action=follow'.[$_Ship.idcode]"/>
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_next_alternative result=continue reason=follow_failed'.[$_Ship.idcode]"/>
+                  </do_if>
+               </do_if>
+               <do_elseif value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=follow event=idle_action_unavailable result=skipped reason=follow_failed idle_action=follow target=%2'.[$_Ship.idcode, $WHO_TO_FOLLOW]"/>
+               </do_elseif>
+            </do_if>
+
+            <!-- DockAndWait stays infinite on success.  Its documented callerid
+                 channel makes a failed DockAt observable after this order restarts. -->
+            <do_if value="$IDLE_DOCKING and not $FAILED_DOCK">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=branch_check result=pending idle_action=dock target=%2 find_station=%3'.[$_Ship.idcode, $WHERE_TO_DOCK, $FIND_STATION]"/>
+               </do_if>
+               <set_value name="$_IdleDockAllowed" exact="false"/>
+               <do_if value="@$WHERE_TO_DOCK.dockingallowed.{$_Ship} and
+                             not $WHERE_TO_DOCK.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} and
+                             not $WHERE_TO_DOCK.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} and
+                             not $WHERE_TO_DOCK.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+                  <find_sector name="$_AccessibleIdleDockSector" space="player.galaxy" macro="$WHERE_TO_DOCK.sector.macro" accessgrantedto="$_Ship.owner"/>
+                  <do_if value="$_AccessibleIdleDockSector == $WHERE_TO_DOCK.sector">
+                     <get_global_path component="$_IdlePathComponent" resultdistance="$_IdlePathDistance" refobject="$_Ship"
+                                      useblacklist="$blacklistgroup" useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
+                        <start object="$_Ship"/>
+                        <end object="$WHERE_TO_DOCK"/>
+                     </get_global_path>
+                     <set_value name="$_IdleDockAllowed" exact="$_IdlePathDistance ge 0"/>
+                  </do_if>
+               </do_if>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=preflight_result result=%2 reason=%3 target=%4 target_sector=%5 path_distance=%6'.[$_Ship.idcode, $_IdleDockAllowed, if not @$WHERE_TO_DOCK.exists then 'invalid_target' else (if not @$WHERE_TO_DOCK.dockingallowed.{$_Ship} then 'cannotdock' else (if $WHERE_TO_DOCK.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} then 'object_blacklisted' else (if $WHERE_TO_DOCK.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship} then 'travel_blacklisted' else (if $WHERE_TO_DOCK.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} then 'activity_blacklisted' else (if $_AccessibleIdleDockSector != $WHERE_TO_DOCK.sector then 'inaccessible' else (if not $_IdleDockAllowed then 'no_known_path' else 'success')))))), $WHERE_TO_DOCK, @$WHERE_TO_DOCK.sector.knownname, @$_IdlePathDistance]"/>
+               </do_if>
+
+               <do_if value="not $_IdleDockAllowed and $FIND_STATION">
+                  <!-- Prefer the nearest gate-distance candidates and stop at
+                       the first target that passes the complete current-ship
+                       policy.  Do not estimate travel time for every known
+                       dockable station in the galaxy. -->
+                  <find_station name="$_FoundStations" space="player.galaxy" multiple="true"
+                                sortbygatedistancefrom="$_Ship" sortlimit="$IDLE_DOCK_CANDIDATE_LIMIT">
+                     <match knownto="$_Ship.owner"/>
+                     <match checkoperational="true"/>
+                     <match_relation_to faction="$_Ship.owner" comparison="ge" relation="dock"/>
+                     <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
+                     <match_use_blacklist object="$_Ship" type="blacklisttype.objectactivity" group="$blacklistgroup"/>
+                  </find_station>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_search_result result=complete candidate_count=%2'.[$_Ship.idcode, $_FoundStations.count]"/>
+                     <set_value name="$_IdleDockCandidatesChecked" exact="0"/>
+                     <set_value name="$_IdleDockPathChecks" exact="0"/>
+                  </do_if>
+                  <do_for_each name="$_FoundStation" in="$_FoundStations">
+                     <do_if value="$DEBUG gt 0">
+                        <set_value name="$_IdleDockCandidatesChecked" operation="add" exact="1"/>
+                     </do_if>
+                     <do_if value="$_FoundStation.dockingallowed.{$_Ship} and
+                                   not $_FoundStation.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+                        <find_sector name="$_AccessibleIdleDockSector" space="player.galaxy" macro="$_FoundStation.sector.macro" accessgrantedto="$_Ship.owner"/>
+                        <do_if value="$_AccessibleIdleDockSector == $_FoundStation.sector">
+                           <do_if value="$DEBUG gt 0">
+                              <set_value name="$_IdleDockPathChecks" operation="add" exact="1"/>
+                           </do_if>
+                           <get_global_path component="$_IdlePathComponent" resultdistance="$_IdlePathDistance" refobject="$_Ship"
+                                            useblacklist="$blacklistgroup" useknownpath="$USE_KNOWN_PATH" uselocalhighways="not $_Ship.iscapitalship">
+                              <start object="$_Ship"/>
+                              <end object="$_FoundStation"/>
+                           </get_global_path>
+                           <do_if value="$_IdlePathDistance ge 0">
+                              <set_value name="$WHERE_TO_DOCK" exact="$_FoundStation"/>
+                              <set_value name="$_IdleDockAllowed" exact="true"/>
+                              <do_if value="$DEBUG gt 0">
+                                 <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_candidate_accepted result=accepted reason=success target=%2 target_sector=%3 path_distance=%4'.[$_Ship.idcode, $_FoundStation, $_FoundStation.sector.knownname, $_IdlePathDistance]"/>
+                              </do_if>
+                              <break/>
+                           </do_if>
+                           <do_elseif value="$DEBUG gt 0">
+                              <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_candidate_excluded result=excluded reason=no_known_path target=%2 target_sector=%3 path_distance=%4'.[$_Ship.idcode, $_FoundStation, $_FoundStation.sector.knownname, $_IdlePathDistance]"/>
+                           </do_elseif>
+                        </do_if>
+                        <do_elseif value="$DEBUG gt 0">
+                           <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_candidate_excluded result=excluded reason=inaccessible target=%2 target_sector=%3'.[$_Ship.idcode, $_FoundStation, $_FoundStation.sector.knownname]"/>
+                        </do_elseif>
+                     </do_if>
+                     <do_elseif value="$DEBUG gt 0">
+                        <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_candidate_excluded result=excluded reason=%2 target=%3 target_sector=%4'.[$_Ship.idcode, if not $_FoundStation.dockingallowed.{$_Ship} then 'cannotdock' else 'travel_blacklisted', $_FoundStation, $_FoundStation.sector.knownname]"/>
+                     </do_elseif>
+                  </do_for_each>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-PERF] event=idle_dock ship=%1 candidates_found=%2 candidates_checked=%3 path_checks=%4 selected=%5 target=%6'.[$_Ship.idcode, $_FoundStations.count, $_IdleDockCandidatesChecked, $_IdleDockPathChecks, $_IdleDockAllowed, $WHERE_TO_DOCK]"/>
+                     <do_if value="$_IdleDockAllowed">
+                        <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_target_selected result=selected reason=success target=%2 target_sector=%3 candidate_count=%4'.[$_Ship.idcode, $WHERE_TO_DOCK, $WHERE_TO_DOCK.sector.knownname, $_FoundStations.count]"/>
+                     </do_if>
+                  </do_if>
+                  <remove_value name="$_FoundStations"/>
+               </do_if>
+
+               <do_if value="$_IdleDockAllowed">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=idle_dock_selected result=selected reason=success target=%2 target_sector=%3'.[$_Ship.idcode, $WHERE_TO_DOCK, $WHERE_TO_DOCK.sector.knownname]"/>
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=order_start result=pending target=%2 callerid=%3 cannotdock=%4'.[$_Ship.idcode, $WHERE_TO_DOCK, this.assignedcontrolled.order, $cannotdock]"/>
+                  </do_if>
+                  <create_order object="$_Ship" id="'DockAndWait'" immediate="true">
+                     <param name="IDLE_RETURN_HOME" value="true"/>
+                     <param name="destination" value="$WHERE_TO_DOCK"/>
+                     <param name="timeout" value="999h"/>
+                     <param name="internalorder" value="true"/>
+                     <param name="callerid" value="this.assignedcontrolled.order"/>
+                  </create_order>
+                  <wait exact="1ms"/>
+               </do_if>
+               <do_elseif value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=dock event=idle_action_unavailable result=skipped reason=cannotdock idle_action=dock target=%2'.[$_Ship.idcode, $WHERE_TO_DOCK]"/>
+               </do_elseif>
+            </do_if>
+
+            <do_if value="$_IdleActionFailed">
+               <!-- Backoff is only reached after an observed child failure and
+                    only when no alternative action remained successful. -->
+               <set_value name="global.$SL_IdleShips.{$_Ship}" exact="player.age"/>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=backoff event=idle_full_backoff result=waiting reason=idle_backoff idle_action=none'.[$_Ship.idcode]"/>
+               </do_if>
+               <wait exact="$IDLE_TIME"/>
+            </do_if>
+            <do_else>
+               <!-- No action was needed or currently allowed: remain in the
+                    normal idle state until the existing MD timer wakes TSE. -->
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=backoff event=idle_full_backoff result=waiting reason=idle_backoff idle_action=none'.[$_Ship.idcode]"/>
+               </do_if>
+               <wait/>
+            </do_else>
+            <resume label="END_LBL"/>
+         </do_if>
+
+         <!-- Preserve the original non-strict fallback for other users of the library. -->
+         <label name="IDLE_MOVE_TO_LBL"/>
+         <do_if value="$IDLE_MOVE_TO">
+            <do_if value="$_Ship.distanceto.[$WHERE_TO_MOVE.{1}, $WHERE_TO_MOVE.{2}] gt 10km">
+               <create_order id="'JP_lib_MoveToPosition'" object="$_Ship" immediate="true">
+                  <param name="SECTOR" value="$WHERE_TO_MOVE.{1}"/>
+                  <param name="POSITION" value="$WHERE_TO_MOVE.{2}"/>
+               </create_order>
+               <wait exact="1ms"/>
+            </do_if>
+            <do_else>
+               <wait exact="$IDLE_TIME"/>
+            </do_else>
+         </do_if>
+
+         <label name="IDLE_FOLLOW_LBL"/>
+         <do_if value="$IDLE_FOLLOW">
+            <do_if value="$WHO_TO_FOLLOW == null">
+               <set_value name="$IDLE_MOVE_TO" exact="true"/>
+               <resume label="IDLE_MOVE_TO_LBL"/>
+            </do_if>
+            <create_order object="$_Ship" id="'Follow'" immediate="true">
+               <param name="IDLE_RETURN_HOME" value="true"/>
+               <param name="target" value="$WHO_TO_FOLLOW"/>
+            </create_order>
+            <wait exact="1ms"/>
+         </do_if>
+
+         <label name="IDLE_DOCKING_LBL"/>
+         <do_if value="$IDLE_DOCKING">
+            <do_if value="not @$WHERE_TO_DOCK.dockingallowed.{$_Ship}">
+               <do_if value="$FIND_STATION">
+                  <find_station name="$_FoundStations" space="player.galaxy" multiple="true">
+                     <match knownto="$_Ship.owner"/>
+                     <match checkoperational="true"/>
+                     <match_relation_to faction="$_Ship.owner" comparison="ge" relation="dock"/>
+                  </find_station>
+                  <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_FoundStations">
+                     <param name="LIST" value="$_FoundStations"/>
+                  </run_script>
+                  <do_for_each name="$_FoundStation" in="$_FoundStations">
+                     <do_if value="$_FoundStation.dockingallowed.{$_Ship}">
+                        <set_value name="$WHERE_TO_DOCK" exact="$_FoundStation"/>
+                        <break/>
+                     </do_if>
+                  </do_for_each>
+               </do_if>
+               <do_if value="not @$WHERE_TO_DOCK.dockingallowed.{$_Ship}">
+                  <set_value name="$IDLE_MOVE_TO" exact="true"/>
+                  <resume label="IDLE_MOVE_TO_LBL"/>
+               </do_if>
+            </do_if>
+            <create_order object="$_Ship" id="'DockAndWait'" immediate="true">
+               <param name="IDLE_RETURN_HOME" value="true"/>
+               <param name="destination" value="$WHERE_TO_DOCK"/>
+               <param name="timeout" value="999h"/>
+            </create_order>
+            <wait exact="1ms"/>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <label name="END_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=lifecycle event=script_end result=complete reason=idle_backoff current_sector=%2'.[$_Ship.idcode, $_Ship.sector.knownname]"/>
+         </do_if>
+
+      </actions>
+   </attention>
+
+   <on_abort>
+      <!-- If an external order aborts the escape while the ordinary idle timer
+           is suspended, re-register the ship so the existing MD cleanup removes
+           the idle name/state on its next pass. -->
+      <do_if value="$STRICT_BLACKLIST and not @global.$SL_IdleShips.{$_Ship}">
+         <set_value name="global.$SL_IdleShips.{$_Ship}" exact="player.age"/>
+      </do_if>
+      <do_if value="$DEBUG gt 0">
+         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[SLIBAI] ' + player.age + ' *** jp.lib.IdleReturnHome:' + '[TSE-TRACE] source=idle_return_home ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted current_sector=%2'.[$_Ship.idcode, $_Ship.sector.knownname]"/>
+      </do_if>
+   </on_abort>
+
+</aiscript>

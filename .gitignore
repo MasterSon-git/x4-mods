@@ -427,3 +427,18 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Local X4 mod workspace and extracted game data
+/_gsdata_/
+/_UnpackedGameFiles/
+/JP_X4Mods_2023/
+/JP_X4Mods_Old/
+/JP_TestMod/
+/x4-reference/
+/reference/
+/local/
+
+# Local X4 runtime and save data
+**/debuglog.txt
+*.sav
+*.sav.gz

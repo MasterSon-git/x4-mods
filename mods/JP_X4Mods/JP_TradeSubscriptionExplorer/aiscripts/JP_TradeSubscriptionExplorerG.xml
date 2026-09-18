@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="JP_TradeSubscriptionExplorerG" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd" version="1">
+
+   <order id="JP_TradeSubscriptionExplorerG" name="{8888888, 97}Trade Subscription Explorer - {8888888, 99}{8888888, 98}{20001, 901}{8888888, 99}" description="{8888888, 1971}" category="navigation" infinite="true" allowinloop="false">
+      <params>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="PLACE_HOLDER_000" text="----------------------------------" type="object" default="null">
+            <input_param name="class" value="[]"/>
+            <input_param name="playerreadonly" value="true"/>
+         </param>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="SECTOR" text="{20001, 201}" comment="Sector" type="internal" default="this.ship.sector">
+            <input_param name="class" value="class.sector"/>
+         </param>
+         <param name="OWNERLESS_SECTORS" text="{8888888, 30}" comment="Ownerless Sectors?" type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{1} else true"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="PLACE_HOLDER_001" text="----------------------------------" type="object" default="null">
+            <input_param name="class" value="[]"/>
+            <input_param name="playerreadonly" value="true"/>
+         </param>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="WHARFS"               text="- {8888888, 11}" comment="Wharfs?"                      type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{2} else true"/>
+         <param name="SHIPYARDS"            text="- {8888888, 12}" comment="Shipyards?"                   type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{3} else true"/>
+         <param name="EQUIPMENTDOCKS"       text="- {8888888, 13}" comment="Equipment docks?"             type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{4} else true"/>
+         <param name="TRADING_STATIONS"     text="- {8888888, 14}" comment="Trading stations?"            type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{5} else true"/>
+         <param name="PIRATE_BASES"         text="- {8888888, 15}" comment="Pirate bases?"                type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{6} else true"/>
+         <param name="RECYCLING_FACILITIES"   text="- {8888888, 16}" comment="Scrap processing facilities?" type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{7} else true"/>
+         <param name="DEFENCE_STATIONS"     text="- {8888888, 17}" comment="Defense stations?"            type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{8} else true"/>
+         <param name="FACTION_HEADQUARTERS" text="- {8888888, 18}" comment="Faction Headquarters?"        type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{9} else true"/>
+         <param name="NON_SPECIAL_STATIONS" text="- {8888888, 19}" comment="Factories?"                   type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{10} else true"/>
+         <param name="CONSTRUCTION_SITES"   text="- {8888888, 20}" comment="Construction Sites?"          type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{11} else false"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="PLACE_HOLDER_996" text="----------------------------------" type="object" default="null">
+            <input_param name="class" value="[]"/>
+            <input_param name="playerreadonly" value="true"/>
+         </param>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="IDLE_TITLE" type="internal" default="{8888888, 1960}" comment="\033#FFe27100#Trade subscriptions renewal paused\033X"/>
+         <param name="IDLE_TIME" text="{8888888, 80}" comment="Idle Time" type="time" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{12} else 600s">
+            <input_param name="min" value="60s"/>
+            <input_param name="max" value="3600s"/>
+            <input_param name="step" value="10s"/>
+         </param>
+         <param name="IDLE_MOVE_TO" text="{8888888, 81}" comment="Idle: Move to?" type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{13} else true"/>
+         <param name="WHERE_TO_MOVE" text="- {8888888, 82}" comment="Where to move?" type="position" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{14} else [this.ship.sector, this.ship.sector.coreposition]">
+            <input_param name="class" value="class.sector"/>
+         </param>
+         <param name="START_POSITION" type="internal" default="[this.ship.sector, this.ship.position]"/>
+         <param name="IDLE_FOLLOW" text="{8888888, 83}" comment="Idle: Follow?" type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{15} else false"/>
+         <param name="WHO_TO_FOLLOW" text="- {8888888, 84}" comment="Who to follow?" type="object" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{16} else null">
+            <input_param name="class" value="[class.ship]"/>
+         </param>
+         <param name="IDLE_DOCKING" text="{8888888, 85}" comment="Idle: Docking?" type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{17} else false"/>
+         <param name="FIND_STATION" text="- {8888888, 86}" comment="Find a Station?" type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{18} else true"/>
+         <param name="WHERE_TO_DOCK" text="- {8888888, 87}" comment="Where to dock?" type="object" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{19} else null">
+            <input_param name="class" value="if this.ship.isclass.[class.ship_s, class.ship_xs] then [class.station, class.ship_m, class.ship_l, class.ship_xl] else [class.station, class.ship_l, class.ship_xl]"/>
+         </param>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="PLACE_HOLDER_997" text="----------------------------------" type="object" default="null">
+            <input_param name="class" value="[]"/>
+            <input_param name="playerreadonly" value="true"/>
+         </param>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="SHOW_MESSAGES" text="{8888888, 90}" comment="Show Messages?" type="number" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{20} else 1">
+            <input_param name="min" value="0"/>
+            <input_param name="max" value="3"/>
+            <input_param name="step" value="1"/>
+         </param>
+         <param name="WRITE_TO_LOG" text="{8888888, 91}" comment="Write to logbook?" type="number" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{21} else 3">
+            <input_param name="min" value="0"/>
+            <input_param name="max" value="3"/>
+            <input_param name="step" value="1"/>
+         </param>
+         <param name="ADD_ORDER_TAG" text="{8888888, 92}" comment="Add order tag?" type="bool" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{22} else true"/>
+         <param name="SAVE_ORDER_SETTINGS" text="{8888888, 93}" comment="Save Order Settings?" type="bool" default="false"/>
+         <param name="RESET_ORDER_SETTINGS" text="{8888888, 94}" comment="Reset Order Settings?" type="bool" default="false"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="PLACE_HOLDER_998" text="----------------------------------" type="object" default="null">
+            <input_param name="class" value="[]"/>
+            <input_param name="playerreadonly" value="true"/>
+         </param>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="DEBUG_FOLDER_NAME" type="internal" default="'JP_TradeSubscriptionExplorer.logs'"/>
+         <param name="DEBUG" text="Debug" type="number" default="if global.$TradeSubscriptionExplorer_Settings? then global.$TradeSubscriptionExplorer_Settings.{23} else 0" advanced="true">
+            <input_param name="min" value="0"/>
+            <input_param name="max" value="100"/>
+            <input_param name="step" value="100"/>
+         </param>
+         <param name="debugchance" type="internal" default="0"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="PLACE_HOLDER_999" text="----------------------------------" type="object" default="null" advanced="true">
+            <input_param name="class" value="[]"/>
+            <input_param name="playerreadonly" value="true"/>
+         </param>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      </params>
+      <skill min="40"/>
+      <requires>
+         <match shiptype="shiptype.lasertower" negate="true"/>
+      </requires>
+   </order>
+
+   <interrupts>
+      <handler ref="AttackHandler"/>
+      <handler ref="MissileLockHandler" />
+      <handler ref="ScannedHandler"/>
+      <handler ref="InspectedHandler"/>
+      <handler ref="FoundAbandonedHandler"/>
+      <handler ref="FoundLockboxHandler"/>
+      <handler ref="ResupplyHandler"/>
+      <handler ref="TideHandler"/>
+   </interrupts>
+
+   <init>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$_Ship" exact="this.ship"/>
+      <add_to_group groupname="global.$TSE_ShipsGroup" object="$_Ship"/>
+      <!-- Stable 0-4 second scheduler offset.  The configured idle time
+           remains the semantic base duration. -->
+      <set_value name="$_WakeOffset" exact="(abs($_Ship.seed) % 5) * 1s"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <do_if value="$DEBUG gt 0">
+         <set_value name="$_DebugFolderName" exact="$DEBUG_FOLDER_NAME"/>
+         <set_value name="$_DebugScriptName" exact="'JP_TradeSubscriptionExplorerG'"/>
+         <set_value name="$_DebugFileName" exact="'TSE_Runtime.log'"/>
+         <set_value name="$_TraceCycle" exact="0"/>
+      </do_if>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </init>
+
+   <attention min="unknown">
+      <actions>
+
+         <label name="INIT_LBL"/>
+         <!-- Ships can briefly have no sector while changing spaces.  Wait for
+              the transition to finish before evaluating sector properties. -->
+         <do_if value="not @$_Ship.sector.exists">
+            <wait exact="1s"/>
+            <resume label="INIT_LBL"/>
+         </do_if>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=lifecycle event=script_start result=active mode=galaxy debug=%2 current_sector=%3'.[$_Ship.idcode, $DEBUG, $_Ship.sector.knownname]"/>
+            <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=order event=order_start result=active mode=galaxy'.[$_Ship.idcode]"/>
+         </do_if>
+
+         <do_if value="$SAVE_ORDER_SETTINGS">
+            <create_list name="global.$TradeSubscriptionExplorer_Settings" chance="if global.$TradeSubscriptionExplorer_Settings? then 0 else 100"/>
+            <clear_list list="global.$TradeSubscriptionExplorer_Settings" chance="if global.$TradeSubscriptionExplorer_Settings? then 100 else 0"/>
+            <append_list_elements name="global.$TradeSubscriptionExplorer_Settings"
+                                  other="[$OWNERLESS_SECTORS,
+                                          $WHARFS, $SHIPYARDS, $EQUIPMENTDOCKS, $TRADING_STATIONS,
+                                          $PIRATE_BASES, $RECYCLING_FACILITIES, $DEFENCE_STATIONS,
+                                          $FACTION_HEADQUARTERS, $NON_SPECIAL_STATIONS, $CONSTRUCTION_SITES,
+                                          $IDLE_TIME, $IDLE_MOVE_TO, $WHERE_TO_MOVE, $IDLE_FOLLOW,
+                                          $WHO_TO_FOLLOW, $IDLE_DOCKING, $FIND_STATION, $WHERE_TO_DOCK,
+                                          $SHOW_MESSAGES, $WRITE_TO_LOG, $ADD_ORDER_TAG, $DEBUG]"/>
+            <run_script name="'jp.lib.MessageLog'">
+               <param name="TEXT"  value="{8888888, 95}"/>
+            </run_script>
+            <resume label="FINISH_LBL"/>
+         </do_if>
+
+         <do_if value="$RESET_ORDER_SETTINGS">
+            <remove_value name="global.$TradeSubscriptionExplorer_Settings"/>
+            <run_script name="'jp.lib.MessageLog'">
+               <param name="TEXT"  value="{8888888, 96}"/>
+            </run_script>
+            <resume label="FINISH_LBL"/>
+         </do_if>
+
+         <do_if value="$ADD_ORDER_TAG">
+            <substitute_text source="$_Ship.knownname" text="$_ResultName">
+               <replace string="'\033#FFA95908#[TSE]\033X '" with="''"/>
+               <replace string="'\033#FFA95908##TSE-S\033X ~ '" with="''"/>
+               <replace string="'\033#FFA95908##TSE-G\033X ~ '" with="''"/>
+               <replace string="'\033#FFCEFBA1# ~ Idle\033X'" with="''"/>
+            </substitute_text>
+            <set_value name="$_TaggedName" exact="'\033#FFA95908#[TSE]\033X ' + $_ResultName"/>
+            <do_if value="$_Ship.knownname != $_TaggedName">
+               <set_object_name object="$_Ship" name="$_TaggedName"/>
+            </do_if>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <label name="SEARCH_LBL"/>
+         <do_if value="not @$_Ship.sector.exists">
+            <wait exact="1s"/>
+            <resume label="SEARCH_LBL"/>
+         </do_if>
+         <set_command command="command.investigate"/>
+         <set_command_action commandaction="commandaction.calculating"/>
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceCycle" operation="add" exact="1"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_start result=active mode=galaxy cycle=%2 current_sector=%3'.[$_Ship.idcode, $_TraceCycle, $_Ship.sector.knownname]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=escape event=check_start result=pending cycle=%2 current_sector=%3'.[$_Ship.idcode, $_TraceCycle, $_Ship.sector.knownname]"/>
+         </do_if>
+
+         <!-- Every subordinate evaluates and escapes with its own effective
+              blacklist; the commander sector is not an allow-list exception. -->
+         <run_script name="'jp.lib.EscapeTravelBlacklist'" result="$_EscapeResult">
+            <param name="USE_KNOWN_PATH" value="true"/>
+         </run_script>
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceEscapeReason" exact="if $_EscapeResult == 'no_valid_path' then 'no_known_path' else $_EscapeResult"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=escape event=check_result result=%2 reason=%3 cycle=%4 current_sector=%5'.[$_Ship.idcode, $_EscapeResult, $_TraceEscapeReason, $_TraceCycle, $_Ship.sector.knownname]"/>
+         </do_if>
+         <do_if value="$_EscapeResult != 'not_required' and $_EscapeResult != 'success'">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=idle event=idle_enter result=waiting reason=escape_failed cycle=%2 idle_action=wait'.[$_Ship.idcode, $_TraceCycle]"/>
+               <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=order event=escape_failed result=%2 reason=escape_failed'.[$_Ship.idcode, $_EscapeResult]"/>
+            </do_if>
+            <wait exact="$IDLE_TIME"/>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_restart result=retry reason=idle_backoff cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+            </do_if>
+            <resume label="SEARCH_LBL"/>
+         </do_if>
+
+         <create_list name="$_FoundStations"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=search event=candidate_search_start result=pending mode=galaxy cycle=%2 current_sector=%3'.[$_Ship.idcode, $_TraceCycle, $_Ship.sector.knownname]"/>
+         </do_if>
+         <run_script name="'jp.lib.TSE.GetTradesubscriptionsToUpdate'" result="$_FoundStations">
+            <param name="OWNERLESS_SECTORS"       value="$OWNERLESS_SECTORS"/>
+            <param name="WHARFS"                  value="$WHARFS"/>
+            <param name="SHIPYARDS"               value="$SHIPYARDS"/>
+            <param name="EQUIPMENTDOCKS"          value="$EQUIPMENTDOCKS"/>
+            <param name="TRADING_STATIONS"        value="$TRADING_STATIONS"/>
+            <param name="PIRATE_BASES"            value="$PIRATE_BASES"/>
+            <param name="RECYCLING_FACILITIES"      value="$RECYCLING_FACILITIES"/>
+            <param name="DEFENCE_STATIONS"        value="$DEFENCE_STATIONS"/>
+            <param name="FACTION_HEADQUARTERS"    value="$FACTION_HEADQUARTERS"/>
+            <param name="NON_SPECIAL_STATIONS"    value="$NON_SPECIAL_STATIONS"/>
+            <param name="CONSTRUCTION_SITES"      value="$CONSTRUCTION_SITES"/>
+         </run_script>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=search event=candidate_search_result result=complete mode=galaxy cycle=%2 candidate_count=%3'.[$_Ship.idcode, $_TraceCycle, $_FoundStations.count]"/>
+         </do_if>
+
+         <do_if value="$_FoundStations.count == 0">
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceIdleReason" exact="'no_candidates'"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=idle event=idle_reason result=selected reason=no_candidates cycle=%2 candidate_count=0'.[$_Ship.idcode, $_TraceCycle]"/>
+            </do_if>
+            <!-- There are no remaining stations within my defined workspace that require a trade subscription update. -->
+            <run_script name="'jp.lib.MessageLog'">
+               <param name="TEXT"  value="'%1\n%2'.[$IDLE_TITLE, ({8888888, 1961} + '\n' + {8888888, 55})]"/>
+            </run_script>
+            <resume label="IDLE_LBL"/>
+         </do_if>
+
+         <set_value name="$_CycleMadeProgress" exact="false"/>
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceCandidateIndex" exact="0"/>
+            <set_value name="$_TraceSucceeded" exact="0"/>
+            <set_value name="$_TraceSkipped" exact="0"/>
+            <set_value name="$_TraceFailed" exact="0"/>
+         </do_if>
+         <do_for_each name="$_CandidateStation" in="$_FoundStations">
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceCandidateIndex" operation="add" exact="1"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_start result=pending cycle=%2 candidate_index=%3 target=%4 target_sector=%5'.[$_Ship.idcode, $_TraceCycle, $_TraceCandidateIndex, $_CandidateStation.idcode, $_CandidateStation.sector.knownname]"/>
+            </do_if>
+            <run_script name="'jp.lib.TSE.UpdateSubscription'" result="$_UpdateResult">
+               <param name="SECTOR" value="global.$TSE_ShipsCurrentSectorTable.{$_Ship}"/>
+               <param name="STATION" value="$_CandidateStation"/>
+            </run_script>
+            <do_if value="$_UpdateResult == 'success' or $_UpdateResult == 'already_current'">
+               <set_value name="$_CycleMadeProgress" exact="true"/>
+               <do_if value="global.$TSE_GalaxyCandidateStations?">
+                  <remove_from_list name="global.$TSE_GalaxyCandidateStations" exact="$_CandidateStation"/>
+               </do_if>
+            </do_if>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceUpdateReason" exact="if $_UpdateResult == 'target_invalid' then 'invalid_target' else if $_UpdateResult == 'target_disallowed' then 'access_denied' else if $_UpdateResult == 'no_valid_path' then 'no_known_path' else $_UpdateResult"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_result result=%2 reason=%3 cycle=%4 candidate_index=%5 target=%6'.[$_Ship.idcode, $_UpdateResult, $_TraceUpdateReason, $_TraceCycle, $_TraceCandidateIndex, $_CandidateStation.idcode]"/>
+               <do_if value="$_UpdateResult == 'success'">
+                  <set_value name="$_TraceSucceeded" operation="add" exact="1"/>
+               </do_if>
+               <do_elseif value="$_UpdateResult == 'already_current'">
+                  <set_value name="$_TraceSkipped" operation="add" exact="1"/>
+               </do_elseif>
+               <do_else>
+                  <set_value name="$_TraceFailed" operation="add" exact="1"/>
+               </do_else>
+            </do_if>
+            <do_if value="$_UpdateResult == 'move_failed' or $_UpdateResult == 'approach_failed'">
+               <continue/>
+            </do_if>
+         </do_for_each>
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceIdleReason" exact="if $_TraceFailed == $_FoundStations.count then 'all_candidates_failed' else 'all_candidates_processed'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=update event=candidate_summary result=complete reason=%2 cycle=%3 candidate_count=%4 succeeded=%5 skipped=%6 failed=%7'.[$_Ship.idcode, $_TraceIdleReason, $_TraceCycle, $_FoundStations.count, $_TraceSucceeded, $_TraceSkipped, $_TraceFailed]"/>
+         </do_if>
+         <do_if value="$_CycleMadeProgress">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_restart result=continue reason=candidates_processed cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+            </do_if>
+            <resume label="SEARCH_LBL"/>
+         </do_if>
+         <resume label="IDLE_LBL"/>
+
+         <label name="IDLE_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=idle event=idle_enter result=selected reason=%2 cycle=%3 idle_action=idle_return_home'.[$_Ship.idcode, $_TraceIdleReason, $_TraceCycle]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=cycle event=cycle_end result=idle reason=idle_backoff cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+         </do_if>
+
+         <!-- I will switch to idle mode and try again later. -->
+         <create_order object="$_Ship" id="'JP_lib_IdleReturnHome'" immediate="true">
+            <param name="IDLE_TIME"      value="$IDLE_TIME + $_WakeOffset"/>
+            <param name="IDLE_MOVE_TO"   value="$IDLE_MOVE_TO"/>
+            <param name="WHERE_TO_MOVE"  value="$WHERE_TO_MOVE"/>
+            <param name="START_POSITION" value="$START_POSITION"/>
+            <param name="IDLE_FOLLOW"    value="$IDLE_FOLLOW"/>
+            <param name="WHO_TO_FOLLOW"  value="$WHO_TO_FOLLOW"/>
+            <param name="IDLE_DOCKING"   value="$IDLE_DOCKING"/>
+            <param name="FIND_STATION"   value="$FIND_STATION"/>
+            <param name="WHERE_TO_DOCK"  value="$WHERE_TO_DOCK"/>
+            <param name="STRICT_BLACKLIST" value="true"/>
+            <param name="USE_KNOWN_PATH"   value="true"/>
+         </create_order>
+         <wait exact="1ms"/>
+
+         <label name="FINISH_LBL"/>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <label name="END_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=lifecycle event=script_end result=complete reason=order_changed cycle=%2'.[$_Ship.idcode, $_TraceCycle]"/>
+            <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=order event=order_end result=complete reason=order_changed'.[$_Ship.idcode]"/>
+         </do_if>
+
+         <set_order_syncpoint_reached order="this.ship.defaultorder"/>
+         <create_order object="this.ship" id="'Wait'" default="true"/>
+
+      </actions>
+   </attention>
+
+   <on_abort>
+      <do_if value="$DEBUG gt 0">
+         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
+         <debug_text filter="scripts" text="'[TSEAI ] ' + player.age + ' *** JP_TradeSubscriptionExplorerG:' + '[TSE-TRACE] source=tse_g ship=%1 phase=order event=order_abort result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
+      </do_if>
+   </on_abort>
+
+</aiscript>

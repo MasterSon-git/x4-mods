@@ -1,0 +1,570 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="jp.lib.TSE.GetTradesubscriptionsToUpdate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+   <params>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <param name="SECTOR"            default="null"/>
+      <param name="OWNERLESS_SECTORS" default="true"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <param name="WHARFS"               default="false"/>
+      <param name="SHIPYARDS"            default="false"/>
+      <param name="EQUIPMENTDOCKS"       default="false"/>
+      <param name="TRADING_STATIONS"     default="false"/>
+      <param name="PIRATE_BASES"         default="false"/>
+      <param name="RECYCLING_FACILITIES" default="false"/>
+      <param name="DEFENCE_STATIONS"     default="false"/>
+      <param name="FACTION_HEADQUARTERS" default="false"/>
+      <param name="NON_SPECIAL_STATIONS" default="false"/>
+      <param name="CONSTRUCTION_SITES"   default="false"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <param name="CACHE_TTL"             default="1min"/>
+      <param name="CACHE_BUILD_TIMEOUT"   default="5min"/>
+      <param name="COORDINATOR_WAIT"      default="5s"/>
+      <param name="CACHE_BUILD_YIELD"     default="1s"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <param name="debugchance" default="0"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </params>
+
+   <init>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$_Ship" exact="this.ship"/>
+      <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$_CacheTTL" exact="if @$_DefaultOrderParamRef.$IDLE_TIME then $_DefaultOrderParamRef.$IDLE_TIME else $CACHE_TTL"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <create_list name="$_Sectors"/>
+      <create_list name="$_FoundStations"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <append_to_list name="$_Sectors" exact="$SECTOR" chance="if @$SECTOR != null then 100 else 0"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <do_if value="$DEBUG gt 0">
+         <set_value name="$_DebugFolderName" exact="@$_DefaultOrderParamRef.$DEBUG_FOLDER_NAME"/>
+         <set_value name="$_DebugScriptName" exact="'jp.lib.TSE.GetTradesubscriptionsToUpdate'"/>
+         <set_value name="$_DebugFileName" exact="'TSE_Runtime.log'"/>
+         <set_value name="$_TraceSectorIndex" exact="0"/>
+         <set_value name="$_TraceCandidateIndex" exact="0"/>
+         <set_value name="$_PerfScanStartTime" exact="player.age"/>
+         <set_value name="$_PerfGalaxyScan" exact="$SECTOR == null"/>
+         <set_value name="$_PerfSectorsConsidered" exact="0"/>
+         <set_value name="$_PerfSectorsAccepted" exact="0"/>
+         <set_value name="$_PerfStationsConsidered" exact="0"/>
+         <set_value name="$_PerfStationsStale" exact="0"/>
+         <set_value name="$_PerfPathChecks" exact="0"/>
+         <set_value name="$_PerfTravelTimeChecks" exact="0"/>
+      </do_if>
+      <set_value name="$_CoordinatorWaitingRegistered" exact="false"/>
+      <set_value name="global.$TSEGalaxyScanWaitingWorkers" exact="0" chance="if not global.$TSEGalaxyScanWaitingWorkers? then 100 else 0"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </init>
+
+   <attention min="unknown">
+      <actions>
+
+         <label name="INIT_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=lifecycle event=script_start result=active mode=%2 current_sector=%3 target_sector=%4'.[$_Ship.idcode, if $SECTOR == null then 'galaxy' else 'sector', $_Ship.sector.knownname, if $SECTOR == null then 'none' else $SECTOR.knownname]"/>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <set_command command="command.scan"/>
+         <set_command_action commandaction="commandaction.calculating"/>
+
+         <label name="RESUME_LBL"/>
+
+         <!-- Vanilla trade.find.commander uses an owning worker plus bounded
+              waits to de-parallelize expensive searches.  Keep the existing
+              TSE critical section, but make its owner recoverable and remove
+              the previous 1 ms hot polling loop. -->
+         <do_if value="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing? and
+                       global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing != $_Ship">
+            <set_value name="$_CoordinatorOwner" exact="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing"/>
+            <do_if value="not $_CoordinatorOwner.exists or
+                          (@$_CoordinatorOwner.defaultorder.id != 'JP_TradeSubscriptionExplorerS' and
+                           @$_CoordinatorOwner.defaultorder.id != 'JP_TradeSubscriptionExplorerG' and
+                           not (@$_CoordinatorOwner.defaultorder.id == 'Assist' and
+                                @$_CoordinatorOwner.commander.defaultorder.id == 'JP_TradeSubscriptionExplorerG')) or
+                          (player.age - @global.$TSEGetTradesubscriptionsToUpdateStarted) ge $CACHE_BUILD_TIMEOUT">
+               <remove_value name="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing"/>
+               <remove_value name="global.$TSEGetTradesubscriptionsToUpdateStarted"/>
+               <set_value name="global.$TSE_GalaxyCandidateState" exact="'invalid'"/>
+               <remove_value name="global.$TSE_GalaxyCandidateBuilder"/>
+               <resume label="RESUME_LBL"/>
+            </do_if>
+            <do_if value="not $_CoordinatorWaitingRegistered">
+               <set_value name="global.$TSEGalaxyScanWaitingWorkers" operation="add" exact="1"/>
+               <set_value name="$_CoordinatorWaitingRegistered" exact="true"/>
+            </do_if>
+            <wait exact="$COORDINATOR_WAIT"/>
+            <resume label="RESUME_LBL"/>
+         </do_if>
+         <do_if value="$_CoordinatorWaitingRegistered">
+            <set_value name="global.$TSEGalaxyScanWaitingWorkers" exact="if @global.$TSEGalaxyScanWaitingWorkers gt 0 then global.$TSEGalaxyScanWaitingWorkers - 1 else 0"/>
+            <set_value name="$_CoordinatorWaitingRegistered" exact="false"/>
+         </do_if>
+         <set_value name="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing" exact="$_Ship"/>
+         <set_value name="global.$TSEGetTradesubscriptionsToUpdateStarted" exact="player.age"/>
+
+         <include_interrupt_actions ref="GetBlacklistgroup"/>
+
+         <do_if value="$SECTOR == null">
+            <!-- The cache is deliberately coarse.  It only discovers known
+                 stations whose trade information is stale.  Every policy,
+                 category, path, ranking and reservation decision below stays
+                 ship-specific. -->
+            <set_value name="global.$TSE_GalaxyCandidateState" exact="'invalid'" chance="if not global.$TSE_GalaxyCandidateState? then 100 else 0"/>
+            <set_value name="global.$TSE_GalaxyCandidateGeneration" exact="0" chance="if not global.$TSE_GalaxyCandidateGeneration? then 100 else 0"/>
+            <create_list name="global.$TSE_GalaxyCandidateStations" chance="if not global.$TSE_GalaxyCandidateStations? then 100 else 0"/>
+            <set_value name="$_CacheAge" exact="if global.$TSE_GalaxyCandidateReadyTime? then player.age - global.$TSE_GalaxyCandidateReadyTime else -1s"/>
+            <set_value name="$_CacheHit" exact="global.$TSE_GalaxyCandidateState == 'ready' and $_CacheAge ge 0s and $_CacheAge lt $_CacheTTL"/>
+
+            <!-- Reaching this point while state is building means the owning
+                 helper disappeared or a pre-fix save retained incomplete
+                 state: the coordinator lock above now belongs to this ship. -->
+            <do_if value="global.$TSE_GalaxyCandidateState == 'building'">
+               <set_value name="global.$TSE_GalaxyCandidateState" exact="'invalid'"/>
+               <remove_value name="global.$TSE_GalaxyCandidateBuilder"/>
+               <set_value name="$_CacheHit" exact="false"/>
+            </do_if>
+
+            <do_if value="not $_CacheHit">
+               <set_value name="global.$TSE_GalaxyCandidateState" exact="'building'"/>
+               <set_value name="global.$TSE_GalaxyCandidateBuilder" exact="$_Ship"/>
+               <set_value name="global.$TSE_GalaxyCandidateBuildStart" exact="player.age"/>
+               <set_value name="$_BuildEpoch" exact="@global.$TSE_GalaxyCandidateEpoch"/>
+               <create_list name="$_BuildCandidateStations"/>
+               <find_sector name="$_BuildSectors" space="player.galaxy" multiple="true">
+                  <match knownto="$_Ship.owner"/>
+               </find_sector>
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_PerfSectorsConsidered" operation="add" exact="$_BuildSectors.count"/>
+               </do_if>
+               <do_for_each name="$_BuildSector" in="$_BuildSectors">
+                  <do_if value="@global.$TSE_GalaxyCandidateEpoch != $_BuildEpoch">
+                     <break/>
+                  </do_if>
+                  <create_list name="$_BuildSectorStations"/>
+                  <find_object name="$_BuildSectorStations" space="$_BuildSector" multiple="true" checkoperational="false">
+                     <match knownto="$_Ship.owner"/>
+                     <match exactclass="class.station"/>
+                     <match tradesknownto="$_Ship.owner" negate="true"/>
+                  </find_object>
+                  <append_list_elements name="$_BuildCandidateStations" other="$_BuildSectorStations"/>
+                  <do_if value="$DEBUG gt 0">
+                     <set_value name="$_PerfStationsConsidered" operation="add" exact="$_BuildSectorStations.count"/>
+                     <set_value name="$_PerfStationsStale" operation="add" exact="$_BuildSectorStations.count"/>
+                  </do_if>
+                  <remove_value name="$_BuildSectorStations"/>
+                   <!-- Deliberately distribute the global scan: Vanilla finder
+                        loops use waits to avoid performance peaks.  TSE can
+                        tolerate a slow cache refresh, so run at most one
+                        sector finder per game-second. -->
+                   <wait exact="$CACHE_BUILD_YIELD"/>
+               </do_for_each>
+               <set_value name="$_BuildInvalidated" exact="global.$TSE_GalaxyCandidateState != 'building' or
+                                                           @global.$TSE_GalaxyCandidateBuilder != $_Ship or
+                                                           @global.$TSE_GalaxyCandidateEpoch != $_BuildEpoch"/>
+               <do_if value="$_BuildInvalidated">
+                  <remove_value name="$_BuildCandidateStations"/>
+                  <remove_value name="$_BuildSectors"/>
+                  <set_value name="$_CacheHit" exact="false"/>
+               </do_if>
+               <do_else>
+                  <set_value name="global.$TSE_GalaxyCandidateStations" exact="$_BuildCandidateStations.clone"/>
+                  <set_value name="global.$TSE_GalaxyCandidateGeneration" operation="add" exact="1"/>
+                  <set_value name="global.$TSE_GalaxyCandidateReadyTime" exact="player.age"/>
+                  <set_value name="global.$TSE_GalaxyCandidateScanOwner" exact="$_Ship"/>
+                  <set_value name="global.$TSE_GalaxyCandidateState" exact="'ready'"/>
+                  <remove_value name="global.$TSE_GalaxyCandidateBuilder"/>
+                  <remove_value name="global.$TSE_GalaxyCandidateBuildStart"/>
+                  <remove_value name="$_BuildCandidateStations"/>
+                  <remove_value name="$_BuildSectors"/>
+                  <set_value name="$_CacheAge" exact="0s"/>
+               </do_else>
+            </do_if>
+
+            <!-- Work on a private snapshot.  Pruning the published list is
+                 safe, but no cache entry is accepted as a final target. -->
+            <set_value name="$_CandidateSnapshot" exact="global.$TSE_GalaxyCandidateStations.clone"/>
+            <do_for_each name="$_CachedStation" in="$_CandidateSnapshot">
+               <do_if value="not $_CachedStation.exists">
+                  <remove_from_list name="global.$TSE_GalaxyCandidateStations" exact="$_CachedStation"/>
+                  <continue/>
+               </do_if>
+               <!-- Destroyed stations remain existing wreck components, but
+                    no longer expose the container trade properties. -->
+               <do_if value="$_CachedStation.iswreck">
+                  <remove_from_list name="global.$TSE_GalaxyCandidateStations" exact="$_CachedStation"/>
+                  <continue/>
+               </do_if>
+               <set_value name="$_CachedSubscriptionTarget" exact="if $_CachedStation.isconstruction then $_CachedStation.buildstorage else $_CachedStation"/>
+               <!-- Optional build storage can resolve to null.  Guard that
+                    object before looking up one of its properties. -->
+               <do_if value="not $_CachedSubscriptionTarget.exists">
+                  <remove_from_list name="global.$TSE_GalaxyCandidateStations" exact="$_CachedStation"/>
+                  <continue/>
+               </do_if>
+               <do_if value="$_CachedSubscriptionTarget.hastradesubscription">
+                  <remove_from_list name="global.$TSE_GalaxyCandidateStations" exact="$_CachedStation"/>
+                  <continue/>
+               </do_if>
+               <do_if value="not $_Sectors.indexof.{$_CachedStation.sector}">
+                  <append_to_list name="$_Sectors" exact="$_CachedStation.sector"/>
+               </do_if>
+            </do_for_each>
+            <remove_value name="$_CandidateSnapshot"/>
+
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=search_start result=pending mode=galaxy current_sector=%2 blacklist=%3'.[$_Ship.idcode, $_Ship.sector.knownname, $blacklistgroup]"/>
+               <find_sector name="$_TraceKnownSectors" space="player.galaxy" multiple="true">
+                  <match knownto="$_Ship.owner"/>
+                  <match_gate_distance object="$_Ship" min="0"/>
+               </find_sector>
+               <find_sector name="$_TraceAccessibleSectors" space="player.galaxy" multiple="true" accessgrantedto="$_Ship.owner">
+                  <match knownto="$_Ship.owner"/>
+                  <match_gate_distance object="$_Ship" min="0"/>
+               </find_sector>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=diagnostic_counts result=complete known_sector_count=%2 accessible_sector_count=%3'.[$_Ship.idcode, $_TraceKnownSectors.count, $_TraceAccessibleSectors.count]"/>
+               <do_for_each name="$_TraceSector" in="$_TraceKnownSectors">
+                  <do_if value="not $_TraceAccessibleSectors.indexof.{$_TraceSector}">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=sector_excluded result=excluded reason=inaccessible target_sector=%2'.[$_Ship.idcode, $_TraceSector.knownname]"/>
+                  </do_if>
+                  <do_elseif value="$_TraceSector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=sector_excluded result=excluded reason=travel_blacklisted target_sector=%2'.[$_Ship.idcode, $_TraceSector.knownname]"/>
+                  </do_elseif>
+                  <do_elseif value="$_TraceSector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship}">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=sector_excluded result=excluded reason=activity_blacklisted target_sector=%2'.[$_Ship.idcode, $_TraceSector.knownname]"/>
+                  </do_elseif>
+                  <do_elseif value="@global.$TSE_SectorsBlacklistGroup.indexof.{$_TraceSector} and @global.$TSE_ShipsCurrentSectorTable.{$_Ship} != $_TraceSector">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=sector_excluded result=excluded reason=reserved target_sector=%2'.[$_Ship.idcode, $_TraceSector.knownname]"/>
+                  </do_elseif>
+               </do_for_each>
+               <remove_value name="$_TraceAccessibleSectors"/>
+               <remove_value name="$_TraceKnownSectors"/>
+            </do_if>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfSectorsConsidered" operation="add" exact="$_Sectors.count"/>
+            </do_if>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=search_result result=complete mode=galaxy candidate_count=%2'.[$_Ship.idcode, $_Sectors.count]"/>
+            </do_if>
+
+            <!-- Stage 1: retain only paths that use this ship's effective travel blacklist and known sectors. -->
+            <create_list name="$_ReachableSectors"/>
+            <do_for_each name="$_CandidateSector" in="$_Sectors">
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_PerfPathChecks" operation="add" exact="1"/>
+               </do_if>
+               <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                                useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+                  <start object="$_Ship"/>
+                  <end object="$_CandidateSector"/>
+               </get_global_path>
+               <do_if value="$_PathDistance ge 0">
+                  <append_to_list name="$_ReachableSectors" exact="$_CandidateSector"/>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=sector_accepted result=accepted reason=success target_sector=%2 path_distance=%3'.[$_Ship.idcode, $_CandidateSector.knownname, $_PathDistance]"/>
+                  </do_if>
+               </do_if>
+               <do_elseif value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_search event=sector_excluded result=excluded reason=no_known_path target_sector=%2 path_distance=%3'.[$_Ship.idcode, $_CandidateSector.knownname, $_PathDistance]"/>
+               </do_elseif>
+            </do_for_each>
+            <!-- Stage 2: estimate_travel_time only ranks the already-safe candidates. -->
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_sort event=sort_start result=pending candidate_count=%2'.[$_Ship.idcode, $_ReachableSectors.count]"/>
+            </do_if>
+            <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_Sectors">
+               <param name="LIST" value="$_ReachableSectors"/>
+            </run_script>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfTravelTimeChecks" operation="add" exact="$_ReachableSectors.count"/>
+            </do_if>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_sort event=sort_result result=complete candidate_count=%2'.[$_Ship.idcode, $_Sectors.count]"/>
+            </do_if>
+         </do_if>
+
+         <do_for_each name="$_Sector" in="$_Sectors">
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceSectorIndex" operation="add" exact="1"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_check result=pending candidate_index=%2 target_sector=%3'.[$_Ship.idcode, $_TraceSectorIndex, $_Sector.knownname]"/>
+            </do_if>
+
+            <!-- Repeat access and policy checks here for fixed-sector orders and dynamic changes. -->
+            <find_sector name="$_AccessibleSector" space="player.galaxy" macro="$_Sector.macro" accessgrantedto="$_Ship.owner"/>
+            <do_if value="$_AccessibleSector != $_Sector">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_excluded result=excluded reason=access_denied candidate_index=%2 target_sector=%3'.[$_Ship.idcode, $_TraceSectorIndex, $_Sector.knownname]"/>
+               </do_if>
+               <continue/>
+            </do_if>
+            <do_if value="$_Sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} or
+                          $_Sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_excluded result=excluded reason=%2 candidate_index=%3 target_sector=%4'.[$_Ship.idcode, if $_Sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship} then 'travel_blacklisted' else 'activity_blacklisted', $_TraceSectorIndex, $_Sector.knownname]"/>
+               </do_if>
+               <continue/>
+            </do_if>
+
+            <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                             useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+               <start object="$_Ship"/>
+               <end object="$_Sector"/>
+            </get_global_path>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfPathChecks" operation="add" exact="1"/>
+            </do_if>
+            <do_if value="$_PathDistance lt 0">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_excluded result=excluded reason=no_known_path candidate_index=%2 target_sector=%3 path_distance=%4'.[$_Ship.idcode, $_TraceSectorIndex, $_Sector.knownname, $_PathDistance]"/>
+               </do_if>
+               <continue/>
+            </do_if>
+
+            <do_if value="@global.$TSE_SectorsBlacklistGroup.indexof.{$_Sector} and @global.$TSE_ShipsCurrentSectorTable.{$_Ship} != $_Sector">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_excluded result=excluded reason=reserved candidate_index=%2 target_sector=%3'.[$_Ship.idcode, $_TraceSectorIndex, $_Sector.knownname]"/>
+               </do_if>
+               <continue/>
+            </do_if>
+
+            <do_if value="$_Sector.owner == faction.ownerless and not $OWNERLESS_SECTORS">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=sector_filter event=sector_excluded result=excluded reason=ownerless_disabled candidate_index=%2 target_sector=%3'.[$_Ship.idcode, $_TraceSectorIndex, $_Sector.knownname]"/>
+               </do_if>
+               <continue/>
+            </do_if>
+
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfSectorsAccepted" operation="add" exact="1"/>
+            </do_if>
+
+            <do_if value="$DEBUG gt 0">
+               <find_object name="$_TraceKnownStations" space="$_Sector" multiple="true" checkoperational="false">
+                  <match knownto="$_Ship.owner"/>
+                  <match exactclass="class.station"/>
+               </find_object>
+               <find_object name="$_TraceExpiredStations" space="$_Sector" multiple="true" checkoperational="false">
+                  <match knownto="$_Ship.owner"/>
+                  <match exactclass="class.station"/>
+                  <match tradesknownto="$_Ship.owner" negate="true"/>
+               </find_object>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_search event=search_start result=pending target_sector=%2 known_station_count=%3 expired_station_count=%4'.[$_Ship.idcode, $_Sector.knownname, $_TraceKnownStations.count, $_TraceExpiredStations.count]"/>
+               <do_if value="$_TraceKnownStations.count gt $_TraceExpiredStations.count">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=exclusion_summary result=excluded reason=already_current target_sector=%2 excluded_count=%3'.[$_Ship.idcode, $_Sector.knownname, $_TraceKnownStations.count - $_TraceExpiredStations.count]"/>
+               </do_if>
+               <do_for_each name="$_TraceExpiredStation" in="$_TraceExpiredStations">
+                  <do_if value="$_Ship.ishostileto.{$_TraceExpiredStation}">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=hostile_target target=%2 target_sector=%3'.[$_Ship.idcode, $_TraceExpiredStation, $_Sector.knownname]"/>
+                  </do_if>
+                  <do_elseif value="$_TraceExpiredStation.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship}">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=object_blacklisted target=%2 target_sector=%3'.[$_Ship.idcode, $_TraceExpiredStation, $_Sector.knownname]"/>
+                  </do_elseif>
+               </do_for_each>
+               <remove_value name="$_TraceKnownStations"/>
+               <remove_value name="$_TraceExpiredStations"/>
+            </do_if>
+            <create_list name="$_Stations"/>
+            <find_object name="$_Stations" space="$_Sector" multiple="true" checkoperational="false">
+               <match knownto="$_Ship.owner"/>
+               <match exactclass="class.station"/>
+               <match tradesknownto="$_Ship.owner" negate="true"/>
+               <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
+               <match_use_blacklist object="$_Ship" type="blacklisttype.objectactivity" group="$blacklistgroup"/>
+            </find_object>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_PerfStationsConsidered" operation="add" exact="$_Stations.count"/>
+               <set_value name="$_PerfStationsStale" operation="add" exact="$_Stations.count"/>
+            </do_if>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_search event=search_result result=complete target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $_Sector.knownname, $_Stations.count]"/>
+            </do_if>
+            <create_list name="$_ReachableStations"/>
+            <do_for_each name="$_Station" in="$_Stations" reverse="true">
+               <do_if value="$_Station.iswreck">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=invalid_target target=%2 target_sector=%3'.[$_Ship.idcode, $_Station, $_Sector.knownname]"/>
+                  </do_if>
+                  <continue/>
+               </do_if>
+               <do_if value="$_Station.isconstruction">
+                  <do_if value="not $_Station.buildstorage.exists or $_Station.buildstorage.hastradesubscription">
+                     <do_if value="$DEBUG gt 0">
+                        <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=%2 target=%3 target_sector=%4'.[$_Ship.idcode, if not $_Station.buildstorage.exists then 'invalid_buildstorage' else 'already_current', $_Station, $_Sector.knownname]"/>
+                     </do_if>
+                     <continue/>
+                  </do_if>
+                  <set_value name="$_SubscriptionTarget" exact="$_Station.buildstorage"/>
+               </do_if>
+               <do_else>
+                  <set_value name="$_SubscriptionTarget" exact="$_Station"/>
+               </do_else>
+               <!-- Match Vanilla's automatic station-update safety intent without
+                    requiring docking: never approach an object hostile to this ship. -->
+               <do_if value="$_Ship.ishostileto.{$_Station} or $_Ship.ishostileto.{$_SubscriptionTarget}">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=hostile_target target=%2 target_sector=%3'.[$_Ship.idcode, $_Station, $_Sector.knownname]"/>
+                  </do_if>
+                  <continue/>
+               </do_if>
+               <do_if value="$_SubscriptionTarget.hastradesubscription or
+                             $_Station.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} or
+                             $_SubscriptionTarget.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship}">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=%2 target=%3 target_sector=%4'.[$_Ship.idcode, if $_SubscriptionTarget.hastradesubscription then 'already_current' else 'object_blacklisted', $_Station, $_Sector.knownname]"/>
+                  </do_if>
+                  <continue/>
+               </do_if>
+               <do_if value="$_Station.isconstruction and not $CONSTRUCTION_SITES or
+                                 $_Station.iswharf and not $WHARFS or
+                                 $_Station.isshipyard and not $SHIPYARDS or
+                                $_Station.isequipmentdock and not $_Station.iswharf and not $_Station.isshipyard and not $_Station.ispiratebase and not $EQUIPMENTDOCKS or
+                                $_Station.istradestation and not $TRADING_STATIONS or
+                                $_Station.ispiratebase and not $PIRATE_BASES or
+                                $_Station.isrecyclingfacility and not $RECYCLING_FACILITIES or
+                                $_Station.isdefencestation and not $_Station.iswharf and not $_Station.isshipyard and not $_Station.istradestation and not $_Station.ispiratebase and not $_Station.isfactionheadquarters and not $DEFENCE_STATIONS or
+                                $_Station.isfactionheadquarters and not $_Station.ispiratebase and not $FACTION_HEADQUARTERS">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=category_disabled target=%2 target_sector=%3'.[$_Ship.idcode, $_Station, $_Sector.knownname]"/>
+                  </do_if>
+                  <continue/>
+               </do_if>
+               <do_if value="(not $_Station.isconstruction and not $_Station.iswharf and not $_Station.isshipyard and
+                                 not $_Station.isequipmentdock and not $_Station.istradestation and not $_Station.ispiratebase and
+                                 not $_Station.isrecyclingfacility and not $_Station.isdefencestation and
+                                  not $_Station.isfactionheadquarters and not $NON_SPECIAL_STATIONS)">
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=category_disabled target=%2 target_sector=%3'.[$_Ship.idcode, $_Station, $_Sector.knownname]"/>
+                  </do_if>
+                  <continue/>
+               </do_if>
+
+               <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                                useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+                  <start object="$_Ship"/>
+                  <end object="$_SubscriptionTarget"/>
+               </get_global_path>
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_PerfPathChecks" operation="add" exact="1"/>
+               </do_if>
+               <do_if value="$_PathDistance ge 0">
+                  <append_to_list name="$_ReachableStations" exact="$_Station"/>
+                  <do_if value="$DEBUG gt 0">
+                     <set_value name="$_TraceCandidateIndex" operation="add" exact="1"/>
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_accepted result=accepted reason=success candidate_index=%2 target=%3 target_sector=%4 path_distance=%5'.[$_Ship.idcode, $_TraceCandidateIndex, $_Station, $_Sector.knownname, $_PathDistance]"/>
+                  </do_if>
+               </do_if>
+               <do_elseif value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_filter event=station_excluded result=excluded reason=no_known_path target=%2 target_sector=%3 path_distance=%4'.[$_Ship.idcode, $_Station, $_Sector.knownname, $_PathDistance]"/>
+               </do_elseif>
+            </do_for_each>
+            <remove_value name="$_Stations"/>
+
+            <do_if value="$_ReachableStations.count gt 0">
+               <!-- Only the blacklist/known-path prefiltered list reaches the time estimator. -->
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_sort event=sort_start result=pending target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $_Sector.knownname, $_ReachableStations.count]"/>
+               </do_if>
+               <run_script name="'jp.lib.SortByEstimatedTravelTime'" result="$_FoundStations">
+                  <param name="LIST" value="$_ReachableStations"/>
+               </run_script>
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_PerfTravelTimeChecks" operation="add" exact="$_ReachableStations.count"/>
+               </do_if>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=station_sort event=sort_result result=complete target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $_Sector.knownname, $_FoundStations.count]"/>
+               </do_if>
+               <do_if value="$_FoundStations.count">
+                  <set_value name="$SECTOR" exact="$_Sector"/>
+                  <break/>
+               </do_if>
+            </do_if>
+            <remove_value name="$_ReachableStations"/>
+
+         </do_for_each>
+
+         <!-- Removing sector from blacklist if no stations found -->
+         <do_if value="$_FoundStations.count == 0 and @global.$TSE_ShipsCurrentSectorTable.{$_Ship} != null">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=reservation event=reservation_removed result=removed reason=no_candidates target_sector=%2'.[$_Ship.idcode, global.$TSE_ShipsCurrentSectorTable.{$_Ship}.knownname]"/>
+            </do_if>
+            <remove_from_group group="global.$TSE_SectorsBlacklistGroup" object="global.$TSE_ShipsCurrentSectorTable.{$_Ship}"/>
+            <set_value name="global.$TSE_ShipsCurrentSectorTable.{$_Ship}" exact="null"/>
+         </do_if>
+
+         <!-- Adding sector to blacklist if stations found and sector not same as current -->
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceReservationChanged" exact="false"/>
+         </do_if>
+         <do_if value="$_FoundStations.count and @global.$TSE_ShipsCurrentSectorTable.{$_Ship} != $SECTOR">
+            <!-- If we had previously blacklisted a sector, remove it from blacklist -->
+            <do_if value="@global.$TSE_ShipsCurrentSectorTable.{$_Ship} != null">
+               <remove_from_group group="global.$TSE_SectorsBlacklistGroup" object="global.$TSE_ShipsCurrentSectorTable.{$_Ship}"/>
+            </do_if>
+            <add_to_group groupname="global.$TSE_SectorsBlacklistGroup" object="$SECTOR"/>
+            <set_value name="global.$TSE_ShipsCurrentSectorTable.{$_Ship}" exact="$SECTOR"/>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceReservationChanged" exact="true"/>
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=reservation event=reservation_set result=active reason=success target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $SECTOR.knownname, $_FoundStations.count]"/>
+            </do_if>
+            <run_script name="'jp.lib.GetFactionColorCode'" result="$_ObjectSectorOwnerColor">
+               <param name="FACTION" value="$SECTOR.owner"/>
+            </run_script>
+            <!-- I will start update trade subscriptions in sector %2%1\033X. -->
+            <run_script name="'jp.lib.MessageLog'">
+               <param name="TEXT"               value="{8888888, 1962}.[$SECTOR.knownname, $_ObjectSectorOwnerColor]"/>
+               <param name="INTERACTION_OBJECT" value="$SECTOR"/>
+               <param name="MESSAGE_CHANCE"     value="2"/>
+               <param name="LOG_CHANCE"         value="2"/>
+            </run_script>
+         </do_if>
+         <do_if value="$DEBUG gt 0 and not $_TraceReservationChanged and $_FoundStations.count and @global.$TSE_ShipsCurrentSectorTable.{$_Ship} == $SECTOR">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=reservation event=reservation_retained result=active reason=success target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $SECTOR.knownname, $_FoundStations.count]"/>
+         </do_if>
+
+         <do_if value="@global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing == $_Ship">
+            <remove_value name="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing"/>
+            <remove_value name="global.$TSEGetTradesubscriptionsToUpdateStarted"/>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <label name="END_LBL"/>
+         <do_if value="$DEBUG gt 0 and $_PerfGalaxyScan">
+            <!-- The observed X4 9.00 runtime parsed %10 through %16 as a
+                 single-digit placeholder followed by a literal digit. -->
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-PERF] event=scan scan_generation=%1 scan_owner=%2 scan_start_time=%3 scan_end_time=%4 sectors_considered=%5 sectors_accepted=%6 stations_considered=%7 stations_stale=%8'.[global.$TSE_GalaxyCandidateGeneration, @global.$TSE_GalaxyCandidateScanOwner.idcode, $_PerfScanStartTime, player.age, $_PerfSectorsConsidered, $_PerfSectorsAccepted, $_PerfStationsConsidered, $_PerfStationsStale]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-PERF] event=worker path_checks=%1 travel_time_checks=%2 candidates_returned=%3 cache_hit=%4 cache_miss=%5 cache_age=%6 cache_ttl=%7 worker_count=%8 waiting_workers=%9'.[$_PerfPathChecks, $_PerfTravelTimeChecks, $_FoundStations.count, $_CacheHit, not $_CacheHit, $_CacheAge, $_CacheTTL, @global.$TSE_ShipsGroup.count, @global.$TSEGalaxyScanWaitingWorkers]"/>
+         </do_if>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 mode=%4 candidate_count=%5 target_sector=%6'.[$_Ship.idcode, if $_FoundStations.count then 'success' else 'no_candidates', if $_FoundStations.count then 'success' else 'no_candidates', if $SECTOR == null then 'galaxy' else 'sector', $_FoundStations.count, if $SECTOR == null then 'none' else $SECTOR.knownname]"/>
+         </do_if>
+
+         <return value="$_FoundStations"/>
+
+      </actions>
+   </attention>
+
+   <on_abort>
+      <do_if value="$_CoordinatorWaitingRegistered">
+         <set_value name="global.$TSEGalaxyScanWaitingWorkers" exact="if @global.$TSEGalaxyScanWaitingWorkers gt 0 then global.$TSEGalaxyScanWaitingWorkers - 1 else 0"/>
+      </do_if>
+      <do_if value="$DEBUG gt 0">
+         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[TSEAI ] ' + player.age + ' *** jp.lib.TSE.GetTradesubscriptionsToUpdate:' + '[TSE-TRACE] source=get_trade_subscriptions ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
+      </do_if>
+      <do_if value="@global.$TSE_GalaxyCandidateBuilder == $_Ship">
+         <set_value name="global.$TSE_GalaxyCandidateState" exact="'invalid'"/>
+         <remove_value name="global.$TSE_GalaxyCandidateBuilder"/>
+         <remove_value name="global.$TSE_GalaxyCandidateBuildStart"/>
+      </do_if>
+      <do_if value="@global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing == $_Ship">
+         <remove_value name="global.$TSEGetTradesubscriptionsToUpdateAlreadyProcessing"/>
+         <remove_value name="global.$TSEGetTradesubscriptionsToUpdateStarted"/>
+      </do_if>
+   </on_abort>
+
+</aiscript>

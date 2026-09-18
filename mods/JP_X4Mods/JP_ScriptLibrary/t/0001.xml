@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default ~~ English -->
+
+<language>
+   <page id="8888888" voice="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <!-- JP_ScriptLibrary -->
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="1">Jump Gates?</t>
+      <t id="2">Active Jump Gates?</t>
+      <t id="3">Inactive Jump Gates?</t>
+      <t id="4">Accelerators?</t>
+      <t id="5">Active Accelerators?</t>
+      <t id="6">Inactive Accelerators?</t>
+      <t id="7">Superhighways?</t>
+      <t id="8">Active Superhighways?</t>
+      <t id="9">Inactive Superhighways?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="10">Stations?</t>
+      <t id="11">Wharfs?</t>
+      <t id="12">Shipyards?</t>
+      <t id="13">Equipment Docks?</t>
+      <t id="14">Trading Stations?</t>
+      <t id="15">Pirate Bases?</t>
+      <t id="16">Scrap Processing Facilities?</t>
+      <t id="17">Defense Stations?</t>
+      <t id="18">Faction Headquarters?</t>
+      <t id="19">Factories?</t>
+      <t id="20">Construction Sites?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="30">Ownerless Sectors?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="40">Idle</t>
+      <t id="41">Move to Sector</t>
+      <t id="42">Move to Position</t>
+      <t id="43">Move to Object</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="50">Currently, there are no available stations where we could restock our desired equipment.</t>
+      <t id="51">Currently, all available stations lack the required resources to manufacture the necessary equipment.\nI will go to the nearest station, place a request for restocking, and then await the next resource replenishment.</t>
+      <t id="52">We lack the necessary funds to restock the desired equipment.</t>
+      <t id="53">The process of creating the restock order has failed.</t>
+      <t id="54">The restock equipment order has failed. More detail is available in the logbook.</t>
+      <t id="55">I will switch to idle mode and try again later.</t>
+      <t id="56">I'll go change my equipment at:\nStation: %5%1 [%2]\033X\nRelation: %6%3\033X\nSector: %7%4\033X\n</t>
+      <t id="57">\nEquipment change cost: %1\n</t>
+      <t id="58">\nI sell equipment for %1</t>
+      <t id="59">\nI buy equipment for %1</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="60">\033#FFe27100#Equipment Change Failure\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="80">Idle Time</t>
+      <t id="81">Idle: Move to?</t>
+      <t id="82">Where to move?</t>
+      <t id="83">Idle: Follow?</t>
+      <t id="84">Who to follow?</t>
+      <t id="85">Idle: Docking?</t>
+      <t id="86">Find a Station?</t>
+      <t id="87">Where to dock?</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="90">Show messages?</t>
+      <t id="91">Write to logbook?</t>
+      <t id="92">Add Order tag?</t>
+      <t id="93">Save Order Settings?</t>
+      <t id="94">Reset Order Settings?</t>
+      <t id="95">Order settings saved.</t>
+      <t id="96">Order settings reset.</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="97">\033#B600CCCC#</t>
+      <t id="98">\033#FF00CC66#</t>
+      <t id="99">\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </page>
+</language>
