@@ -52,7 +52,9 @@ The sector behavior repeatedly:
 2. escapes only if the current sector is travel-blacklisted;
 3. finds known stations with expired trade information in the selected sector;
 4. applies category, access, hostility, blacklist and known-path checks;
-5. processes candidates in travel-time order;
+5. selects candidates by estimated travel time from the ship's current
+   position and re-ranks the remaining in-sector list after each successful
+   station visit;
 6. approaches a still-valid target to half radar range;
 7. waits until X4 reports `hastradesubscription`;
 8. starts a fresh search after productive work, or enters the configured idle

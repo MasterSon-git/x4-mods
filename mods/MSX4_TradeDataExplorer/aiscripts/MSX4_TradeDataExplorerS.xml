@@ -258,13 +258,17 @@
               failed movement advances to the next entry; a later search cycle
               receives a fresh list and may try the station again. -->
          <set_value name="$_CycleMadeProgress" exact="false"/>
+         <create_list name="$_RemainingStations"/>
+         <append_list_elements name="$_RemainingStations" other="$_FoundStations"/>
          <do_if value="$DEBUG gt 0">
             <set_value name="$_TraceCandidateIndex" exact="0"/>
             <set_value name="$_TraceSucceeded" exact="0"/>
             <set_value name="$_TraceSkipped" exact="0"/>
             <set_value name="$_TraceFailed" exact="0"/>
          </do_if>
-         <do_for_each name="$_CandidateStation" in="$_FoundStations">
+         <do_while value="$_RemainingStations.count">
+            <set_value name="$_CandidateStation" exact="$_RemainingStations.{1}"/>
+            <remove_from_list name="$_RemainingStations" exact="$_CandidateStation"/>
             <do_if value="$DEBUG gt 0">
                <set_value name="$_TraceCandidateIndex" operation="add" exact="1"/>
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** MSX4_TradeDataExplorerS:' + '[MSX4-TDE-TRACE] source=tde_s ship=%1 phase=update event=candidate_start result=pending cycle=%2 candidate_index=%3 target=%4 target_sector=%5'.[$_Ship.idcode, $_TraceCycle, $_TraceCandidateIndex, $_CandidateStation.idcode, $_CandidateStation.sector.knownname]"/>
@@ -289,10 +293,28 @@
                   <set_value name="$_TraceFailed" operation="add" exact="1"/>
                </do_else>
             </do_if>
+            <!-- A successful visit can materially change the shortest route
+                 through this sector.  Re-rank only the already-filtered
+                 remainder; station discovery and policy filtering stay out
+                 of this loop. -->
+            <do_if value="$_UpdateResult == 'success' and $_RemainingStations.count gt 1">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** MSX4_TradeDataExplorerS:' + '[MSX4-TDE-TRACE] source=tde_s ship=%1 phase=update event=candidate_rerank_start result=pending cycle=%2 remaining_count=%3 current_sector=%4'.[$_Ship.idcode, $_TraceCycle, $_RemainingStations.count, $_Ship.sector.knownname]"/>
+               </do_if>
+               <run_script name="'msx4.lib.SortByEstimatedTravelTime'" result="$_RemainingStations">
+                  <param name="LIST" value="$_RemainingStations"/>
+                  <param name="YIELD_EVERY" value="1"/>
+                  <param name="YIELD_TIME"  value="100ms"/>
+               </run_script>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** MSX4_TradeDataExplorerS:' + '[MSX4-TDE-TRACE] source=tde_s ship=%1 phase=update event=candidate_rerank_result result=complete cycle=%2 remaining_count=%3 next_target=%4'.[$_Ship.idcode, $_TraceCycle, $_RemainingStations.count, @$_RemainingStations.{1}.idcode]"/>
+               </do_if>
+            </do_if>
             <do_if value="$_UpdateResult == 'move_failed' or $_UpdateResult == 'approach_failed'">
                <continue/>
             </do_if>
-         </do_for_each>
+         </do_while>
+         <remove_value name="$_RemainingStations"/>
          <do_if value="$DEBUG gt 0">
             <set_value name="$_TraceIdleReason" exact="if $_TraceFailed == $_FoundStations.count then 'all_candidates_failed' else 'all_candidates_processed'"/>
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** MSX4_TradeDataExplorerS:' + '[MSX4-TDE-TRACE] source=tde_s ship=%1 phase=update event=candidate_summary result=complete reason=%2 cycle=%3 candidate_count=%4 succeeded=%5 skipped=%6 failed=%7'.[$_Ship.idcode, $_TraceIdleReason, $_TraceCycle, $_FoundStations.count, $_TraceSucceeded, $_TraceSkipped, $_TraceFailed]"/>

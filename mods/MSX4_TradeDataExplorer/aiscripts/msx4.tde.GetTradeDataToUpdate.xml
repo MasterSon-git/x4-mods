@@ -471,6 +471,8 @@
                </do_if>
                <run_script name="'msx4.lib.SortByEstimatedTravelTime'" result="$_FoundStations">
                   <param name="LIST" value="$_ReachableStations"/>
+                  <param name="YIELD_EVERY" value="1"/>
+                  <param name="YIELD_TIME"  value="100ms"/>
                </run_script>
                <do_if value="$DEBUG gt 0">
                   <set_value name="$_PerfTravelTimeChecks" operation="add" exact="$_ReachableStations.count"/>

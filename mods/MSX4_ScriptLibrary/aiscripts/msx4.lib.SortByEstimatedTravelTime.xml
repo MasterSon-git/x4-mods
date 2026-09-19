@@ -6,6 +6,8 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <param name="LIST"    default="[]"/>
       <param name="REVERSE" default="false"/>
+      <param name="YIELD_EVERY" default="0"/>
+      <param name="YIELD_TIME"  default="0s"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <param name="debugchance" default="0"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -15,6 +17,8 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$_Ship" exact="this.ship"/>
       <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$_CandidateCount" exact="$LIST.count"/>
+      <set_value name="$_ProcessedCount" exact="0"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -41,6 +45,7 @@
 
          <create_list name="$_SectorTravelTimes"/>
          <do_for_each name="$_ListEntry" in="$LIST">
+            <set_value name="$_ProcessedCount" operation="add" exact="1"/>
             <do_if value="$DEBUG gt 0">
                <set_value name="$_TraceTargetIndex" operation="add" exact="1"/>
             </do_if>
@@ -51,6 +56,9 @@
             <!-- X4 9.00 defines a negative result as no path; do not rank it before valid times. -->
             <do_if value="$_TravelTime ge 0">
                <append_to_list name="$_SectorTravelTimes" exact="[$_ListEntry, $_TravelTime]"/>
+            </do_if>
+            <do_if value="$YIELD_EVERY gt 0 and $YIELD_TIME gt 0s and ($_ProcessedCount % $YIELD_EVERY) == 0 and $_ProcessedCount lt $_CandidateCount">
+               <wait exact="$YIELD_TIME"/>
             </do_if>
          </do_for_each>
          <sort_list list="$_SectorTravelTimes" sortbyvalue="loop.element.{2}"/>

@@ -32,6 +32,17 @@ hostility, categories, travel/activity/object blacklists, known path, sector
 reservation and travel-time ordering. A successful or already-current target
 is removed from the coarse snapshot; destroyed and wrecked entries are pruned.
 
+Within an active sector, a worker re-ranks only its already-filtered remaining
+stations after a successful visit. This avoids repeating galaxy discovery and
+policy filtering while allowing the next target to reflect the ship's new
+position. No re-ranking is performed for an already-current target or when
+fewer than two candidates remain.
+
+Initial in-sector ranking and subsequent re-ranking estimate one station per
+batch, yielding for 0.1 universe seconds between batches. Thirty candidates
+therefore span roughly 2.9 universe seconds of scheduler yields
+instead of performing all estimates in one uninterrupted script step.
+
 ### Work spreading
 
 The cache builder yields for one universe second after every sector finder.
