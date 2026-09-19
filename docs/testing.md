@@ -76,10 +76,13 @@ tests.
    work rather than merely following.
 5. Change sector travel/activity and object-activity blacklists while work is
    active; confirm the next validation boundary rejects disallowed work.
-6. Let the fleet enter idle, wait for the timeout, and confirm a fresh search
+6. Provide at least three stale stations in one sector. After the first visit,
+   confirm the next target reflects estimated travel time from the ship's new
+   position rather than the order calculated at the start of the cycle.
+7. Let the fleet enter idle, wait for the timeout, and confirm a fresh search
    search occurs before another idle action.
-7. Save and reload with active Trade Data Explorer and Mimic orders.
-8. Repeat once with `DEBUG=100`, check the central and Trade Data Explorer runtime logs, then
+8. Save and reload with active Trade Data Explorer and Mimic orders.
+9. Repeat once with `DEBUG=100`, check the central and Trade Data Explorer runtime logs, then
    repeat the performance observation with `DEBUG=0`.
 
 ## Open targeted tests
