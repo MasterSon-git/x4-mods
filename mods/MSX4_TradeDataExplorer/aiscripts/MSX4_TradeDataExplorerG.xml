@@ -306,6 +306,8 @@
                </do_if>
                <run_script name="'msx4.lib.SortByEstimatedTravelTime'" result="$_RemainingStations">
                   <param name="LIST" value="$_RemainingStations"/>
+                  <param name="YIELD_EVERY" value="1"/>
+                  <param name="YIELD_TIME"  value="100ms"/>
                </run_script>
                <do_if value="$DEBUG gt 0">
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** MSX4_TradeDataExplorerG:' + '[MSX4-TDE-TRACE] source=tde_g ship=%1 phase=update event=candidate_rerank_result result=complete cycle=%2 remaining_count=%3 next_target=%4'.[$_Ship.idcode, $_TraceCycle, $_RemainingStations.count, @$_RemainingStations.{1}.idcode]"/>
