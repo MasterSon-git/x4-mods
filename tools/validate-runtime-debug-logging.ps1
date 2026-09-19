@@ -3,19 +3,19 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$modsRoot = Join-Path $repoRoot 'mods/JP_X4Mods'
+$modsRoot = Join-Path $repoRoot 'mods'
 $baselineCommit = '7afc74d2c94b537e0468019458578766e214d469'
 $loggingFixCommit = 'f192803581ec60476b8b5252f87ff4ca9e91875c'
 $postLoggingFunctionalPaths = @(
-    'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml',
-    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/jp.lib.IdleReturnHome.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/jp.lib.TSE.UpdateSubscription.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/libraries/experiences.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
+    'mods/MSX4_ScriptLibrary/md/msx4.ScriptLibrary.md.xml',
+    'mods/MSX4_ScriptLibrary/aiscripts/msx4.lib.IdleReturnHome.xml',
+    'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerS.xml',
+    'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerG.xml',
+    'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.GetTradeDataToUpdate.xml',
+    'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.UpdateTradeData.xml',
+    'mods/MSX4_TradeDataExplorer/libraries/experiences.xml',
+    'mods/MSX4_TradeDataExplorer/aiscripts/order.assist.xml',
+    'mods/MSX4_TradeDataExplorer/md/msx4.TradeDataExplorer.md.xml'
 )
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'
 $mdSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/md.xsd'
@@ -49,13 +49,33 @@ function ConvertTo-JavaPath {
 function ConvertTo-HistoricalModPath {
     param([Parameter(Mandatory)] [string] $Path)
 
-    return $Path -replace '^mods/JP_X4Mods/', 'mods/'
+    $result = $Path
+    $result = $result -replace '^mods/MSX4_ScriptLibrary/', 'mods/JP_ScriptLibrary/'
+    $result = $result -replace '^mods/MSX4_TradeDataExplorer/', 'mods/JP_TradeSubscriptionExplorer/'
+    $result = $result -replace 'md/msx4\.ScriptLibrary\.md\.xml$', 'md/jp.ScriptLibrary.md.xml'
+    $result = $result -replace 'md/msx4\.TradeDataExplorer\.md\.xml$', 'md/jp.TradeSubscriptionExplorer.md.xml'
+    $result = $result -replace 'aiscripts/MSX4_TradeDataExplorerS\.xml$', 'aiscripts/JP_TradeSubscriptionExplorerS.xml'
+    $result = $result -replace 'aiscripts/MSX4_TradeDataExplorerG\.xml$', 'aiscripts/JP_TradeSubscriptionExplorerG.xml'
+    $result = $result -replace 'aiscripts/msx4\.tde\.GetTradeDataToUpdate\.xml$', 'aiscripts/jp.lib.TSE.GetTradesubscriptionsToUpdate.xml'
+    $result = $result -replace 'aiscripts/msx4\.tde\.UpdateTradeData\.xml$', 'aiscripts/jp.lib.TSE.UpdateSubscription.xml'
+    $result = $result -replace 'aiscripts/msx4\.lib\.', 'aiscripts/jp.lib.'
+    return $result
 }
 
 function ConvertTo-CurrentModPath {
     param([Parameter(Mandatory)] [string] $Path)
 
-    return $Path -replace '^mods/JP_', 'mods/JP_X4Mods/JP_'
+    $result = $Path
+    $result = $result -replace '^mods/JP_ScriptLibrary/', 'mods/MSX4_ScriptLibrary/'
+    $result = $result -replace '^mods/JP_TradeSubscriptionExplorer/', 'mods/MSX4_TradeDataExplorer/'
+    $result = $result -replace 'md/jp\.ScriptLibrary\.md\.xml$', 'md/msx4.ScriptLibrary.md.xml'
+    $result = $result -replace 'md/jp\.TradeSubscriptionExplorer\.md\.xml$', 'md/msx4.TradeDataExplorer.md.xml'
+    $result = $result -replace 'aiscripts/JP_TradeSubscriptionExplorerS\.xml$', 'aiscripts/MSX4_TradeDataExplorerS.xml'
+    $result = $result -replace 'aiscripts/JP_TradeSubscriptionExplorerG\.xml$', 'aiscripts/MSX4_TradeDataExplorerG.xml'
+    $result = $result -replace 'aiscripts/jp\.lib\.TSE\.GetTradesubscriptionsToUpdate\.xml$', 'aiscripts/msx4.tde.GetTradeDataToUpdate.xml'
+    $result = $result -replace 'aiscripts/jp\.lib\.TSE\.UpdateSubscription\.xml$', 'aiscripts/msx4.tde.UpdateTradeData.xml'
+    $result = $result -replace 'aiscripts/jp\.lib\.', 'aiscripts/msx4.lib.'
+    return $result
 }
 
 function Test-DebugGuard {
@@ -65,7 +85,7 @@ function Test-DebugGuard {
     while ($null -ne $ancestor) {
         if ($ancestor.NodeType -eq [System.Xml.XmlNodeType]::Element -and
             $ancestor.LocalName -in @('do_if', 'do_elseif') -and
-            $ancestor.GetAttribute('value') -match '(?:\$DEBUG|TSETraceDebug|\.?\$DEBUG).*gt 0') {
+            $ancestor.GetAttribute('value') -match '(?:\$DEBUG|TDETraceDebug|\.?\$DEBUG).*gt 0') {
             return $true
         }
         $ancestor = $ancestor.ParentNode
@@ -192,8 +212,8 @@ function Remove-DiagnosticXml {
         $name = $child.GetAttribute('name')
         $groupName = $child.GetAttribute('groupname')
         $isDebugAction = $child.LocalName -in @('debug_to_file', 'debug_text')
-        $isDiagnosticState = $name -match '^\$(?:_Trace|_TSETrace|_TSEDefaultOrderParamRef|_Debug|_DefaultOrderParamRef|_ValidationReason)|^\$DEBUG$' -or
-            $groupName -match '^\$(?:_Trace|_TSETrace|_Debug)'
+        $isDiagnosticState = $name -match '^\$(?:_Trace|_(?:TSE|TDE)Trace|_(?:TSE|TDE)DefaultOrderParamRef|_Debug|_DefaultOrderParamRef|_ValidationReason)|^\$DEBUG$' -or
+            $groupName -match '^\$(?:_Trace|_(?:TSE|TDE)Trace|_Debug)'
         $isDiagnosticFinder = $child.LocalName -match '^find_' -and $name -match 'Trace'
 
         if ($isDebugAction -or $isDiagnosticState -or $isDiagnosticFinder) {
@@ -278,16 +298,16 @@ Write-Output "1/20 XML well-formedness: OK ($($xmlFiles.Count) mod XML files)"
 
 $traceNodes = @(
     foreach ($entry in $documents.GetEnumerator()) {
-        foreach ($node in $entry.Value.SelectNodes("//*[@text and contains(@text, '[TSE-TRACE]')]")) {
+        foreach ($node in $entry.Value.SelectNodes("//*[@text and (contains(@text, '[MSX4-TDE-TRACE]') or contains(@text, '[MSX4-SLIB-TRACE]'))]")) {
             [pscustomobject]@{ Path = $entry.Key; Node = $node }
         }
     }
 )
-Assert-Condition ($traceNodes.Count -gt 0) 'At least one structured TSE trace must exist.'
+Assert-Condition ($traceNodes.Count -gt 0) 'At least one structured TDE trace must exist.'
 
 foreach ($trace in $traceNodes) {
     $text = $trace.Node.GetAttribute('text')
-    Assert-Condition ($text -match "^'\[(?:TSEAI |TSEMD |SLIBAI|SLIBMD)\] ' \+ player\.age \+ ' \*\*\* [A-Za-z0-9_.]+:' \+ '\[TSE-TRACE\] ") "$($trace.Path) has a trace without the required timestamp envelope."
+    Assert-Condition ($text -match "^'\[(?:MSX4-TDE-AI|MSX4-TDE-MD|MSX4-SLIB-AI|MSX4-SLIB-MD)\] ' \+ player\.age \+ ' \*\*\* [A-Za-z0-9_.]+:' \+ '\[MSX4-(?:TDE|SLIB)-TRACE\] ") "$($trace.Path) has a trace without the required timestamp envelope."
     Assert-Condition ($text -notmatch '(\\n|\\r|[\r\n])') "$($trace.Path) has a multiline trace."
     Assert-Condition ($text -cmatch '^[\x00-\x7F]+$') "$($trace.Path) has a non-ASCII trace template."
     foreach ($key in @('source=', 'ship=', 'phase=')) {
@@ -323,29 +343,29 @@ $ambiguousPlaceholders = @(
 Assert-Condition ($ambiguousPlaceholders.Count -eq 0) ("Ambiguous multi-digit format placeholders remain: " + ($ambiguousPlaceholders -join ' | '))
 
 $optionalContextDiffs = @(
-    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.xml'
-    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml'
-    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml'
+    Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/order.dock.xml'
+    Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/order.dock.wait.xml'
+    Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/order.move.follow.xml'
 )
 foreach ($path in $optionalContextDiffs) {
     $document = $documents[$path]
-    foreach ($guard in $document.SelectNodes("//do_if[descendant::debug_to_file[contains(@text, '[TSE-TRACE]')] or descendant::debug_text[contains(@text, '[TSE-TRACE]')]]")) {
+    foreach ($guard in $document.SelectNodes("//do_if[descendant::debug_to_file[contains(@text, '[MSX4-SLIB-TRACE]')] or descendant::debug_text[contains(@text, '[MSX4-SLIB-TRACE]')]]")) {
         $value = $guard.GetAttribute('value')
-        if ($value -match '\$IDLE_RETURN_HOME') {
-            Assert-Condition ($value -match '@\$IDLE_RETURN_HOME') "$path has an unsafe optional IDLE_RETURN_HOME trace guard: $value"
+        if ($value -match '\$MSX4_IDLE_RETURN_HOME') {
+            Assert-Condition ($value -match '@\$MSX4_IDLE_RETURN_HOME') "$path has an unsafe optional MSX4_IDLE_RETURN_HOME trace guard: $value"
         }
-        if ($value -match '\$_TSETraceDebug') {
-            Assert-Condition ($value -match '@\$_TSETraceDebug') "$path has an unsafe optional TSETraceDebug guard: $value"
+        if ($value -match '\$_TDETraceDebug') {
+            Assert-Condition ($value -match '@\$_TDETraceDebug') "$path has an unsafe optional TDETraceDebug guard: $value"
         }
     }
-    foreach ($trace in $document.SelectNodes("//*[self::debug_to_file or self::debug_text][contains(@text, '[TSE-TRACE]')]")) {
-        $safeIdleGuard = $trace.SelectSingleNode("ancestor::do_if[contains(@value, '@`$IDLE_RETURN_HOME')]")
-        Assert-Condition ($null -ne $safeIdleGuard) "$path has a TSE trace without a safe optional idle-context guard."
+    foreach ($trace in $document.SelectNodes("//*[self::debug_to_file or self::debug_text][contains(@text, '[MSX4-SLIB-TRACE]')]")) {
+        $safeIdleGuard = $trace.SelectSingleNode("ancestor::do_if[contains(@value, '@`$MSX4_IDLE_RETURN_HOME')]")
+        Assert-Condition ($null -ne $safeIdleGuard) "$path has a TDE trace without a safe optional idle-context guard."
     }
 }
-Write-Output 'Trace placeholders and optional TSE context: OK'
+Write-Output 'Trace placeholders and optional TDE context: OK'
 
-$assistPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml'
+$assistPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/order.assist.xml'
 $assistDocument = $documents[$assistPath]
 $expectedAssistParams = @(
     'OWNERLESS_SECTORS', 'WHARFS', 'SHIPYARDS', 'EQUIPMENTDOCKS',
@@ -356,8 +376,8 @@ $expectedAssistParams = @(
     'FIND_STATION', 'WHERE_TO_DOCK', 'SHOW_MESSAGES', 'WRITE_TO_LOG',
     'ADD_ORDER_TAG', 'DEBUG'
 )
-$assistBranch = $assistDocument.SelectSingleNode("/diff/add/do_if[@value=`"`$orderdef.`$id == 'JP_TradeSubscriptionExplorerG'`"]")
-Assert-Condition ($null -ne $assistBranch) 'The TSE-G Assist branch is missing.'
+$assistBranch = $assistDocument.SelectSingleNode("/diff/add/do_if[@value=`"`$orderdef.`$id == 'MSX4_TradeDataExplorerG'`"]")
+Assert-Condition ($null -ne $assistBranch) 'The TDE-G Assist branch is missing.'
 
 $createParams = @($assistBranch.SelectNodes("do_if[@value='`$createdefaultorder?']/create_order/param"))
 $runParams = @($assistBranch.SelectNodes("do_else/run_script/param"))
@@ -453,7 +473,7 @@ foreach ($finder in $diagnosticFinders) {
 $diagnosticCounters = @(
     foreach ($entry in $documents.GetEnumerator()) {
         if ($entry.Key -match '[\\/]aiscripts[\\/]') {
-            $entry.Value.SelectNodes("//set_value[(contains(@name, 'Trace') or @name='`$_ValidationReason') and not(contains(@name, 'TSETraceDebug')) and not(contains(@name, 'TSEDefaultOrderParamRef'))]")
+            $entry.Value.SelectNodes("//set_value[(contains(@name, 'Trace') or @name='`$_ValidationReason') and not(contains(@name, 'TDETraceDebug')) and not(contains(@name, 'TDEDefaultOrderParamRef'))]")
         }
     }
 )
@@ -470,8 +490,8 @@ $globalTraceState = @(
 Assert-Condition ($globalTraceState.Count -eq 0) 'A new global trace state variable was introduced.'
 
 $orderFiles = @(
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerS.xml',
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/JP_TradeSubscriptionExplorerG.xml'
+    'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerS.xml',
+    'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerG.xml'
 )
 foreach ($relativePath in $orderFiles) {
     $current = $documents[(Join-Path $repoRoot $relativePath)]
@@ -490,9 +510,9 @@ foreach ($relativePath in $orderFiles) {
 Write-Output '10-11/20 no new UI setting; existing advanced DEBUG default retained: OK'
 
 $allModText = ($xmlFiles | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join [Environment]::NewLine
-Assert-Condition ($allModText -notmatch '\[TSE-(?:DIAG|AUDIT)\]') 'A retired TSE-DIAG or TSE-AUDIT marker was introduced.'
+Assert-Condition ($allModText -notmatch '\[MSX4-TDE-(?:DIAG|AUDIT)\]') 'A retired MSX4-TDE-DIAG or MSX4-TDE-AUDIT marker was introduced.'
 
-$diffText = (& git -C $repoRoot diff --find-renames=20% $baselineCommit --unified=0 -- 'mods/JP_TradeSubscriptionExplorer' 'mods/JP_ScriptLibrary' 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer' 'mods/JP_X4Mods/JP_ScriptLibrary') -join [Environment]::NewLine
+$diffText = (& git -C $repoRoot diff --find-renames=20% $baselineCommit --unified=0 -- 'mods/MSX4_TradeDataExplorer' 'mods/MSX4_ScriptLibrary' 'mods/MSX4_TradeDataExplorer' 'mods/MSX4_ScriptLibrary') -join [Environment]::NewLine
 Assert-Condition ($LASTEXITCODE -eq 0) 'Could not obtain the logging diff.'
 $addedLines = @(
     $diffText -split "\r?\n" |
@@ -517,11 +537,11 @@ Assert-Condition (@($forbiddenDiagnostics).Count -eq 0) 'A scan, reveal, or perm
 Write-Output '12-14/20 retired markers, unproven Sector.idcode, scan/reveal/subscription additions: absent'
 
 $diffMappings = @{
-    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
-    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.dock.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.xml'
-    'mods/JP_X4Mods/JP_ScriptLibrary/aiscripts/order.move.follow.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.move.follow.xml'
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.assist.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.assist.xml'
-    'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
+    'mods/MSX4_ScriptLibrary/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
+    'mods/MSX4_ScriptLibrary/aiscripts/order.dock.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.xml'
+    'mods/MSX4_ScriptLibrary/aiscripts/order.move.follow.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.move.follow.xml'
+    'mods/MSX4_TradeDataExplorer/aiscripts/order.assist.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.assist.xml'
+    'mods/MSX4_TradeDataExplorer/aiscripts/order.dock.wait.xml' = 'x4-reference/x4-9.00/base/aiscripts/order.dock.wait.xml'
 }
 
 $changedCodePaths = @(
@@ -534,22 +554,13 @@ foreach ($relativePath in $changedCodePaths) {
     $baseline = [System.Xml.XmlDocument]::new()
     $baseline.PreserveWhitespace = $true
     $baseline.LoadXml($baselineText)
-    if ($relativePath -in $postLoggingFunctionalPaths) {
-        # Later gameplay fixes are validated by their own regression.  Compare
-        # the committed logging snapshot here so this test continues to prove
-        # the functional inertness of the logging change itself.
-        $loggingSnapshot = [System.Xml.XmlDocument]::new()
-        $loggingSnapshot.PreserveWhitespace = $true
-        $loggingSnapshot.LoadXml((Get-GitContent -Revision $loggingFixCommit -Path $relativePath))
-        $current = $loggingSnapshot
-
-        # Later functional and logging refinements are validated by their own
-        # permanent regressions.  This snapshot still proves that the original
-        # instrumentation commit itself was functionally inert.
-    }
-    else {
-        $current = [System.Xml.XmlDocument] $documents[(Join-Path $repoRoot $relativePath)].CloneNode($true)
-    }
+    # Compare the two historical snapshots directly. Later functional changes,
+    # including the independent MSX4 namespace, have their own permanent
+    # regressions and intentionally differ from both snapshots.
+    $loggingSnapshot = [System.Xml.XmlDocument]::new()
+    $loggingSnapshot.PreserveWhitespace = $true
+    $loggingSnapshot.LoadXml((Get-GitContent -Revision $loggingFixCommit -Path $relativePath))
+    $current = $loggingSnapshot
 
     if ($current.DocumentElement.LocalName -eq 'diff') {
         Assert-Condition ($diffMappings.ContainsKey($relativePath)) "$relativePath has no Vanilla mapping for functional comparison."
@@ -567,7 +578,7 @@ foreach ($relativePath in $changedCodePaths) {
 
 Write-Output "15/20 logging snapshot functional XML tree after removing diagnostics: unchanged from $baselineCommit"
 
-$validationTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("tse-runtime-debug-validation-" + [guid]::NewGuid().ToString('N'))
+$validationTempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("tde-runtime-debug-validation-" + [guid]::NewGuid().ToString('N'))
 [void] (New-Item -ItemType Directory -Path $validationTempRoot)
 $simulatedAiFiles = @(
     foreach ($mapping in $diffMappings.GetEnumerator()) {
@@ -599,8 +610,8 @@ $completeAiFiles = @(
     }
 ) + $simulatedAiFiles
 $mdFiles = @(
-    Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/md/jp.ScriptLibrary.md.xml'
-    Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/md/jp.TradeSubscriptionExplorer.md.xml'
+    Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/md/msx4.ScriptLibrary.md.xml'
+    Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/md/msx4.TradeDataExplorer.md.xml'
 )
 $jshell = Get-Command 'jshell' -ErrorAction SilentlyContinue
 Assert-Condition ($null -ne $jshell) 'jshell is required for recursive Vanilla XSD validation.'
@@ -678,4 +689,4 @@ finally {
 }
 Assert-Condition ($gitExitCode -eq 0) ("git diff --check failed: " + ($diffCheck -join ' | '))
 Write-Output '20/20 git diff --check: OK'
-Write-Output 'Structured TSE runtime debug logging validation: PASS'
+Write-Output 'Structured TDE runtime debug logging validation: PASS'

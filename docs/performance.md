@@ -1,8 +1,8 @@
-# TSE Galaxy performance architecture
+# Trade Data Explorer Galaxy performance architecture
 
 ## Reported problem
 
-A TSE Galaxy commander with 14 Mimic subordinates produced multi-second
+A Trade Data Explorer Galaxy commander with 14 Mimic subordinates produced multi-second
 stalls after the fleet ran out of targets and entered its idle cycle. The first
 implementation serialized discovery with a global boolean, but every waiting
 worker polled rapidly and then repeated the complete galaxy search. The idle
@@ -17,7 +17,7 @@ that a particular XML action consumed an exact number of milliseconds.
 
 ### Shared coarse discovery
 
-TSE Galaxy maintains a coarse list of potentially stale known stations:
+Trade Data Explorer Galaxy maintains a coarse list of potentially stale known stations:
 
 - state is `invalid`, `building` or `ready`;
 - only one concrete ship owns a build;
@@ -40,25 +40,25 @@ over about 106 seconds rather than grouping them into four or five universe
 seconds. Delayed discovery is acceptable because trade-information expiry is
 not urgent and every final target is revalidated.
 
-Workers add a stable zero-to-four-second offset to TSE Galaxy idle wakeups.
+Workers add a stable zero-to-four-second offset to Galaxy idle wakeups.
 This reduces synchronized resume waves without changing the configured idle
-interval by a large amount. TSE Sector does not use the galaxy cache.
+interval by a large amount. The Sector behavior does not use the galaxy cache.
 
 ### Bounded idle docking
 
-Strict TSE idle docking asks the finder for at most ten known operational
+Strict Trade Data Explorer idle docking asks the finder for at most ten known operational
 stations ordered by gate distance. It retains docking permission, access,
 blacklist and known-path checks and stops at the first fully valid result. It
 does not estimate travel time for the complete galaxy station list.
 
-When automatic idle docking has no explicit destination, a TSE ship retains
+When automatic idle docking has no explicit destination, a Trade Data Explorer ship retains
 its current station if that station remains operational, non-hostile,
 accessible and permitted by its blacklists. The bounded station search runs
 only when the current station no longer qualifies.
 
 ## Diagnostic counters
 
-With the Advanced `DEBUG` order parameter set to `100`, `[TSE-PERF]` records
+With the Advanced `DEBUG` order parameter set to `100`, `[MSX4-TDE-PERF]` records
 summarize:
 
 - cache generation, builder and build start/end;
@@ -85,7 +85,7 @@ satisfactory over multiple longer play sessions. This is useful runtime
 evidence, but it is a subjective acceptance result rather than a repeatable
 frame-time benchmark.
 
-The permanent regression is `tools/validate-tse-galaxy-performance.ps1`. It
+The permanent regression is `tools/validate-tde-galaxy-performance.ps1`. It
 checks builder ownership, pacing, recovery, cache invalidation, per-ship final
 rules, Mimic behavior, idle bounds, wreck handling, no-sector guards, XML/XSD
 validity and the earlier behavioral regressions.

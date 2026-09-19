@@ -3,8 +3,8 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$tseIconsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/libraries/icons.xml'
-$scriptLibraryIconsPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary/libraries/icons.xml'
+$tdeIconsPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/libraries/icons.xml'
+$scriptLibraryIconsPath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/libraries/icons.xml'
 $vanillaIconsPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/icons.xml'
 $expectedPrefix = 'assets\textures\ui\order\'
 $obsoletePrefix = 'assets\fx\gui\textures\order\'
@@ -29,23 +29,23 @@ function Read-XmlDocument {
     return $document
 }
 
-$tseIcons = Read-XmlDocument -Path $tseIconsPath
+$tdeIcons = Read-XmlDocument -Path $tdeIconsPath
 $scriptLibraryIcons = Read-XmlDocument -Path $scriptLibraryIconsPath
 $vanillaIcons = Read-XmlDocument -Path $vanillaIconsPath
 Write-Output 'XML well-formedness: OK (2 mod icon libraries and Vanilla 9.00 icon reference)'
 
 $expectedIcons = @{
-    'order_jp_tradesubscriptionexplorers' = 'order_recon.tga'
-    'order_jp_tradesubscriptionexplorerg' = 'order_recon.tga'
-    'order_jp_lib_tse_updatesubscription' = 'order_exploreupdate.tga'
-    'order_jp_lib_movetoposition' = 'order_movewait.tga'
-    'order_jp_lib_movetoobject' = 'order_movetoobject.tga'
-    'order_jp_lib_movetosector' = 'order_movewait.tga'
-    'order_jp_lib_movethroughgate' = 'order_movewait.tga'
-    'order_jp_lib_idlereturnhome' = 'order_wait.tga'
+    'order_msx4_tradedataexplorers' = 'order_recon.tga'
+    'order_msx4_tradedataexplorerg' = 'order_recon.tga'
+    'order_msx4_tde_updatetradedata' = 'order_exploreupdate.tga'
+    'order_msx4_lib_movetoposition' = 'order_movewait.tga'
+    'order_msx4_lib_movetoobject' = 'order_movetoobject.tga'
+    'order_msx4_lib_movetosector' = 'order_movewait.tga'
+    'order_msx4_lib_movethroughgate' = 'order_movewait.tga'
+    'order_msx4_lib_idlereturnhome' = 'order_wait.tga'
 }
 
-$modIconNodes = @($tseIcons.SelectNodes('/icons/icon')) + @($scriptLibraryIcons.SelectNodes('/icons/icon'))
+$modIconNodes = @($tdeIcons.SelectNodes('/icons/icon')) + @($scriptLibraryIcons.SelectNodes('/icons/icon'))
 Assert-Condition ($modIconNodes.Count -eq $expectedIcons.Count) 'The two mod libraries must retain exactly the eight reviewed icon definitions.'
 Assert-Condition ((@($modIconNodes | ForEach-Object { $_.GetAttribute('name') } | Sort-Object -Unique)).Count -eq $expectedIcons.Count) 'Every mod icon name must remain unique.'
 
@@ -65,8 +65,8 @@ foreach ($fileName in $fileNames) {
 }
 
 $modXmlFiles = @(
-    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer') -Recurse -File -Filter '*.xml'
-    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/JP_X4Mods/JP_ScriptLibrary') -Recurse -File -Filter '*.xml'
+    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer') -Recurse -File -Filter '*.xml'
+    Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/MSX4_ScriptLibrary') -Recurse -File -Filter '*.xml'
 )
 $obsoleteReferences = @($modXmlFiles | Select-String -SimpleMatch $obsoletePrefix)
 Assert-Condition ($obsoleteReferences.Count -eq 0) 'The obsolete assets\fx\gui\textures\order prefix must not remain in either extension.'

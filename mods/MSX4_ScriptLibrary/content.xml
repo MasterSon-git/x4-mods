@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<content id="MSX4_ScriptLibrary" name="MSX4 Script Library" description="Runtime helpers maintained for MSX4 mods on X4 9.00." author="JanPanthera; maintained by MasterSon-git" version="100" date="2026-09-18" save="0" enabled="1">
+   <text language="7"  name="MSX4 Script Library" description="Это библиотека скриптов, используемых модами MSX4."/>
+   <text language="33" name="MSX4 Script Library" description="Il s'agit d'une bibliothèque de scripts utilisés par les mods MSX4."/>
+   <text language="34" name="MSX4 Script Library" description="Esta es una biblioteca de scripts utilizada por los mods MSX4."/>
+   <text language="39" name="MSX4 Script Library" description="Questa è una biblioteca di script utilizzata dai mod MSX4."/>
+   <text language="42" name="MSX4 Script Library" description="To jest biblioteka skryptów wykorzystywanych przez modyfikacje MSX4."/>
+   <text language="44" name="MSX4 Script Library" description="Runtime helpers maintained for MSX4 mods on X4 9.00."/>
+   <text language="48" name="MSX4 Script Library" description="To jest biblioteka skryptów wykorzystywanych przez modyfikacje MSX4."/>
+   <text language="49" name="MSX4 Script Library" description="Dies ist eine Bibliothek von Skripten, die von MSX4-Mods genutzt werden."/>
+   <text language="55" name="MSX4 Script Library" description="Esta é uma biblioteca de scripts utilizada por mods MSX4."/>
+   <text language="81" name="MSX4 Script Library" description="これはMSX4のmodによって使用されるスクリプトのライブラリーです。"/>
+   <text language="82" name="MSX4 Script Library" description="이것은 MSX4 모드에서 사용하는 스크립트 라이브러리입니다."/>
+   <text language="86" name="MSX4 Script Library" description="Simplified Chinese: 这是MSX4模组使用的脚本库。"/>
+   <text language="88" name="MSX4 Script Library" description="Traditional Chinese: 這是MSX4模組使用的腳本庫。"/>
+   <dependency version="900"/>
+</content>

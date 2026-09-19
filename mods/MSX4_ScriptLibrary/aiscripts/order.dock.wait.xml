@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<diff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://x4dynlib.access.ly\libraries\aiscripts.xsd">
+
+   <add sel="/aiscript/order[@id='DockAndWait']/params">
+      <param name="MSX4_IDLE_RETURN_HOME"  type="internal" default="false"/>
+   </add>
+
+   <add sel="/aiscript/init">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME">
+         <set_value name="$_TDEDefaultOrderParamRef" exact="if @this.ship.defaultorder.id == 'Assist' and @this.ship.commander.defaultorder then this.ship.commander.defaultorder else this.ship.defaultorder"/>
+         <set_value name="$_TDETraceDebug" exact="@$_TDEDefaultOrderParamRef.$DEBUG"/>
+         <do_if value="@$_TDETraceDebug gt 0">
+            <set_value name="$_TDETraceFile" exact="'MSX4_TradeDataExplorer_Runtime.log'"/>
+         </do_if>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions/label[@name='start']" pos="after">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=lifecycle event=order_start result=active target=%2 callerid=%3'.[this.assignedcontrolled.idcode, $destination, $callerid]"/>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions//create_order[@name='$dockorder'][@object='this.assignedcontrolled'][@id=&quot;'DockAt'&quot;]" pos="before">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=dock event=dock_at_start result=pending target=%2 callerid=%3'.[this.assignedcontrolled.idcode, $destination, $callerid]"/>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions//create_order[@name='$dockorder'][@object='this.assignedcontrolled'][@id=&quot;'DockAt'&quot;]">
+      <param name="MSX4_IDLE_RETURN_HOME" value="$MSX4_IDLE_RETURN_HOME"/>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions//create_order[@name='$dockorder'][@object='this.assignedcontrolled'][@id=&quot;'DockAt'&quot;]" pos="after">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=dock event=dock_at_created result=active target=%2 order=%3 callerid=%4'.[this.assignedcontrolled.idcode, $destination, $dockorder, $callerid]"/>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions/do_if[starts-with(normalize-space(@value), '$isdockfollower')]/do_if[@value='$callerid.exists']/do_if[@value='$callerid.$cannotdock?']/edit_order_param[@order='$callerid'][@param=&quot;'cannotdock'&quot;][@value='true']" pos="before">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=dock event=cannotdock_set result=failed reason=cannotdock target=%2 callerid=%3'.[this.assignedcontrolled.idcode, $destination, $callerid]"/>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions/do_if[@value='not $destination.isoperational or not @$destination.isclass.container']/do_if[@value='$callerid.exists']/do_if[@value='$callerid.$cannotdock?']/edit_order_param[@order='$callerid'][@param=&quot;'cannotdock'&quot;][@value='true']" pos="before">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=dock event=cannotdock_set result=failed reason=cannotdock target=%2 callerid=%3'.[this.assignedcontrolled.idcode, $destination, $callerid]"/>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions/label[@name='finish']" pos="after">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=lifecycle event=order_return result=complete reason=%2 target=%3 callerid=%4'.[this.assignedcontrolled.idcode, if $destination.isoperational then 'order_changed' else 'invalid_target', $destination, $callerid]"/>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/interrupts">
+      <handler>
+         <conditions>
+            <event_object_signalled object="this.ship" param="'MSX4_Cancel_IdleReturnHome'"/>
+            <check_value value="$MSX4_IDLE_RETURN_HOME == true"/>
+         </conditions>
+         <actions>
+            <cancel_order order="this.ship.order"/>
+         </actions>
+      </handler>
+   </add>
+
+   <add sel="/aiscript/on_abort">
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
+         <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=lifecycle event=order_abort result=aborted reason=order_interrupted target=%2 callerid=%3'.[this.assignedcontrolled.idcode, $destination, $callerid]"/>
+      </do_if>
+   </add>
+
+</diff>

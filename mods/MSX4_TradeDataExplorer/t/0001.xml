@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default ~~ English -->
+
+<language>
+   <page id="975211" voice="no">
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <!-- MSX4_TradeDataExplorer -->
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="1940">Update trade information</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="1960">\033#FFe27100#Trade data update paused\033X</t>
+      <t id="1961">There are no remaining stations within my defined workspace whose trade information needs updating.</t>
+      <t id="1962">I will start updating trade information in sector %2%1\033X.</t>
+      <t id="1963">Updated trade information at %5%1 [%2]\033X\nRelation to us: %7%3\033X\nSector: %6%4\033X</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <t id="1970">Updates trade information for known stations within a specific sector.</t>
+      <t id="1971">Updates trade information for known stations throughout the entire galaxy.</t>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </page>
+</language>

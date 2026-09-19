@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="msx4.tde.UpdateTradeData" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+   <order id="MSX4_TDE_UpdateTradeData" name="{975211, 1940}" category="internal" infinite="false" allowinloop="false" canplayercancel="true">
+      <params>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="SECTOR"  type="internal" default="null"/>
+         <param name="STATION" type="internal" default="null"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+         <param name="debugchance" type="internal" default="0"/>
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      </params>
+      <location object="$STATION" condition="@$STATION != null"/>
+   </order>
+
+   <interrupts>
+      <library>
+         <!-- Validate against the current target state and the ship's effective Vanilla blacklist policy. -->
+         <actions name="ValidateTarget">
+            <set_value name="$_ValidationStatus" exact="'target_invalid'"/>
+            <set_value name="$_Station" exact="null"/>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_ValidationReason" exact="'invalid_target'"/>
+            </do_if>
+            <!-- A destroyed station remains an existing wreck component, but
+                 no longer exposes container trade properties. -->
+            <do_if value="$STATION.exists and not @$STATION.iswreck">
+               <set_value name="$_Station" exact="if $STATION.isconstruction then $STATION.buildstorage else $STATION"/>
+               <do_if value="$_Station.exists">
+                  <!-- ishostileto includes mutual object/faction hostility and the
+                       effective fire-authorisation state in X4 9.00. -->
+                  <do_if value="$_Ship.ishostileto.{$STATION} or $_Ship.ishostileto.{$_Station}">
+                     <set_value name="$_ValidationStatus" exact="'target_disallowed'"/>
+                     <do_if value="$DEBUG gt 0">
+                        <set_value name="$_ValidationReason" exact="'hostile_target'"/>
+                     </do_if>
+                  </do_if>
+                  <do_elseif value="$_Station.hastradesubscription">
+                     <set_value name="$_ValidationStatus" exact="'already_current'"/>
+                     <do_if value="$DEBUG gt 0">
+                        <set_value name="$_ValidationReason" exact="'already_current'"/>
+                     </do_if>
+                  </do_elseif>
+                  <do_else>
+                     <find_sector name="$_AccessibleTargetSector" space="player.galaxy" macro="$_Station.sector.macro" accessgrantedto="$_Ship.owner"/>
+                     <do_if value="$_AccessibleTargetSector != $_Station.sector">
+                        <set_value name="$_ValidationStatus" exact="'target_disallowed'"/>
+                        <do_if value="$DEBUG gt 0">
+                           <set_value name="$_ValidationReason" exact="'access_denied'"/>
+                        </do_if>
+                     </do_if>
+                     <do_else>
+                        <include_interrupt_actions ref="GetBlacklistgroup"/>
+                        <!-- Construction sites deliberately require both the site and its
+                             buildstorage to pass Object Activity. -->
+                        <do_if value="$STATION.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} or
+                                      $_Station.isblacklisted.{blacklisttype.objectactivity}.{$blacklistgroup}.{$_Ship} or
+                                      $_Station.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} or
+                                      $_Station.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship}">
+                           <set_value name="$_ValidationStatus" exact="'target_disallowed'"/>
+                           <do_if value="$DEBUG gt 0">
+                              <set_value name="$_ValidationReason" exact="if $_Station.sector.isblacklisted.{blacklisttype.sectortravel}.{$blacklistgroup}.{$_Ship} then 'travel_blacklisted' else (if $_Station.sector.isblacklisted.{blacklisttype.sectoractivity}.{$blacklistgroup}.{$_Ship} then 'activity_blacklisted' else 'object_blacklisted')"/>
+                           </do_if>
+                        </do_if>
+                        <do_else>
+                           <get_global_path component="$_PathComponent" resultdistance="$_PathDistance" refobject="$_Ship"
+                                            useblacklist="$blacklistgroup" useknownpath="true" uselocalhighways="not $_Ship.iscapitalship">
+                              <start object="$_Ship"/>
+                              <end object="$_Station"/>
+                           </get_global_path>
+                           <set_value name="$_ValidationStatus" exact="if $_PathDistance ge 0 then 'valid' else 'no_valid_path'"/>
+                           <do_if value="$DEBUG gt 0">
+                              <set_value name="$_ValidationReason" exact="if $_PathDistance ge 0 then 'success' else 'no_known_path'"/>
+                           </do_if>
+                        </do_else>
+                     </do_else>
+                  </do_else>
+               </do_if>
+            </do_if>
+         </actions>
+      </library>
+      <handler>
+         <conditions>
+            <check_any>
+               <event_object_destroyed object="$STATION"/>
+               <event_object_destroyed object="$_Station"/>
+            </check_any>
+         </conditions>
+         <actions>
+            <set_value name="$_Result" exact="'target_invalid'"/>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=interrupt event=target_destroyed result=target_invalid reason=target_destroyed target=%2'.[$_Ship.idcode, $STATION]"/>
+               <debug_text filter="scripts" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=error event=target_destroyed result=target_invalid reason=target_destroyed'.[$_Ship.idcode]"/>
+            </do_if>
+            <abort_called_scripts resume="END_LBL"/>
+         </actions>
+      </handler>
+      <handler ref="AttackHandler"/>
+      <handler ref="MissileLockHandler" />
+      <handler ref="ScannedHandler"/>
+      <handler ref="InspectedHandler"/>
+      <handler ref="FoundAbandonedHandler"/>
+      <handler ref="FoundLockboxHandler"/>
+      <handler ref="ResupplyHandler"/>
+      <handler ref="TideHandler"/>
+   </interrupts>
+
+   <init>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$_Ship" exact="this.ship"/>
+      <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$_Result" exact="'target_invalid'"/>
+      <set_value name="$_Station" exact="if $STATION.exists and $STATION.isconstruction then $STATION.buildstorage else $STATION"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+      <do_if value="$DEBUG gt 0">
+         <set_value name="$_DebugFolderName" exact="'MSX4_TradeDataExplorer.logs'"/>
+         <set_value name="$_DebugScriptName" exact="'msx4.tde.UpdateTradeData'"/>
+         <set_value name="$_DebugFileName" exact="'MSX4_TradeDataExplorer_Runtime.log'"/>
+         <set_value name="$_TraceWaitAttempt" exact="0"/>
+         <set_value name="$_TraceNextWaitLog" exact="1"/>
+      </do_if>
+      <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+   </init>
+
+   <attention min="unknown">
+      <actions>
+
+         <label name="INIT_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_start result=active target=%2 current_sector=%3 target_sector=%4 subscription=%5'.[$_Ship.idcode, $STATION, $_Ship.sector.knownname, @$_Station.sector.knownname, @$_Station.hastradesubscription]"/>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <set_command command="command.investigate" param="$STATION"/>
+         <set_command_action commandaction="commandaction.investigating" param="$STATION"/>
+
+         <!-- Do not depart for a destroyed, current, blacklisted, unknown-route or unreachable target. -->
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceValidationPhase" exact="'before_intersector_move'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_start result=pending stage=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
+         </do_if>
+         <include_interrupt_actions ref="ValidateTarget"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 target=%5 path_distance=%6 subscription=%7'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_PathDistance, @$_Station.hastradesubscription]"/>
+         </do_if>
+         <do_if value="$_ValidationStatus != 'valid'">
+            <set_value name="$_Result" exact="$_ValidationStatus"/>
+            <resume label="END_LBL"/>
+         </do_if>
+
+         <!-- Vanilla 9.00 owns all inter-sector gate, accelerator and highway handling. -->
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_required result=%2 reason=%3 current_sector=%4 target_sector=%5 subscription=%6'.[$_Ship.idcode, $_Ship.sector != $_Station.sector, if $_Ship.sector != $_Station.sector then 'success' else 'not_required', $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
+         </do_if>
+         <do_if value="$_Ship.sector != $_Station.sector">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_start result=pending target_sector=%2 strictblacklist=true useknownpath=true uselocalhighways=%3 recallsubordinates=false subscription=%4'.[$_Ship.idcode, $_Station.sector.knownname, not $_Ship.iscapitalship, $_Station.hastradesubscription]"/>
+            </do_if>
+            <run_script name="'move.generic'" result="$_MoveSuccess">
+               <param name="destination" value="$_Station.sector"/>
+               <param name="strictblacklist" value="true"/>
+               <param name="useknownpath" value="true"/>
+               <param name="uselocalhighways" value="not $_Ship.iscapitalship"/>
+               <param name="recallsubordinates" value="false"/>
+               <param name="debugchance" value="$debugchance"/>
+            </run_script>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=intersector_move event=move_return result=%2 reason=%3 move_result=%2 current_sector=%4 target_sector=%5 subscription=%6'.[$_Ship.idcode, $_MoveSuccess, if $_MoveSuccess then 'success' else 'move_failed', $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
+            </do_if>
+            <do_if value="not $_MoveSuccess">
+               <set_value name="$_Result" exact="'move_failed'"/>
+               <resume label="END_LBL"/>
+            </do_if>
+         </do_if>
+
+         <!-- Time passed during travel: reject targets that became current or invalid. -->
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceValidationPhase" exact="'after_intersector_move'"/>
+         </do_if>
+         <include_interrupt_actions ref="ValidateTarget"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 current_sector=%5 target_sector=%6 subscription=%7'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $_Ship.sector.knownname, @$_Station.sector.knownname, @$_Station.hastradesubscription]"/>
+         </do_if>
+         <do_if value="$_ValidationStatus != 'valid'">
+            <set_value name="$_Result" exact="$_ValidationStatus"/>
+            <resume label="END_LBL"/>
+         </do_if>
+         <do_if value="$_Ship.sector != $_Station.sector">
+            <set_value name="$_Result" exact="'move_failed'"/>
+            <resume label="END_LBL"/>
+         </do_if>
+
+         <!-- Preserve the existing radar approach, but prevent it from reaching the legacy sector stack. -->
+         <do_if value="$DEBUG gt 0">
+            <set_value name="$_TraceValidationPhase" exact="'before_radar_approach'"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_snapshot result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=approach event=move_start result=pending target=%2 current_sector=%3 target_sector=%4 target_distance=%5 subscription=%6'.[$_Ship.idcode, $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, ($_Ship.maxradarrange * 0.5), $_Station.hastradesubscription]"/>
+         </do_if>
+         <run_script name="'msx4.lib.MoveToObject'" result="$_ApproachSuccess">
+            <param name="OBJECT" value="$_Station"/>
+            <param name="POSITION_SPACE" value="$_Ship"/>
+            <param name="DISTANCE_TO_OBJECT" value="($_Ship.maxradarrange * 0.5)"/>
+            <param name="FORCE_POSITION" value="false"/>
+            <param name="FINISH_ON_APPROACH" value="true"/>
+            <param name="SKIP_SECTOR_CHECK" value="true"/>
+         </run_script>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=approach event=move_return result=%2 reason=%3 target=%4 current_sector=%5 target_sector=%6 subscription=%7'.[$_Ship.idcode, $_ApproachSuccess, if $_ApproachSuccess then 'success' else 'approach_failed', $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
+            <set_value name="$_TraceValidationPhase" exact="'after_radar_approach'"/>
+         </do_if>
+
+         <include_interrupt_actions ref="ValidateTarget"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
+         </do_if>
+         <do_if value="$_ValidationStatus == 'already_current'">
+            <resume label="SUCCESS_LBL"/>
+         </do_if>
+         <do_if value="$_ValidationStatus != 'valid'">
+            <set_value name="$_Result" exact="$_ValidationStatus"/>
+            <resume label="END_LBL"/>
+         </do_if>
+         <do_if value="not $_ApproachSuccess">
+            <set_value name="$_Result" exact="'approach_failed'"/>
+            <resume label="END_LBL"/>
+         </do_if>
+
+         <!-- No arbitrary timeout: leave only when Vanilla confirms the update or the target becomes invalid. -->
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_start result=pending target=%2 subscription=%3'.[$_Ship.idcode, $_Station, $_Station.hastradesubscription]"/>
+         </do_if>
+         <do_while value="$_ValidationStatus != 'already_current'">
+            <wait exact="5s"/>
+            <do_if value="$DEBUG gt 0">
+               <set_value name="$_TraceWaitAttempt" operation="add" exact="1"/>
+               <set_value name="$_TraceValidationPhase" exact="'subscription_wait'"/>
+               <do_if value="$_TraceWaitAttempt ge $_TraceNextWaitLog">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_tick result=pending attempt=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_TraceWaitAttempt, $_Station, $_Station.hastradesubscription]"/>
+                  <set_value name="$_TraceNextWaitLog" operation="add" exact="12"/>
+               </do_if>
+            </do_if>
+            <include_interrupt_actions ref="ValidateTarget"/>
+            <do_if value="$DEBUG gt 0 and $_ValidationStatus != 'valid'">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=subscription_wait attempt=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceWaitAttempt, $STATION, @$_Station.hastradesubscription]"/>
+            </do_if>
+            <do_if value="$_ValidationStatus != 'valid' and $_ValidationStatus != 'already_current'">
+               <set_value name="$_Result" exact="$_ValidationStatus"/>
+               <resume label="END_LBL"/>
+            </do_if>
+         </do_while>
+
+         <label name="SUCCESS_LBL"/>
+         <set_value name="$_Result" exact="'success'"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=subscription_detected result=success reason=success target=%2 subscription=true attempt=%3'.[$_Ship.idcode, $_Station, $_TraceWaitAttempt]"/>
+         </do_if>
+
+         <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+         <run_script name="'msx4.lib.GetFactionColorCode'" result="$_ObjectOwnerColor">
+            <param name="FACTION" value="$STATION.owner"/>
+         </run_script>
+         <run_script name="'msx4.lib.GetFactionColorCode'" result="$_ObjectSectorOwnerColor">
+            <param name="FACTION" value="$STATION.sector.owner"/>
+         </run_script>
+         <run_script name="'msx4.lib.GetFactionRelationColorCode'" result="$_ObjectOwnerRelationColorCode">
+            <param name="FACTION_RELATION" value="$_Ship.owner.relation.{$STATION.relationto.{$_Ship}}.uivalue"/>
+         </run_script>
+
+         <!-- Renewed subscription at %5%1 [%2]\033X\nRelation to us: %7%3\033X\nSector: %6%4\033X -->
+         <set_value name="$_Text" exact="{975211, 1963}.[$STATION.knownname, $STATION.idcode, $_Ship.owner.relation.{$STATION.relationto.{$_Ship}}.uivalue, $STATION.sector.knownname, $_ObjectOwnerColor, $_ObjectSectorOwnerColor, $_ObjectOwnerRelationColorCode]"/>
+
+         <run_script name="'msx4.lib.MessageLog'">
+            <param name="TEXT"               value="$_Text"/>
+            <param name="INTERACTION_OBJECT" value="$STATION"/>
+            <param name="MESSAGE_CHANCE"     value="3"/>
+            <param name="LOG_CHANCE"         value="3"/>
+         </run_script>
+
+         <label name="END_LBL"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 target=%4 current_sector=%5 subscription=%6'.[$_Ship.idcode, $_Result, if $_Result == 'target_invalid' then 'invalid_target' else (if $_Result == 'target_disallowed' then $_ValidationReason else (if $_Result == 'no_valid_path' then 'no_known_path' else $_Result)), $STATION, $_Ship.sector.knownname, @$_Station.hastradesubscription]"/>
+         </do_if>
+
+         <return value="$_Result"/>
+
+      </actions>
+   </attention>
+
+   <on_abort>
+      <do_if value="$DEBUG gt 0">
+         <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted target=%2'.[$_Ship.idcode, $STATION]"/>
+      </do_if>
+   </on_abort>
+
+</aiscript>

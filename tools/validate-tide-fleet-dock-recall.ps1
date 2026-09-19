@@ -28,8 +28,8 @@ function ConvertTo-JavaPath {
     return [System.IO.Path]::GetFullPath($Path).Replace('\', '/').Replace('"', '\"')
 }
 
-$diffPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.xml'
-$existingWaitDiffPath = Join-Path $repoRoot 'mods/JP_X4Mods/JP_TradeSubscriptionExplorer/aiscripts/order.dock.wait.xml'
+$diffPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/order.dock.xml'
+$existingWaitDiffPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/order.dock.wait.xml'
 $vanillaDockPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/aiscripts/order.dock.xml'
 $vanillaFleeDockPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/aiscripts/move.flee.dock.xml'
 $aiSchemaPath = Join-Path $repoRoot 'x4-reference/x4-9.00/base/libraries/aiscripts.xsd'
@@ -44,12 +44,12 @@ $vanillaInit = @($vanillaDock.SelectNodes('/aiscript/init'))
 Assert-Condition ($null -ne $add -and $vanillaInit.Count -eq 1) 'the additive diff selector resolves to exactly one Vanilla order.dock init node'
 
 $guard = $add.SelectSingleNode("do_if")
-$expectedGuard = "`$dockfollowers and @this.ship.defaultorder.id == 'JP_TradeSubscriptionExplorerG' and this.ship.subordinates.count gt 0"
-Assert-Condition ($guard.GetAttribute('value') -ceq $expectedGuard) 'the override is restricted to active dockfollowers on a TSE-G commander with subordinates'
+$expectedGuard = "`$dockfollowers and @this.ship.defaultorder.id == 'MSX4_TradeDataExplorerG' and this.ship.subordinates.count gt 0"
+Assert-Condition ($guard.GetAttribute('value') -ceq $expectedGuard) 'the override is restricted to active dockfollowers on a TDE-G commander with subordinates'
 Assert-Condition ($null -ne $guard.SelectSingleNode("set_value[@name='`$dockfollowers' and @exact='false']")) 'the guarded change only disables follower docking'
 Assert-Condition ($null -ne $guard.SelectSingleNode("do_if[@value='@this.ship.defaultorder.`$DEBUG gt 0']/debug_to_file[contains(@text, 'event=dockfollowers_override')]")) 'the override has guarded runtime diagnostics'
 
-$waitGuard = $existingWaitDiff.SelectSingleNode("/diff/add/do_if[contains(@value, `"@this.ship.defaultorder.id == 'JP_TradeSubscriptionExplorerG'`")]/set_value[@name='`$dockfollowers' and @exact='false']")
+$waitGuard = $existingWaitDiff.SelectSingleNode("/diff/add/do_if[contains(@value, `"@this.ship.defaultorder.id == 'MSX4_TradeDataExplorerG'`")]/set_value[@name='`$dockfollowers' and @exact='false']")
 Assert-Condition ($null -ne $waitGuard) 'the existing DockAndWait protection remains in place'
 
 $fleeCall = $vanillaFleeDock.SelectSingleNode("//run_script[@name=`"'order.dock'`"]/param[@name='dockfollowers' and @value='@`$attacker.isclass.celestialbody']")
@@ -67,7 +67,7 @@ $elementCountAfter = @($target.ChildNodes | Where-Object NodeType -eq ([System.X
 $appliedGuard = $applied.SelectSingleNode("/aiscript/init/do_if[@value=`"$expectedGuard`"]")
 Assert-Condition ($elementCountAfter -eq ($elementCountBefore + 1) -and $null -ne $appliedGuard) 'simulated diff application adds exactly one functional initialization guard'
 
-$tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('tse-tide-dock-validation-' + [guid]::NewGuid().ToString('N'))
+$tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('tde-tide-dock-validation-' + [guid]::NewGuid().ToString('N'))
 [void] (New-Item -ItemType Directory -Path $tempRoot)
 try {
     $appliedPath = Join-Path $tempRoot 'order.dock.applied.xml'
@@ -96,7 +96,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or -not (($javaOutput -join "`n").Contains('XSD validation complete'))) {
         throw "AI-XSD validation failed:`n$($javaOutput -join [Environment]::NewLine)"
     }
-    Write-Host 'PASS: simulated order.dock with the TSE guard validates against the Vanilla 9.00 AI schema'
+    Write-Host 'PASS: simulated order.dock with the TDE guard validates against the Vanilla 9.00 AI schema'
 }
 finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force
@@ -105,4 +105,4 @@ finally {
 & git -c core.autocrlf=false -C $repoRoot diff --check
 Assert-Condition ($LASTEXITCODE -eq 0) 'git diff --check passes'
 
-Write-Host 'TSE Tide fleet dock-recall regression: PASS'
+Write-Host 'TDE Tide fleet dock-recall regression: PASS'
