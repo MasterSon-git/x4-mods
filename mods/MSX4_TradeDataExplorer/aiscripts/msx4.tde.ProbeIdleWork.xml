@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="msx4.tde.ProbeIdleWork" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+   <init>
+      <set_value name="$_Ship" exact="this.ship"/>
+      <set_value name="$_DefaultOrderParamRef" exact="if @$_Ship.defaultorder.id == 'Assist' and @$_Ship.commander.defaultorder then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
+   </init>
+
+   <attention min="unknown">
+      <actions>
+         <create_list name="$_Candidates"/>
+         <set_value name="$_SearchStatus" exact="'invalid_order'"/>
+         <do_if value="@$_DefaultOrderParamRef.id == 'MSX4_TradeDataExplorerS'">
+            <run_script name="'msx4.tde.GetTradeDataToUpdate'" result="$_Candidates">
+               <param name="SECTOR"                  value="$_DefaultOrderParamRef.$SECTOR"/>
+               <param name="WHARFS"                  value="$_DefaultOrderParamRef.$WHARFS"/>
+               <param name="SHIPYARDS"               value="$_DefaultOrderParamRef.$SHIPYARDS"/>
+               <param name="EQUIPMENTDOCKS"          value="$_DefaultOrderParamRef.$EQUIPMENTDOCKS"/>
+               <param name="TRADING_STATIONS"        value="$_DefaultOrderParamRef.$TRADING_STATIONS"/>
+               <param name="PIRATE_BASES"            value="$_DefaultOrderParamRef.$PIRATE_BASES"/>
+               <param name="RECYCLING_FACILITIES"    value="$_DefaultOrderParamRef.$RECYCLING_FACILITIES"/>
+               <param name="DEFENCE_STATIONS"        value="$_DefaultOrderParamRef.$DEFENCE_STATIONS"/>
+               <param name="FACTION_HEADQUARTERS"    value="$_DefaultOrderParamRef.$FACTION_HEADQUARTERS"/>
+               <param name="NON_SPECIAL_STATIONS"    value="$_DefaultOrderParamRef.$NON_SPECIAL_STATIONS"/>
+               <param name="CONSTRUCTION_SITES"      value="$_DefaultOrderParamRef.$CONSTRUCTION_SITES"/>
+               <param name="SILENT"                  value="true"/>
+               <save_retval name="status" variable="$_SearchStatus"/>
+            </run_script>
+         </do_if>
+         <do_elseif value="@$_DefaultOrderParamRef.id == 'MSX4_TradeDataExplorerG'">
+            <run_script name="'msx4.tde.GetTradeDataToUpdate'" result="$_Candidates">
+               <param name="OWNERLESS_SECTORS"       value="$_DefaultOrderParamRef.$OWNERLESS_SECTORS"/>
+               <param name="WHARFS"                  value="$_DefaultOrderParamRef.$WHARFS"/>
+               <param name="SHIPYARDS"               value="$_DefaultOrderParamRef.$SHIPYARDS"/>
+               <param name="EQUIPMENTDOCKS"          value="$_DefaultOrderParamRef.$EQUIPMENTDOCKS"/>
+               <param name="TRADING_STATIONS"        value="$_DefaultOrderParamRef.$TRADING_STATIONS"/>
+               <param name="PIRATE_BASES"            value="$_DefaultOrderParamRef.$PIRATE_BASES"/>
+               <param name="RECYCLING_FACILITIES"    value="$_DefaultOrderParamRef.$RECYCLING_FACILITIES"/>
+               <param name="DEFENCE_STATIONS"        value="$_DefaultOrderParamRef.$DEFENCE_STATIONS"/>
+               <param name="FACTION_HEADQUARTERS"    value="$_DefaultOrderParamRef.$FACTION_HEADQUARTERS"/>
+               <param name="NON_SPECIAL_STATIONS"    value="$_DefaultOrderParamRef.$NON_SPECIAL_STATIONS"/>
+               <param name="CONSTRUCTION_SITES"      value="$_DefaultOrderParamRef.$CONSTRUCTION_SITES"/>
+               <param name="SILENT"                  value="true"/>
+               <save_retval name="status" variable="$_SearchStatus"/>
+            </run_script>
+         </do_elseif>
+         <set_value name="$_CandidateCount" exact="$_Candidates.count"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.ProbeIdleWork:' + '[MSX4-TDE-TRACE] source=probe_idle_work ship=%1 phase=idle_probe event=candidate_result result=%2 mode=%3 candidate_count=%4'.[$_Ship.idcode, $_SearchStatus, if @$_DefaultOrderParamRef.id == 'MSX4_TradeDataExplorerS' then 'sector' else (if @$_DefaultOrderParamRef.id == 'MSX4_TradeDataExplorerG' then 'galaxy' else 'invalid'), $_CandidateCount]"/>
+         </do_if>
+         <return value="$_CandidateCount gt 0">
+            <retval name="status" value="$_SearchStatus"/>
+            <retval name="candidate_count" value="$_CandidateCount"/>
+         </return>
+      </actions>
+   </attention>
+
+</aiscript>

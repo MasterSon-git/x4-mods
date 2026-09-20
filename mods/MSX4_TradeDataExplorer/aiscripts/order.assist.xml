@@ -19,8 +19,8 @@
          <!-- Recreate the inherited default order after promotion using the values saved below. -->
          <do_if value="$createdefaultorder?">
             <do_if value="$_TDETraceDebug gt 0">
-               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=movement idle_time=%2 idle_move=%3 idle_follow=%4 idle_dock=%5'.[this.assignedcontrolled.idcode, $orderdef.$IDLE_TIME, $orderdef.$IDLE_MOVE_TO, $orderdef.$IDLE_FOLLOW, $orderdef.$IDLE_DOCKING]"/>
-               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=idle_targets where_to_move=%2 start_position=%3 who_to_follow=%4 find_station=%5 where_to_dock=%6'.[this.assignedcontrolled.idcode, $orderdef.$WHERE_TO_MOVE, $orderdef.$START_POSITION, $orderdef.$WHO_TO_FOLLOW, $orderdef.$FIND_STATION, $orderdef.$WHERE_TO_DOCK]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=movement idle_time=%2 idle_action=%3'.[this.assignedcontrolled.idcode, $orderdef.$IDLE_TIME, $orderdef.$IDLE_ACTION]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=idle_targets move_target=%2 start_position=%3 follow_target=%4 dock_target=%5'.[this.assignedcontrolled.idcode, $orderdef.$IDLE_MOVE_TARGET, $orderdef.$START_POSITION, $orderdef.$IDLE_FOLLOW_TARGET, $orderdef.$IDLE_DOCK_TARGET]"/>
                <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=station_categories ownerless=%2 wharfs=%3 shipyards=%4 equipmentdocks=%5 trading_stations=%6 pirate_bases=%7 recycling=%8 defence=%9'.[this.assignedcontrolled.idcode, $orderdef.$OWNERLESS_SECTORS, $orderdef.$WHARFS, $orderdef.$SHIPYARDS, $orderdef.$EQUIPMENTDOCKS, $orderdef.$TRADING_STATIONS, $orderdef.$PIRATE_BASES, $orderdef.$RECYCLING_FACILITIES, $orderdef.$DEFENCE_STATIONS]"/>
                <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=station_categories_special headquarters=%2 factories=%3 construction=%4'.[this.assignedcontrolled.idcode, $orderdef.$FACTION_HEADQUARTERS, $orderdef.$NON_SPECIAL_STATIONS, $orderdef.$CONSTRUCTION_SITES]"/>
                <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=create group=messages_debug show_messages=%2 write_to_log=%3 add_order_tag=%4 debug=%5'.[this.assignedcontrolled.idcode, $orderdef.$SHOW_MESSAGES, $orderdef.$WRITE_TO_LOG, $orderdef.$ADD_ORDER_TAG, $orderdef.$DEBUG]"/>
@@ -38,14 +38,11 @@
                <param name="NON_SPECIAL_STATIONS" value="$orderdef.$NON_SPECIAL_STATIONS"/>
                <param name="CONSTRUCTION_SITES" value="$orderdef.$CONSTRUCTION_SITES"/>
                <param name="IDLE_TIME" value="$orderdef.$IDLE_TIME"/>
-               <param name="IDLE_MOVE_TO" value="$orderdef.$IDLE_MOVE_TO"/>
-               <param name="WHERE_TO_MOVE" value="$orderdef.$WHERE_TO_MOVE"/>
+               <param name="IDLE_ACTION" value="$orderdef.$IDLE_ACTION"/>
+               <param name="IDLE_MOVE_TARGET" value="$orderdef.$IDLE_MOVE_TARGET"/>
                <param name="START_POSITION" value="$orderdef.$START_POSITION"/>
-               <param name="IDLE_FOLLOW" value="$orderdef.$IDLE_FOLLOW"/>
-               <param name="WHO_TO_FOLLOW" value="$orderdef.$WHO_TO_FOLLOW"/>
-               <param name="IDLE_DOCKING" value="$orderdef.$IDLE_DOCKING"/>
-               <param name="FIND_STATION" value="$orderdef.$FIND_STATION"/>
-               <param name="WHERE_TO_DOCK" value="$orderdef.$WHERE_TO_DOCK"/>
+               <param name="IDLE_FOLLOW_TARGET" value="$orderdef.$IDLE_FOLLOW_TARGET"/>
+               <param name="IDLE_DOCK_TARGET" value="$orderdef.$IDLE_DOCK_TARGET"/>
                <param name="SHOW_MESSAGES" value="$orderdef.$SHOW_MESSAGES"/>
                <param name="WRITE_TO_LOG" value="$orderdef.$WRITE_TO_LOG"/>
                <param name="ADD_ORDER_TAG" value="$orderdef.$ADD_ORDER_TAG"/>
@@ -69,22 +66,19 @@
             <set_value name="$orderdef.$NON_SPECIAL_STATIONS" exact="$order.$NON_SPECIAL_STATIONS"/>
             <set_value name="$orderdef.$CONSTRUCTION_SITES" exact="$order.$CONSTRUCTION_SITES"/>
             <set_value name="$orderdef.$IDLE_TIME" exact="$order.$IDLE_TIME"/>
-            <set_value name="$orderdef.$IDLE_MOVE_TO" exact="$order.$IDLE_MOVE_TO"/>
-            <set_value name="$orderdef.$WHERE_TO_MOVE" exact="$order.$WHERE_TO_MOVE"/>
+            <set_value name="$orderdef.$IDLE_ACTION" exact="$order.$IDLE_ACTION"/>
+            <set_value name="$orderdef.$IDLE_MOVE_TARGET" exact="$order.$IDLE_MOVE_TARGET"/>
             <set_value name="$orderdef.$START_POSITION" exact="[this.ship.sector, this.ship.position]"/>
-            <set_value name="$orderdef.$IDLE_FOLLOW" exact="$order.$IDLE_FOLLOW"/>
-            <set_value name="$orderdef.$WHO_TO_FOLLOW" exact="$order.$WHO_TO_FOLLOW"/>
-            <set_value name="$orderdef.$IDLE_DOCKING" exact="$order.$IDLE_DOCKING"/>
-            <set_value name="$orderdef.$FIND_STATION" exact="$order.$FIND_STATION"/>
-            <set_value name="$orderdef.$WHERE_TO_DOCK" exact="$order.$WHERE_TO_DOCK"/>
+            <set_value name="$orderdef.$IDLE_FOLLOW_TARGET" exact="$order.$IDLE_FOLLOW_TARGET"/>
+            <set_value name="$orderdef.$IDLE_DOCK_TARGET" exact="$order.$IDLE_DOCK_TARGET"/>
             <set_value name="$orderdef.$SHOW_MESSAGES" exact="$order.$SHOW_MESSAGES"/>
             <set_value name="$orderdef.$WRITE_TO_LOG" exact="$order.$WRITE_TO_LOG"/>
             <set_value name="$orderdef.$ADD_ORDER_TAG" exact="$order.$ADD_ORDER_TAG"/>
             <set_value name="$orderdef.$DEBUG" exact="$order.$DEBUG"/>
 
             <do_if value="$_TDETraceDebug gt 0">
-               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=movement idle_time=%2 idle_move=%3 idle_follow=%4 idle_dock=%5'.[this.assignedcontrolled.idcode, $order.$IDLE_TIME, $order.$IDLE_MOVE_TO, $order.$IDLE_FOLLOW, $order.$IDLE_DOCKING]"/>
-               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=idle_targets where_to_move=%2 start_position=%3 who_to_follow=%4 find_station=%5 where_to_dock=%6'.[this.assignedcontrolled.idcode, $order.$WHERE_TO_MOVE, [this.ship.sector, this.ship.position], $order.$WHO_TO_FOLLOW, $order.$FIND_STATION, $order.$WHERE_TO_DOCK]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=movement idle_time=%2 idle_action=%3'.[this.assignedcontrolled.idcode, $order.$IDLE_TIME, $order.$IDLE_ACTION]"/>
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=idle_targets move_target=%2 start_position=%3 follow_target=%4 dock_target=%5'.[this.assignedcontrolled.idcode, $order.$IDLE_MOVE_TARGET, [this.ship.sector, this.ship.position], $order.$IDLE_FOLLOW_TARGET, $order.$IDLE_DOCK_TARGET]"/>
                <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=station_categories ownerless=%2 wharfs=%3 shipyards=%4 equipmentdocks=%5 trading_stations=%6 pirate_bases=%7 recycling=%8 defence=%9'.[this.assignedcontrolled.idcode, $order.$OWNERLESS_SECTORS, $order.$WHARFS, $order.$SHIPYARDS, $order.$EQUIPMENTDOCKS, $order.$TRADING_STATIONS, $order.$PIRATE_BASES, $order.$RECYCLING_FACILITIES, $order.$DEFENCE_STATIONS]"/>
                <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=station_categories_special headquarters=%2 factories=%3 construction=%4'.[this.assignedcontrolled.idcode, $order.$FACTION_HEADQUARTERS, $order.$NON_SPECIAL_STATIONS, $order.$CONSTRUCTION_SITES]"/>
                <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-TDE-AI] ' + player.age + ' *** order.assist:' + '[MSX4-TDE-TRACE] source=assist_tde_g ship=%1 phase=inherit event=parameter_group result=copied path=run group=messages_debug show_messages=%2 write_to_log=%3 add_order_tag=%4 debug=%5'.[this.assignedcontrolled.idcode, $order.$SHOW_MESSAGES, $order.$WRITE_TO_LOG, $order.$ADD_ORDER_TAG, $order.$DEBUG]"/>
@@ -103,14 +97,11 @@
                <param name="NON_SPECIAL_STATIONS" value="$order.$NON_SPECIAL_STATIONS"/>
                <param name="CONSTRUCTION_SITES" value="$order.$CONSTRUCTION_SITES"/>
                <param name="IDLE_TIME" value="$order.$IDLE_TIME"/>
-               <param name="IDLE_MOVE_TO" value="$order.$IDLE_MOVE_TO"/>
-               <param name="WHERE_TO_MOVE" value="$order.$WHERE_TO_MOVE"/>
+               <param name="IDLE_ACTION" value="$order.$IDLE_ACTION"/>
+               <param name="IDLE_MOVE_TARGET" value="$order.$IDLE_MOVE_TARGET"/>
                <param name="START_POSITION" value="[this.ship.sector, this.ship.position]"/>
-               <param name="IDLE_FOLLOW" value="$order.$IDLE_FOLLOW"/>
-               <param name="WHO_TO_FOLLOW" value="$order.$WHO_TO_FOLLOW"/>
-               <param name="IDLE_DOCKING" value="$order.$IDLE_DOCKING"/>
-               <param name="FIND_STATION" value="$order.$FIND_STATION"/>
-               <param name="WHERE_TO_DOCK" value="$order.$WHERE_TO_DOCK"/>
+               <param name="IDLE_FOLLOW_TARGET" value="$order.$IDLE_FOLLOW_TARGET"/>
+               <param name="IDLE_DOCK_TARGET" value="$order.$IDLE_DOCK_TARGET"/>
                <param name="SHOW_MESSAGES" value="$order.$SHOW_MESSAGES"/>
                <param name="WRITE_TO_LOG" value="$order.$WRITE_TO_LOG"/>
                <param name="ADD_ORDER_TAG" value="$order.$ADD_ORDER_TAG"/>

@@ -56,6 +56,13 @@
       <t id="85">Inattivo: Attraccare?</t>
       <t id="86">Trovare una Stazione?</t>
       <t id="87">Dove attraccare?</t>
+      <t id="100">Azione inattiva</t>
+      <t id="101">Obiettivo inattivo</t>
+      <t id="102">Mantieni la posizione</t>
+      <t id="103">Spostati in posizione</t>
+      <t id="104">Segui oggetto</t>
+      <t id="105">Attracca alla stazione selezionata</t>
+      <t id="106">Attracca a una stazione adatta</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="90">Mostrare i messaggi?</t>
       <t id="91">Scrivere sul registro di bordo?</t>

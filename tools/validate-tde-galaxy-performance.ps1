@@ -10,6 +10,7 @@ $helperPath = Join-Path $repo 'mods\MSX4_TradeDataExplorer\aiscripts\msx4.tde.Ge
 $galaxyPath = Join-Path $repo 'mods\MSX4_TradeDataExplorer\aiscripts\MSX4_TradeDataExplorerG.xml'
 $sectorPath = Join-Path $repo 'mods\MSX4_TradeDataExplorer\aiscripts\MSX4_TradeDataExplorerS.xml'
 $updatePath = Join-Path $repo 'mods\MSX4_TradeDataExplorer\aiscripts\msx4.tde.UpdateTradeData.xml'
+$storeIdleDockTargetPath = Join-Path $repo 'mods\MSX4_TradeDataExplorer\aiscripts\msx4.tde.StoreIdleDockTarget.xml'
 $idlePath = Join-Path $repo 'mods\MSX4_ScriptLibrary\aiscripts\msx4.lib.IdleReturnHome.xml'
 $mdPath = Join-Path $repo 'mods\MSX4_TradeDataExplorer\md\msx4.TradeDataExplorer.md.xml'
 $aiSchemaPath = Join-Path $repo 'x4-reference\x4-9.00\base\libraries\aiscripts.xsd'
@@ -40,12 +41,14 @@ $helper = Read-Xml $helperPath
 $galaxy = Read-Xml $galaxyPath
 $sector = Read-Xml $sectorPath
 $update = Read-Xml $updatePath
+$storeIdleDockTarget = Read-Xml $storeIdleDockTargetPath
 $idle = Read-Xml $idlePath
 $md = Read-Xml $mdPath
 $helperText = Get-Content -Raw -LiteralPath $helperPath
 $galaxyText = Get-Content -Raw -LiteralPath $galaxyPath
 $sectorText = Get-Content -Raw -LiteralPath $sectorPath
 $updateText = Get-Content -Raw -LiteralPath $updatePath
+$storeIdleDockTargetText = Get-Content -Raw -LiteralPath $storeIdleDockTargetPath
 $idleText = Get-Content -Raw -LiteralPath $idlePath
 $mdText = Get-Content -Raw -LiteralPath $mdPath
 
@@ -54,12 +57,13 @@ Assert-True ($helperText.Contains('global.$MSX4_TDE_GalaxyCandidateStations') -a
     $helperText.Contains('$_CacheHit')) 'a worker can reuse a shared galaxy snapshot instead of rebuilding every wakeup'
 Assert-True (($helper.SelectNodes("//set_value[@name='global.`$MSX4_TDE_GalaxyCandidateBuilder' and @exact='`$_Ship']")).Count -eq 1) 'only one builder assignment exists'
 Assert-True ($helperText.Contains('global.$MSX4_TDE_GetTradeDataToUpdateAlreadyProcessing != $_Ship')) 'additional workers cannot enter a concurrent rebuild'
-$coordinatorWait = $helper.SelectSingleNode("//label[@name='RESUME_LBL']/following-sibling::do_if[1]//wait[@exact='`$COORDINATOR_WAIT']")
-Assert-True ($null -ne $coordinatorWait -and -not ($helperText -match '<wait exact="1ms"\s*/>\s*<resume label="RESUME_LBL"')) 'coordinator waiting is bounded and not a 1 ms polling loop'
+$deferredReturn = $helper.SelectSingleNode("//label[@name='RESUME_LBL']/following-sibling::do_if[1]/return[@value='[]']/retval[@name='status' and @value='`$_DeferredStatus']")
+Assert-True ($null -ne $deferredReturn -and
+    $helperText.Contains("if `$SECTOR == null and @global.`$MSX4_TDE_GalaxyCandidateState == 'building' then 'cache_build_pending' else 'search_busy'") -and
+    -not $helperText.Contains('COORDINATOR_WAIT')) 'coordinator contention distinguishes an actual Galaxy cache build from a short busy-search retry'
 $buildYield = $helper.SelectSingleNode("//do_for_each[@name='`$_BuildSector' and @in='`$_BuildSectors']/wait[@exact='`$CACHE_BUILD_YIELD']")
 Assert-True ($null -ne $buildYield) 'incremental sector work has an explicit scheduler yield'
 Assert-True ($null -ne $helper.SelectSingleNode("//param[@name='CACHE_BUILD_YIELD' and @default='1s']") -and
-    $null -ne $helper.SelectSingleNode("//param[@name='COORDINATOR_WAIT' and @default='5s']") -and
     $null -ne $helper.SelectSingleNode("//param[@name='CACHE_BUILD_TIMEOUT' and @default='5min']")) 'cache rebuild and waiting work are paced across game ticks with recovery margin'
 foreach ($state in @('invalid', 'building', 'ready')) {
     Assert-True ($helperText.Contains("'$state'") -and
@@ -112,26 +116,50 @@ Assert-True ($helperText.Contains('not $_CachedStation.exists') -and
     $helperText.Contains('remove_from_list name="global.$MSX4_TDE_GalaxyCandidateStations"')) 'destroyed cached stations are pruned'
 Assert-True ($galaxyText.Contains('$_FoundStations.count == 0') -and
     $galaxyText.Contains('resume label="IDLE_LBL"')) 'no candidates enter the controlled idle fallback'
+Assert-True ($galaxyText.Contains('<save_retval name="status" variable="$_SearchStatus"/>') -and
+    $galaxyText.Contains("`$_SearchStatus == 'cache_build_pending'") -and
+    $galaxyText.Contains("`$_SearchStatus == 'search_busy'") -and
+    $galaxyText.Contains('<wait exact="1s + $_WakeOffset"/>')) 'Galaxy workers idle only for an active cache build and briefly retry ordinary coordinator contention'
+Assert-True ($sectorText.Contains('<save_retval name="status" variable="$_SearchStatus"/>') -and
+    $sectorText.Contains("`$_SearchStatus == 'search_busy'") -and
+    $sectorText.Contains('<wait exact="5s"/>')) 'Sector workers briefly retry coordinator contention without entering a cache-build idle'
 Assert-True (-not ($helperText -match '<wait exact="1ms"\s*/>\s*<resume')) 'no hot empty-search loop exists'
 Assert-True ($galaxyText.Contains('abs($_Ship.seed) % 5') -and
     $galaxyText.Contains('$IDLE_TIME + $_WakeOffset')) 'Galaxy worker wakeups use a bounded stable offset'
 Assert-True (-not ($galaxyText -match '\[\$IDLE_TIME,\s*[^\]]+\]\.max') -and
     -not ($galaxyText -match 'IDLE_TIME"\s+value="[0-9]+min')) 'configured idle time is not replaced by a large minimum'
-Assert-True ($helperText.Contains('if @$_DefaultOrderParamRef.$IDLE_TIME then $_DefaultOrderParamRef.$IDLE_TIME else $CACHE_TTL') -and
+Assert-True ($helperText.Contains('[if @$_DefaultOrderParamRef.$IDLE_TIME then $_DefaultOrderParamRef.$IDLE_TIME else $CACHE_TTL, $CACHE_BUILD_TIMEOUT].max') -and
     $helperText.Contains('$_CacheAge lt $_CacheTTL') -and
-    -not $helperText.Contains('default="15s"')) 'cache reuse follows the effective configured idle interval'
+    -not $helperText.Contains('default="15s"')) 'cache reuse lasts at least through the five-minute build recovery window'
 $strictIdleDockSearch = $idle.SelectSingleNode("//do_if[@value='`$IDLE_DOCKING and not `$FAILED_DOCK']/do_if[@value='not `$_IdleDockAllowed and `$FIND_STATION']")
 Assert-True ($null -ne $strictIdleDockSearch -and
-    $null -ne $strictIdleDockSearch.SelectSingleNode("find_station[@space='player.galaxy' and @sortbygatedistancefrom='`$_Ship' and @sortlimit='`$IDLE_DOCK_CANDIDATE_LIMIT']") -and
+    $null -ne $strictIdleDockSearch.SelectSingleNode("find_station[@space='`$_Ship.sector' and @sortbydistanceto='`$_Ship' and @sortlimit='`$IDLE_DOCK_CANDIDATE_LIMIT']") -and
+    $null -ne $strictIdleDockSearch.SelectSingleNode("find_station[@space='player.galaxy' and @sortbygatedistancefrom='`$_Ship' and @sortlimit='`$IDLE_DOCK_CANDIDATE_LIMIT' and @excluded='`$_FoundStations']") -and
+    $null -ne $strictIdleDockSearch.SelectSingleNode("append_list_elements[@name='`$_FoundStations' and @other='`$_FallbackStations']") -and
     $null -eq $strictIdleDockSearch.SelectSingleNode("run_script[@name=`"'msx4.lib.SortByEstimatedTravelTime'`"]") -and
-    $null -ne $strictIdleDockSearch.SelectSingleNode(".//do_if[@value='`$_IdlePathDistance ge 0']/break")) 'strict idle docking uses gate-distance order and stops after the first fully valid station'
-Assert-True ($null -ne $idle.SelectSingleNode("//param[@name='IDLE_DOCK_CANDIDATE_LIMIT' and @default='10']")) 'strict idle docking caps path checks to ten nearby candidates per idle cycle'
+    $null -ne $strictIdleDockSearch.SelectSingleNode(".//do_if[@value='`$_IdlePathDistance ge 0']/break")) 'strict idle docking checks physical-distance local candidates before its gate-distance fallback'
+Assert-True ($null -ne $idle.SelectSingleNode("//param[@name='IDLE_DOCK_CANDIDATE_LIMIT' and @default='10']")) 'strict idle docking caps each local and cross-sector candidate tier at ten'
+foreach ($behavior in @($galaxy, $sector)) {
+    Assert-True ($null -ne $behavior.SelectSingleNode("//do_if[@value=`"`$_UpdateResult == 'success'`"]//set_value[@name='`$_LastSuccessfulStation' and @exact='`$_CandidateStation']") -and
+        $null -ne $behavior.SelectSingleNode("//do_if[@value=`"`$_UpdateResult == 'success'`"]//set_value[@name='global.`$MSX4_TDE_IdleDockTargetTable.{`$_Ship}' and @exact='`$_CandidateStation']") -and
+        $null -ne $behavior.SelectSingleNode("//create_order[@id=`"'MSX4_lib_IdleReturnHome'`"]//param[@name='WHERE_TO_DOCK' and contains(@value, '`$_LastSuccessfulStation') and contains(@value, 'global.`$MSX4_TDE_IdleDockTargetTable.{`$_Ship}')]") -and
+        $null -ne $behavior.SelectSingleNode("//create_order[@id=`"'MSX4_lib_IdleReturnHome'`"]//param[@name='MSX4_AUTO_IDLE_DOCK' and @value='`$_IdleFindStationEnabled']") -and
+        $null -ne $behavior.SelectSingleNode("//create_order[@id=`"'MSX4_lib_IdleReturnHome'`"]//param[@name='MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT' and @value=`"'msx4.tde.StoreIdleDockTarget'`"]")) 'automatic idle docking remembers and prefers the last successful target across behavior restarts'
+}
+Assert-True ($null -ne $idle.SelectSingleNode("//param[@name='MSX4_AUTO_IDLE_DOCK' and @default='false']") -and
+    $null -ne $idle.SelectSingleNode("//param[@name='MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT' and @default='null']") -and
+    $null -ne $idle.SelectSingleNode("//do_if[@value='`$_IdleDockAllowed']/do_if[@value='`$MSX4_AUTO_IDLE_DOCK and `$MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT']/run_script[@name='`$MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT']/param[@name='TARGET' and @value='`$WHERE_TO_DOCK']") -and
+    $null -ne $storeIdleDockTarget.SelectSingleNode("//set_value[@name='global.`$MSX4_TDE_IdleDockTargetTable.{`$_Ship}' and @exact='`$TARGET']") -and
+    $mdText.Contains('remove_value name="global.$MSX4_TDE_IdleDockTargetTable.{event.param}"') -and
+    $mdText.Contains('event_object_changed_true_owner group="global.$MSX4_TDE_ShipsGroup"') -and
+    $mdText.Contains('event_object_abandoned group="global.$MSX4_TDE_ShipsGroup"')) 'the selected automatic dock survives idle restarts and is cleaned on every TDE ownership exit'
 Assert-True ($idleText.Contains('[MSX4-SLIB-PERF] event=idle_dock') -and
     $idleText.Contains('candidates_checked=') -and
     $idleText.Contains('path_checks=')) 'idle docking reports bounded candidate work'
 $strictIdleDock = $idle.SelectSingleNode("//do_if[@value='`$IDLE_DOCKING and not `$FAILED_DOCK']")
 $currentDockReuse = $strictIdleDock.SelectSingleNode("do_if[contains(@value, 'not @`$WHERE_TO_DOCK.exists') and contains(@value, '@`$_Ship.dock.container.exists') and contains(@value, '`$_Ship.dock.container.isclass.station')]")
 Assert-True ($null -ne $currentDockReuse -and
+    $currentDockReuse.GetAttribute('value').Contains("`$MSX4_AUTO_IDLE_DOCK or not @`$WHERE_TO_DOCK.exists") -and
     $null -ne $currentDockReuse.SelectSingleNode("set_value[@name='`$_IdleDockAllowed' and contains(@exact, '`$_CurrentIdleDock.isoperational') and contains(@exact, 'not `$_Ship.ishostileto.{`$_CurrentIdleDock}') and contains(@exact, 'blacklisttype.objectactivity') and contains(@exact, 'blacklisttype.sectoractivity') and contains(@exact, 'blacklisttype.sectortravel') and contains(@exact, '`$_AccessibleIdleDockSector == `$_CurrentIdleDock.sector')]") -and
     $null -ne $currentDockReuse.SelectSingleNode("do_if[@value='`$_IdleDockAllowed']/set_value[@name='`$WHERE_TO_DOCK' and @exact='`$_CurrentIdleDock']")) 'automatic idle docking retains a valid current station without a replacement search'
 Assert-True ($null -ne $strictIdleDock.SelectSingleNode("do_if[@value='not `$_IdleDockAllowed and `$FIND_STATION']") -and
@@ -156,6 +184,7 @@ Assert-True (-not (($galaxyText + $sectorText + $helperText + $updateText) -matc
 # 25: XML well-formedness was established by Read-Xml.
 Assert-True ($null -ne $helper.aiscript -and $null -ne $galaxy.aiscript -and
     $null -ne $sector.aiscript -and $null -ne $update.aiscript -and
+    $null -ne $storeIdleDockTarget.aiscript -and
     $null -ne $idle.aiscript -and
     $null -ne $md.mdscript) 'all directly changed/reached XML files are well formed'
 
@@ -165,7 +194,7 @@ $requiredFields = @(
     'sectors_considered=', 'sectors_accepted=', 'stations_considered=',
     'stations_stale=', 'path_checks=', 'travel_time_checks=',
     'candidates_returned=', 'cache_hit=', 'cache_miss=', 'cache_age=',
-    'cache_ttl=', 'worker_count=', 'waiting_workers='
+    'cache_ttl=', 'worker_count='
 )
 $performanceNodes = @($helper.SelectNodes("//debug_to_file[contains(@text, '[MSX4-TDE-PERF]')]"))
 Assert-True ($performanceNodes.Count -eq 2) 'exactly two bounded performance summary actions exist'
@@ -188,7 +217,7 @@ Assert-True (($idlePlaceholderIndexes | Measure-Object -Maximum).Maximum -le 9) 
 # 26-27: recursive XSD validation through the JDK validator.
 $jshell = Get-Command jshell -ErrorAction SilentlyContinue
 Assert-True ($null -ne $jshell) 'jshell is available for recursive Vanilla XSD validation'
-$aiFiles = @($helperPath, $galaxyPath, $sectorPath, $updatePath, $idlePath)
+$aiFiles = @($helperPath, $galaxyPath, $sectorPath, $updatePath, $storeIdleDockTargetPath, $idlePath)
 $aiStatements = ($aiFiles | ForEach-Object {
     "validator.validate(new StreamSource(new File(`"$(ConvertTo-JavaPath $_)`")));"
 }) -join [Environment]::NewLine

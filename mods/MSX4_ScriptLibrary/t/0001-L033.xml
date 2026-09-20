@@ -56,6 +56,13 @@
       <t id="85">Inactif: Accostage?</t>
       <t id="86">Trouver une station?</t>
       <t id="87">Où accoster?</t>
+      <t id="100">Action d'inactivité</t>
+      <t id="101">Cible d'inactivité</t>
+      <t id="102">Maintenir la position</t>
+      <t id="103">Se déplacer vers une position</t>
+      <t id="104">Suivre un objet</t>
+      <t id="105">S'amarrer à la station sélectionnée</t>
+      <t id="106">S'amarrer à une station appropriée</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="90">Afficher les messages?</t>
       <t id="91">Écrire dans le journal de bord?</t>

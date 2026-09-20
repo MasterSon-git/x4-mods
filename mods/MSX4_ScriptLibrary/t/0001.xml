@@ -56,6 +56,13 @@
       <t id="85">Idle: Docking?</t>
       <t id="86">Find a Station?</t>
       <t id="87">Where to dock?</t>
+      <t id="100">Idle Action</t>
+      <t id="101">Idle Target</t>
+      <t id="102">Hold Position</t>
+      <t id="103">Move to Position</t>
+      <t id="104">Follow Object</t>
+      <t id="105">Dock at Selected Station</t>
+      <t id="106">Dock at Suitable Station</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="90">Show messages?</t>
       <t id="91">Write to logbook?</t>

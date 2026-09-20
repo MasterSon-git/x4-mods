@@ -103,12 +103,16 @@ $strictWaitCommand = $idle.SelectSingleNode(
     "/set_command[@command='command.wait']"
 )
 $controlledWait = $idle.SelectSingleNode(
-    "//do_if[@value='`$_IdleActionFailed']/following-sibling::do_else[1]/wait[not(@exact)]"
+    "//do_elseif[@value='`$_IdleActionFailed']/following-sibling::do_else[1]/wait[not(@exact)]"
+)
+$persistentProbe = $idle.SelectSingleNode(
+    "//do_if[@value='`$_IdleActionEstablished and `$MSX4_IDLE_PROBE_SCRIPT']" +
+    "/do_while[@value='not `$_IdleWorkAvailable']/run_script[@name='`$MSX4_IDLE_PROBE_SCRIPT']"
 )
 Assert-Condition ($null -ne $legacyFallback) 'The historical non-strict return-to-start fallback must remain.'
 Assert-Condition ($null -eq $strictFallback) 'The strict TDE path must not synthesize an idle movement.'
-Assert-Condition ($null -ne $strictWaitCommand -and $null -ne $controlledWait) 'No selected TDE idle action must display Wait and block under manager control.'
-Write-Output '3/5 no selected strict idle action performs no movement and waits under the existing timeout manager: OK'
+Assert-Condition ($null -ne $strictWaitCommand -and $null -ne $persistentProbe -and $null -ne $controlledWait) 'Hold must retain its wait state during callback probes, with the timeout manager preserved as a non-callback fallback.'
+Write-Output '3/5 Hold Position remains active across work probes without synthesizing movement: OK'
 
 $targetedCleanup = $manager.SelectSingleNode(
     "//cue[@name='MSX4_SL_ManageIdleReturnHome_MD']//do_for_each[@name='`$_Order' and @in='`$_Ship.orders.clone']" +
