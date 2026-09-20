@@ -54,16 +54,19 @@ The trace covers:
 - blacklist escape decisions and movement result;
 - galaxy cache build, reuse and worker-specific selection;
 - candidate counts, rejection reasons and sector reservation;
-- target validation before/after travel and approach;
-- waiting for `hastradesubscription` and successful completion;
+- target validation before/after travel and throughout the bounded approach
+  recovery;
+- 75%/40%/20% approach stages, dock preflight/result, the final 2 km approach,
+  `hastradesubscription` detection and `update_timeout`;
 - idle action selection, Dock/DockAndWait integration and timeout cleanup;
 - Mimic parameter propagation;
 - MD setup, order changes and cleanup.
 
 Expected rejection reasons include current information, invalid/wrecked target,
-hostile target, access or blacklist denial, no known path, movement failure and
-approach failure. A rejection reason is not automatically an error; many are
-normal consequences of revalidation.
+hostile target, access or blacklist denial, no known path, movement failure,
+approach failure, unavailable docking and a bounded update timeout. A
+rejection reason is not automatically an error; many are normal consequences
+of revalidation.
 
 ## Debugging invariants
 
@@ -74,8 +77,8 @@ Vanilla Dock, DockAndWait and Follow orders do not evaluate mod-only state.
 
 Run `tools/validate-runtime-debug-logging.ps1` after editing trace code. It
 checks the line envelope, placeholders, mandatory fields, guards, Assist
-parameter propagation, functional equivalence of the original logging-only
-change, simulated Vanilla diff selectors and the broader regression suite.
+parameter propagation, functional inertness of logging-only branches,
+simulated Vanilla diff selectors and the broader regression suite.
 
 Logs may contain player names, ship IDs, local paths and save-specific state.
 They are intentionally ignored by Git and should be reviewed before sharing.

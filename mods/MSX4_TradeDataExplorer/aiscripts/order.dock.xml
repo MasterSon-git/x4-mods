@@ -2,7 +2,17 @@
 
 <diff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://x4dynlib.access.ly\libraries\aiscripts.xsd">
 
+   <add sel="/aiscript/order/params">
+      <!-- Internal marker for the bounded TDE trade-data recovery attempt.
+           Vanilla behavior remains unchanged when the marker is false. -->
+      <param name="MSX4_TDE_TRADE_DATA_RECOVERY" type="internal" default="false"/>
+   </add>
+
    <add sel="/aiscript/init">
+      <!-- A failed recovery dock is handled by UpdateTradeData and must not
+           emit Vanilla's player-facing order failure notification. -->
+      <set_value name="$nofeedback" exact="true" chance="if $MSX4_TDE_TRADE_DATA_RECOVERY then 100 else 0"/>
+
       <!-- Vanilla's Tide flee docks followers at the commander's shelter.
            TDE-G subordinates operate independently and handle their own Tide
            signal, so do not recall the distributed explorer fleet. -->
@@ -13,5 +23,14 @@
          </do_if>
       </do_if>
    </add>
+
+   <!-- order.dock normally marks the caller's current order as failed when a
+        dock cannot be assigned.  The TDE recovery path consumes the boolean
+        return value itself and may continue with a closer radar approach. -->
+   <replace sel="/aiscript/attention[@min='unknown']/actions//set_order_failed[@order='$thisship.order']">
+      <do_if value="not $MSX4_TDE_TRADE_DATA_RECOVERY">
+         <set_order_failed order="$thisship.order" text="$failuretext" recurring="$internalorder and ($thisship.order != $thisship.defaultorder)"/>
+      </do_if>
+   </replace>
 
 </diff>

@@ -7,7 +7,8 @@ This repository contains independently maintained mods for X4: Foundations.
 - Distributable extensions live directly below `mods/`.
 - `MSX4_TradeDataExplorer` requires `MSX4_ScriptLibrary`.
 - Regression and deployment scripts live in `tools/`.
-- Public maintenance records live in `docs/`.
+- Current compatibility, architecture, testing, migration and diagnostic
+  documentation lives in `docs/`.
 
 Keep repository-maintained documentation, code comments and commit messages in
 English. Localization files remain in their respective languages.
@@ -41,6 +42,10 @@ evidence from behavior that still requires an in-game test.
   feature explicitly changes the documented scope.
 - Update the relevant public document when a behavior, compatibility boundary
   or manual-test status changes.
+- Keep maintained documentation focused on the current contract and durable
+  architectural decisions. Keep issue descriptions and pull-request summaries
+  focused on the final relevant state; leave development chronology and
+  discarded attempts to Git history.
 
 ## Validation
 
