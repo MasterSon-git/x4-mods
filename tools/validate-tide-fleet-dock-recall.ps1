@@ -40,8 +40,12 @@ $vanillaDock = Read-XmlDocument $vanillaDockPath
 $vanillaFleeDock = Read-XmlDocument $vanillaFleeDockPath
 
 $add = $diff.SelectSingleNode("/diff/add[@sel='/aiscript/init']")
+$paramAdd = $diff.SelectSingleNode("/diff/add[@sel='/aiscript/order/params']")
+$failureReplace = $diff.SelectSingleNode("/diff/replace[contains(@sel, 'set_order_failed')]")
 $vanillaInit = @($vanillaDock.SelectNodes('/aiscript/init'))
 Assert-Condition ($null -ne $add -and $vanillaInit.Count -eq 1) 'the additive diff selector resolves to exactly one Vanilla order.dock init node'
+Assert-Condition ($null -ne $paramAdd.SelectSingleNode("param[@name='MSX4_TDE_TRADE_DATA_RECOVERY' and @type='internal' and @default='false']")) 'the TDE recovery marker defaults to false for every non-TDE dock call'
+Assert-Condition ($null -ne $failureReplace.SelectSingleNode("do_if[@value='not `$MSX4_TDE_TRADE_DATA_RECOVERY']/set_order_failed")) 'the Vanilla order failure is suppressed only for the marked TDE recovery call'
 
 $guard = $add.SelectSingleNode("do_if")
 $expectedGuard = "`$dockfollowers and @this.ship.defaultorder.id == 'MSX4_TradeDataExplorerG' and this.ship.subordinates.count gt 0"
@@ -60,12 +64,36 @@ Assert-Condition ($null -ne $fleeCall -and $null -ne $fleeRecallSetting -and $nu
 $applied = [System.Xml.XmlDocument] $vanillaDock.CloneNode($true)
 $target = $applied.SelectSingleNode('/aiscript/init')
 $elementCountBefore = @($target.ChildNodes | Where-Object NodeType -eq ([System.Xml.XmlNodeType]::Element)).Count
-foreach ($child in @($add.ChildNodes)) {
-    [void] $target.AppendChild($applied.ImportNode($child, $true))
+foreach ($operation in $diff.SelectNodes('/diff/*[@sel]')) {
+    $selector = $operation.GetAttribute('sel')
+    $matches = @($applied.SelectNodes($selector))
+    Assert-Condition ($matches.Count -eq 1) "the diff selector resolves exactly once while applying the complete order.dock diff: $selector"
+    $operationTarget = $matches[0]
+    $children = @($operation.ChildNodes | Where-Object {
+        $_.NodeType -in @([System.Xml.XmlNodeType]::Element, [System.Xml.XmlNodeType]::Comment)
+    })
+    if ($operation.LocalName -eq 'add') {
+        foreach ($child in $children) {
+            [void] $operationTarget.AppendChild($applied.ImportNode($child, $true))
+        }
+    }
+    elseif ($operation.LocalName -eq 'replace') {
+        foreach ($child in $children) {
+            [void] $operationTarget.ParentNode.InsertBefore($applied.ImportNode($child, $true), $operationTarget)
+        }
+        [void] $operationTarget.ParentNode.RemoveChild($operationTarget)
+    }
+    else {
+        throw "Unsupported diff operation '$($operation.LocalName)'."
+    }
 }
+$target = $applied.SelectSingleNode('/aiscript/init')
 $elementCountAfter = @($target.ChildNodes | Where-Object NodeType -eq ([System.Xml.XmlNodeType]::Element)).Count
 $appliedGuard = $applied.SelectSingleNode("/aiscript/init/do_if[@value=`"$expectedGuard`"]")
-Assert-Condition ($elementCountAfter -eq ($elementCountBefore + 1) -and $null -ne $appliedGuard) 'simulated diff application adds exactly one functional initialization guard'
+$appliedFeedbackGuard = $applied.SelectSingleNode("/aiscript/init/set_value[@name='`$nofeedback' and @chance='if `$MSX4_TDE_TRADE_DATA_RECOVERY then 100 else 0']")
+$appliedFailureGuard = $applied.SelectSingleNode("//do_if[@value='not `$MSX4_TDE_TRADE_DATA_RECOVERY']/set_order_failed[@order='`$thisship.order']")
+Assert-Condition ($elementCountAfter -eq ($elementCountBefore + 2) -and $null -ne $appliedGuard -and $null -ne $appliedFeedbackGuard) 'simulated diff application adds the Tide guard and the recovery-only feedback guard'
+Assert-Condition ($null -ne $appliedFailureGuard) 'simulated diff application preserves Vanilla failure handling behind the recovery marker'
 
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('tde-tide-dock-validation-' + [guid]::NewGuid().ToString('N'))
 [void] (New-Item -ItemType Directory -Path $tempRoot)

@@ -120,7 +120,6 @@
          <set_value name="$_DebugScriptName" exact="'msx4.tde.UpdateTradeData'"/>
          <set_value name="$_DebugFileName" exact="'MSX4_TradeDataExplorer_Runtime.log'"/>
          <set_value name="$_TraceWaitAttempt" exact="0"/>
-         <set_value name="$_TraceNextWaitLog" exact="1"/>
       </do_if>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
    </init>
@@ -150,6 +149,30 @@
          <do_if value="$_ValidationStatus != 'valid'">
             <set_value name="$_Result" exact="$_ValidationStatus"/>
             <resume label="END_LBL"/>
+         </do_if>
+
+         <!-- A successful recovery dock is retained while no work exists.
+              Undock only after a different valid target has actually been
+              assigned, matching Vanilla's synchronous order.dock callers. -->
+         <do_if value="$_Ship.dock and not $_Ship.hascontext.{$_Station}">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=undock event=undock_start result=pending reason=new_target_assigned current_dock=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_Ship.dock.container, $_Station, $_Station.hastradesubscription]"/>
+            </do_if>
+            <run_script name="'move.undock'">
+               <param name="debugchance" value="$debugchance"/>
+            </run_script>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=undock event=undock_return result=%2 reason=%3 target=%4'.[$_Ship.idcode, not $_Ship.dock, if $_Ship.dock then 'undock_failed' else 'success', $_Station]"/>
+            </do_if>
+            <do_if value="$_Ship.dock">
+               <set_value name="$_Result" exact="'move_failed'"/>
+               <resume label="END_LBL"/>
+            </do_if>
+            <include_interrupt_actions ref="ValidateTarget"/>
+            <do_if value="$_ValidationStatus != 'valid'">
+               <set_value name="$_Result" exact="$_ValidationStatus"/>
+               <resume label="END_LBL"/>
+            </do_if>
          </do_if>
 
          <!-- Vanilla 9.00 owns all inter-sector gate, accelerator and highway handling. -->
@@ -194,29 +217,151 @@
             <resume label="END_LBL"/>
          </do_if>
 
-         <!-- Preserve the existing radar approach, but prevent it from reaching the legacy sector stack. -->
+         <!-- Start at the original 75% radar-range distance.  Only a target
+              that remains stale advances through the closer recovery stages. -->
+         <set_value name="$_ApproachDistances" exact="[($_Ship.maxradarrange * 0.75), ($_Ship.maxradarrange * 0.4), ($_Ship.maxradarrange * 0.2)]"/>
+         <set_value name="$_ApproachStage" exact="0"/>
+         <do_for_each name="$_ApproachDistance" in="$_ApproachDistances">
+            <set_value name="$_ApproachStage" operation="add" exact="1"/>
+
+            <!-- Time spent in the preceding move or grace window may already
+                 have refreshed the target or invalidated it. -->
+            <include_interrupt_actions ref="ValidateTarget"/>
+            <do_if value="$_ValidationStatus == 'already_current'">
+               <resume label="SUCCESS_LBL"/>
+            </do_if>
+            <do_if value="$_ValidationStatus != 'valid'">
+               <set_value name="$_Result" exact="$_ValidationStatus"/>
+               <resume label="END_LBL"/>
+            </do_if>
+
+            <set_value name="$_ApproachSuccess" exact="true"/>
+            <!-- Never move a ship away from a station merely to satisfy an
+                 outer stage that it has already passed. -->
+            <do_if value="$_Ship.distanceto.{$_Station} gt $_ApproachDistance">
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=approach event=move_start result=pending stage=%2 target=%3 current_sector=%4 target_sector=%5 target_distance=%6 current_distance=%7 subscription=%8'.[$_Ship.idcode, $_ApproachStage, $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, $_ApproachDistance, $_Ship.distanceto.{$_Station}, $_Station.hastradesubscription]"/>
+               </do_if>
+               <run_script name="'msx4.lib.MoveToObject'" result="$_ApproachSuccess">
+                  <param name="OBJECT" value="$_Station"/>
+                  <param name="POSITION_SPACE" value="$_Ship"/>
+                  <param name="DISTANCE_TO_OBJECT" value="$_ApproachDistance"/>
+                  <param name="FORCE_POSITION" value="false"/>
+                  <param name="FINISH_ON_APPROACH" value="true"/>
+                  <param name="SKIP_SECTOR_CHECK" value="true"/>
+               </run_script>
+               <do_if value="$DEBUG gt 0">
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=approach event=move_return result=%2 reason=%3 stage=%4 target=%5 current_distance=%6 subscription=%7'.[$_Ship.idcode, $_ApproachSuccess, if $_ApproachSuccess then 'success' else 'approach_failed', $_ApproachStage, $_Station, $_Ship.distanceto.{$_Station}, $_Station.hastradesubscription]"/>
+               </do_if>
+            </do_if>
+            <do_elseif value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=approach event=move_skipped result=success reason=already_inside_stage_distance stage=%2 target=%3 target_distance=%4 current_distance=%5 subscription=%6'.[$_Ship.idcode, $_ApproachStage, $_Station, $_ApproachDistance, $_Ship.distanceto.{$_Station}, $_Station.hastradesubscription]"/>
+            </do_elseif>
+
+            <include_interrupt_actions ref="ValidateTarget"/>
+            <do_if value="$_ValidationStatus == 'already_current'">
+               <resume label="SUCCESS_LBL"/>
+            </do_if>
+            <do_if value="$_ValidationStatus != 'valid'">
+               <set_value name="$_Result" exact="$_ValidationStatus"/>
+               <resume label="END_LBL"/>
+            </do_if>
+            <do_if value="not $_ApproachSuccess">
+               <set_value name="$_Result" exact="'approach_failed'"/>
+               <resume label="END_LBL"/>
+            </do_if>
+
+            <!-- Give the engine two short update opportunities after each
+                 arrival instead of waiting indefinitely at one position. -->
+            <do_all exact="2" counter="$_ApproachWaitCheck">
+               <wait exact="5s"/>
+               <do_if value="$DEBUG gt 0">
+                  <set_value name="$_TraceWaitAttempt" operation="add" exact="1"/>
+                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_tick result=pending stage=%2 stage_attempt=%3 total_attempt=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ApproachStage, $_ApproachWaitCheck, $_TraceWaitAttempt, $_Station, $_Station.hastradesubscription]"/>
+               </do_if>
+               <include_interrupt_actions ref="ValidateTarget"/>
+               <do_if value="$_ValidationStatus == 'already_current'">
+                  <resume label="SUCCESS_LBL"/>
+               </do_if>
+               <do_if value="$_ValidationStatus != 'valid'">
+                  <set_value name="$_Result" exact="$_ValidationStatus"/>
+                  <resume label="END_LBL"/>
+               </do_if>
+            </do_all>
+         </do_for_each>
+
+         <!-- Docking is a final bounded recovery step.  Preflight both the
+              permission and a compatible Vanilla dock so a structurally
+              impossible request does not alter the running TDE behavior. -->
+         <set_value name="$_DockingAllowed" exact="$_Station.dockingallowed.{$_Ship}"/>
+         <find_dockingbay object="$_Station" name="$_RecoveryDock">
+            <match_dock size="$_Ship.docksize" trading="false" building="false" allowplayeronly="false" showroom="false" ventureplatform="null" ventureronly="false" storage="false"/>
+            <match_relation_to object="$_Ship" comparison="not" relation="enemy"/>
+         </find_dockingbay>
+         <set_value name="$_DockEligible" exact="$_DockingAllowed and $_RecoveryDock != null"/>
+         <set_value name="$_DockSuccess" exact="false"/>
          <do_if value="$DEBUG gt 0">
-            <set_value name="$_TraceValidationPhase" exact="'before_radar_approach'"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_snapshot result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=approach event=move_start result=pending target=%2 current_sector=%3 target_sector=%4 target_distance=%5 subscription=%6'.[$_Ship.idcode, $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, ($_Ship.maxradarrange * 0.5), $_Station.hastradesubscription]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=dock_recovery event=preflight result=%2 reason=%3 target=%4 docking_allowed=%5 compatible_dock=%6 subscription=%7'.[$_Ship.idcode, if $_DockEligible then 'eligible' else 'skipped', if not $_DockingAllowed then 'docking_not_allowed' else (if $_RecoveryDock == null then 'no_compatible_dock' else 'success'), $_Station, $_DockingAllowed, $_RecoveryDock, $_Station.hastradesubscription]"/>
          </do_if>
-         <run_script name="'msx4.lib.MoveToObject'" result="$_ApproachSuccess">
-            <param name="OBJECT" value="$_Station"/>
-            <param name="POSITION_SPACE" value="$_Ship"/>
-            <param name="DISTANCE_TO_OBJECT" value="($_Ship.maxradarrange * 0.5)"/>
-            <param name="FORCE_POSITION" value="false"/>
-            <param name="FINISH_ON_APPROACH" value="true"/>
-            <param name="SKIP_SECTOR_CHECK" value="true"/>
-         </run_script>
-         <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=approach event=move_return result=%2 reason=%3 target=%4 current_sector=%5 target_sector=%6 subscription=%7'.[$_Ship.idcode, $_ApproachSuccess, if $_ApproachSuccess then 'success' else 'approach_failed', $_Station, $_Ship.sector.knownname, $_Station.sector.knownname, $_Station.hastradesubscription]"/>
-            <set_value name="$_TraceValidationPhase" exact="'after_radar_approach'"/>
+         <do_if value="$_DockEligible">
+            <run_script name="'order.dock'" result="$_DockSuccess">
+               <param name="destination" value="$_Station"/>
+               <param name="waittime" value="30s"/>
+               <param name="store" value="false"/>
+               <param name="dockfollowers" value="false"/>
+               <param name="internalorder" value="false"/>
+               <param name="recallsubordinates" value="false"/>
+               <param name="MSX4_TDE_TRADE_DATA_RECOVERY" value="true"/>
+               <param name="debugchance" value="$debugchance"/>
+            </run_script>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=dock_recovery event=dock_return result=%2 reason=%3 target=%4 dock=%5 subscription=%6'.[$_Ship.idcode, $_DockSuccess, if $_DockSuccess then 'success' else 'dock_unavailable_or_failed', $_Station, $_Ship.dock, $_Station.hastradesubscription]"/>
+            </do_if>
+
+            <include_interrupt_actions ref="ValidateTarget"/>
+            <do_if value="$_ValidationStatus == 'already_current'">
+               <resume label="SUCCESS_LBL"/>
+            </do_if>
+            <do_if value="$_ValidationStatus != 'valid'">
+               <set_value name="$_Result" exact="$_ValidationStatus"/>
+               <resume label="END_LBL"/>
+            </do_if>
+            <do_if value="$_DockSuccess">
+               <do_all exact="2" counter="$_DockWaitCheck">
+                  <wait exact="5s"/>
+                  <include_interrupt_actions ref="ValidateTarget"/>
+                  <do_if value="$_ValidationStatus == 'already_current'">
+                     <resume label="SUCCESS_LBL"/>
+                  </do_if>
+                  <do_if value="$_ValidationStatus != 'valid'">
+                     <set_value name="$_Result" exact="$_ValidationStatus"/>
+                     <resume label="END_LBL"/>
+                  </do_if>
+               </do_all>
+               <set_value name="$_Result" exact="'update_timeout'"/>
+               <resume label="END_LBL"/>
+            </do_if>
+         </do_if>
+
+         <!-- Permission denial, incompatible docks and a temporarily full
+              dock all receive one last collision-safe radar approach. -->
+         <set_value name="$_FinalApproachDistance" exact="2km"/>
+         <set_value name="$_ApproachSuccess" exact="true"/>
+         <do_if value="$_Ship.distanceto.{$_Station} gt $_FinalApproachDistance">
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=final_approach event=move_start result=pending reason=%2 target=%3 target_distance=%4 current_distance=%5 subscription=%6'.[$_Ship.idcode, if $_DockEligible then 'dock_failed_or_full' else 'dock_ineligible', $_Station, $_FinalApproachDistance, $_Ship.distanceto.{$_Station}, $_Station.hastradesubscription]"/>
+            </do_if>
+            <run_script name="'msx4.lib.MoveToObject'" result="$_ApproachSuccess">
+               <param name="OBJECT" value="$_Station"/>
+               <param name="POSITION_SPACE" value="$_Ship"/>
+               <param name="DISTANCE_TO_OBJECT" value="$_FinalApproachDistance"/>
+               <param name="FORCE_POSITION" value="false"/>
+               <param name="FINISH_ON_APPROACH" value="true"/>
+               <param name="SKIP_SECTOR_CHECK" value="true"/>
+            </run_script>
          </do_if>
 
          <include_interrupt_actions ref="ValidateTarget"/>
-         <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceValidationPhase, $STATION, @$_Station.hastradesubscription]"/>
-         </do_if>
          <do_if value="$_ValidationStatus == 'already_current'">
             <resume label="SUCCESS_LBL"/>
          </do_if>
@@ -228,30 +373,22 @@
             <set_value name="$_Result" exact="'approach_failed'"/>
             <resume label="END_LBL"/>
          </do_if>
-
-         <!-- No arbitrary timeout: leave only when Vanilla confirms the update or the target becomes invalid. -->
-         <do_if value="$DEBUG gt 0">
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_start result=pending target=%2 subscription=%3'.[$_Ship.idcode, $_Station, $_Station.hastradesubscription]"/>
-         </do_if>
-         <do_while value="$_ValidationStatus != 'already_current'">
+         <do_all exact="2" counter="$_FinalWaitCheck">
             <wait exact="5s"/>
-            <do_if value="$DEBUG gt 0">
-               <set_value name="$_TraceWaitAttempt" operation="add" exact="1"/>
-               <set_value name="$_TraceValidationPhase" exact="'subscription_wait'"/>
-               <do_if value="$_TraceWaitAttempt ge $_TraceNextWaitLog">
-                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_tick result=pending attempt=%2 target=%3 subscription=%4'.[$_Ship.idcode, $_TraceWaitAttempt, $_Station, $_Station.hastradesubscription]"/>
-                  <set_value name="$_TraceNextWaitLog" operation="add" exact="12"/>
-               </do_if>
-            </do_if>
             <include_interrupt_actions ref="ValidateTarget"/>
-            <do_if value="$DEBUG gt 0 and $_ValidationStatus != 'valid'">
-               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=validation event=validation_result result=%2 reason=%3 stage=subscription_wait attempt=%4 target=%5 subscription=%6'.[$_Ship.idcode, $_ValidationStatus, $_ValidationReason, $_TraceWaitAttempt, $STATION, @$_Station.hastradesubscription]"/>
+            <do_if value="$_ValidationStatus == 'already_current'">
+               <resume label="SUCCESS_LBL"/>
             </do_if>
-            <do_if value="$_ValidationStatus != 'valid' and $_ValidationStatus != 'already_current'">
+            <do_if value="$_ValidationStatus != 'valid'">
                <set_value name="$_Result" exact="$_ValidationStatus"/>
                <resume label="END_LBL"/>
             </do_if>
-         </do_while>
+         </do_all>
+         <set_value name="$_Result" exact="'update_timeout'"/>
+         <do_if value="$DEBUG gt 0">
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.UpdateTradeData:' + '[MSX4-TDE-TRACE] source=update_subscription ship=%1 phase=subscription_wait event=wait_end result=update_timeout reason=trade_data_still_stale target=%2 current_distance=%3 dock_eligible=%4 dock_success=%5 subscription=%6'.[$_Ship.idcode, $_Station, $_Ship.distanceto.{$_Station}, $_DockEligible, $_DockSuccess, $_Station.hastradesubscription]"/>
+         </do_if>
+         <resume label="END_LBL"/>
 
          <label name="SUCCESS_LBL"/>
          <set_value name="$_Result" exact="'success'"/>

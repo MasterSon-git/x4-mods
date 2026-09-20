@@ -1,13 +1,11 @@
 # Trade Data Explorer Galaxy performance architecture
 
-## Reported problem
+## Design constraints
 
-A Trade Data Explorer Galaxy commander with 14 Mimic subordinates produced multi-second
-stalls after the fleet ran out of targets and entered its idle cycle. The first
-implementation serialized discovery with a global boolean, but every waiting
-worker polled rapidly and then repeated the complete galaxy search. The idle
-docking fallback separately examined more than one thousand stations and
-estimated travel time for most of them on every ship.
+Galaxy discovery and idle docking must remain responsive with a commander and
+many Mimic subordinates. Workers must not repeat complete galaxy searches,
+poll a shared build rapidly or estimate travel time for an unbounded station
+list during the same scheduler step.
 
 Logs established the action counts and their timing in universe time. They did
 not provide a CPU wall-clock profiler, so the documents and code do not claim
@@ -117,18 +115,23 @@ The clock is `player.age`, which is universe time and can be affected by pause
 or time acceleration. It is suitable for sequence and pacing analysis, not
 CPU benchmarking.
 
-## Runtime result and limits
+Trade-data recovery remains local to the ship and its already selected target.
+It performs no candidate discovery, galaxy-cache rebuild or distance sorting.
+A normal target needs only the outer approach. A target that stays stale can
+trigger at most two closer radar moves, one 30-second Vanilla dock-assignment
+window and one final 2 km move. Each update grace period is bounded and ends
+with `update_timeout` if normal radar reception still does not update the
+station.
 
-The first optimized runs exposed three separate issues: an existing station
-wrack whose trade property was invalid, an unbounded idle-dock fallback, and a
-short no-sector transition. The final optimization addressed all three and
-spread cache construction across ticks.
+## Validation and limits
 
-The tester subsequently reported that the 15-ship scenario felt substantially
-better with `DEBUG=100`, marginally better again with `DEBUG=0`, and remained
-satisfactory over multiple longer play sessions. This is useful runtime
-evidence, but it is a subjective acceptance result rather than a repeatable
-frame-time benchmark.
+Static validation covers station-wreck rejection, bounded idle-dock fallback,
+transient no-sector states and incremental cache construction.
+
+Manual play with a 15-ship fleet was satisfactory over multiple longer
+sessions with `DEBUG=100` and `DEBUG=0`. This is useful runtime evidence, but
+it is a subjective acceptance result rather than a repeatable frame-time
+benchmark.
 
 The permanent regression is `tools/validate-tde-galaxy-performance.ps1`. It
 checks builder ownership, pacing, recovery, cache invalidation, per-ship final

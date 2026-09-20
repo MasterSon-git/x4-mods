@@ -85,10 +85,14 @@ Assert-Condition ($null -ne $hostileValidationGuard) 'Dynamic target validation 
 Assert-Condition ($null -ne $hostileValidationGuard.SelectSingleNode("set_value[@name='`$_ValidationStatus' and @exact=`"'target_disallowed'`"]")) 'A hostile dynamic target does not return target_disallowed.'
 Assert-Condition ($null -ne $hostileValidationGuard.SelectSingleNode(".//set_value[@name='`$_ValidationReason' and @exact=`"'hostile_target'`"]")) 'A hostile dynamic target has no stable validation reason.'
 $validationCalls = @($update.SelectNodes("//attention[@min='unknown']/actions//include_interrupt_actions[@ref='ValidateTarget']"))
-$waitValidation = $update.SelectSingleNode("//do_while/include_interrupt_actions[@ref='ValidateTarget']")
-Assert-Condition ($validationCalls.Count -eq 4) "Expected four target revalidations, got $($validationCalls.Count)."
-Assert-Condition ($null -ne $waitValidation) 'The subscription wait loop does not re-check dynamic hostility.'
-Write-Output '4/5 hostility is revalidated before travel, after travel, after approach and during the subscription wait: OK'
+$approachValidation = $update.SelectSingleNode("//do_for_each[@name='`$_ApproachDistance' and @in='`$_ApproachDistances']//include_interrupt_actions[@ref='ValidateTarget']")
+$dockValidation = $update.SelectSingleNode("//do_if[@value='`$_DockEligible']//include_interrupt_actions[@ref='ValidateTarget']")
+$finalValidation = $update.SelectSingleNode("//do_all[@counter='`$_FinalWaitCheck']/include_interrupt_actions[@ref='ValidateTarget']")
+Assert-Condition ($validationCalls.Count -ge 8) "Expected target revalidation throughout staged recovery, got $($validationCalls.Count)."
+Assert-Condition ($null -ne $approachValidation) 'The staged radar approach does not re-check dynamic hostility.'
+Assert-Condition ($null -ne $dockValidation) 'The dock recovery does not re-check dynamic hostility.'
+Assert-Condition ($null -ne $finalValidation) 'The final close-range wait does not re-check dynamic hostility.'
+Write-Output '4/5 hostility is revalidated before and throughout travel, staged approach, dock recovery and final wait: OK'
 
 $modFiles = @(Get-ChildItem -LiteralPath (Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer') -Recurse -File -Filter '*.xml')
 $hardcodedHostileFactions = @($modFiles | Select-String -Pattern 'faction\.(?:khaak|xenon)' -CaseSensitive)

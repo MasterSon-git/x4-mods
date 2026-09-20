@@ -56,8 +56,8 @@ explicit `-DestinationRoot` to `tools/deploy-mods.ps1`.
 
 - `mods/` contains the independently distributable extension directories.
 - `tools/` contains deployment and regression scripts.
-- `docs/` records the port, compatibility evidence, tests, diagnostics and
-  performance work.
+- `docs/` records current compatibility contracts, tests, diagnostics,
+  migration guidance and performance architecture.
 - `.vscode/tasks.json` exposes the local deployment tasks.
 
 Extracted X4 game files are deliberately absent. Validators expect a local,
@@ -68,7 +68,6 @@ ignored by Git and must never be published from this repository.
 
 - [Contributing](CONTRIBUTING.md)
 - [Compatibility with X4 9.00](docs/compatibility-x4-9.md)
-- [Porting and maintenance history](docs/porting-history.md)
 - [Testing and remaining runtime coverage](docs/testing.md)
 - [Performance architecture](docs/performance.md)
 - [Runtime debugging](docs/runtime-debugging.md)
