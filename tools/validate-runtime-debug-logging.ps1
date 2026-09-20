@@ -371,9 +371,9 @@ $expectedAssistParams = @(
     'OWNERLESS_SECTORS', 'WHARFS', 'SHIPYARDS', 'EQUIPMENTDOCKS',
     'TRADING_STATIONS', 'PIRATE_BASES', 'RECYCLING_FACILITIES',
     'DEFENCE_STATIONS', 'FACTION_HEADQUARTERS', 'NON_SPECIAL_STATIONS',
-    'CONSTRUCTION_SITES', 'IDLE_TIME', 'IDLE_MOVE_TO', 'WHERE_TO_MOVE',
-    'START_POSITION', 'IDLE_FOLLOW', 'WHO_TO_FOLLOW', 'IDLE_DOCKING',
-    'FIND_STATION', 'WHERE_TO_DOCK', 'SHOW_MESSAGES', 'WRITE_TO_LOG',
+    'CONSTRUCTION_SITES', 'IDLE_TIME', 'IDLE_ACTION', 'IDLE_MOVE_TARGET',
+    'START_POSITION', 'IDLE_FOLLOW_TARGET', 'IDLE_DOCK_TARGET',
+    'SHOW_MESSAGES', 'WRITE_TO_LOG',
     'ADD_ORDER_TAG', 'DEBUG'
 )
 $assistBranch = $assistDocument.SelectSingleNode("/diff/add/do_if[@value=`"`$orderdef.`$id == 'MSX4_TradeDataExplorerG'`"]")
@@ -382,9 +382,9 @@ Assert-Condition ($null -ne $assistBranch) 'The TDE-G Assist branch is missing.'
 $createParams = @($assistBranch.SelectNodes("do_if[@value='`$createdefaultorder?']/create_order/param"))
 $runParams = @($assistBranch.SelectNodes("do_else/run_script/param"))
 $savedParams = @($assistBranch.SelectNodes("do_else/set_value[starts-with(@name, '`$orderdef.`$')]"))
-Assert-Condition ($createParams.Count -eq 24) "Assist create path must copy 24 parameters, got $($createParams.Count)."
-Assert-Condition ($runParams.Count -eq 24) "Assist run path must copy 24 parameters, got $($runParams.Count)."
-Assert-Condition ($savedParams.Count -eq 24) "Assist saved-orderdef path must copy 24 parameters, got $($savedParams.Count)."
+Assert-Condition ($createParams.Count -eq 21) "Assist create path must copy 21 parameters, got $($createParams.Count)."
+Assert-Condition ($runParams.Count -eq 21) "Assist run path must copy 21 parameters, got $($runParams.Count)."
+Assert-Condition ($savedParams.Count -eq 21) "Assist saved-orderdef path must copy 21 parameters, got $($savedParams.Count)."
 Assert-Condition ((@($createParams | ForEach-Object { $_.GetAttribute('name') }) -join "`n") -ceq ($expectedAssistParams -join "`n")) 'Assist create parameter names/order changed.'
 Assert-Condition ((@($runParams | ForEach-Object { $_.GetAttribute('name') }) -join "`n") -ceq ($expectedAssistParams -join "`n")) 'Assist run parameter names/order changed.'
 Assert-Condition ((@($savedParams | ForEach-Object { $_.GetAttribute('name') -replace '^\$orderdef\.\$', '' }) -join "`n") -ceq ($expectedAssistParams -join "`n")) 'Assist saved-orderdef parameter names/order changed.'
@@ -406,14 +406,11 @@ foreach ($parameter in $expectedAssistParams) {
 
 $traceFieldToParam = [ordered]@{
     idle_time = 'IDLE_TIME'
-    idle_move = 'IDLE_MOVE_TO'
-    idle_follow = 'IDLE_FOLLOW'
-    idle_dock = 'IDLE_DOCKING'
-    where_to_move = 'WHERE_TO_MOVE'
+    idle_action = 'IDLE_ACTION'
+    move_target = 'IDLE_MOVE_TARGET'
     start_position = 'START_POSITION'
-    who_to_follow = 'WHO_TO_FOLLOW'
-    find_station = 'FIND_STATION'
-    where_to_dock = 'WHERE_TO_DOCK'
+    follow_target = 'IDLE_FOLLOW_TARGET'
+    dock_target = 'IDLE_DOCK_TARGET'
     ownerless = 'OWNERLESS_SECTORS'
     wharfs = 'WHARFS'
     shipyards = 'SHIPYARDS'
@@ -442,7 +439,7 @@ foreach ($pathName in @('create', 'run')) {
             }
         }
     }
-    Assert-Condition ($fieldMap.Count -eq 24) "Assist $pathName trace must expose all 24 parameters, got $($fieldMap.Count)."
+    Assert-Condition ($fieldMap.Count -eq 21) "Assist $pathName trace must expose all 21 parameters, got $($fieldMap.Count)."
     foreach ($entry in $traceFieldToParam.GetEnumerator()) {
         Assert-Condition ($fieldMap.ContainsKey($entry.Key)) "Assist $pathName trace is missing field $($entry.Key)."
         $expectedExpression = if ($pathName -eq 'create') {
@@ -457,7 +454,7 @@ foreach ($pathName in @('create', 'run')) {
         Assert-Condition ($fieldMap[$entry.Key] -eq $expectedExpression) "Assist $pathName trace field $($entry.Key) is mapped to '$($fieldMap[$entry.Key])', expected '$expectedExpression'."
     }
 }
-Write-Output 'Assist parameter contract: OK (24 run/create/saved values and trace fields)'
+Write-Output 'Assist parameter contract: OK (21 run/create/saved values and trace fields)'
 
 $diagnosticFinders = @(
     foreach ($entry in $documents.GetEnumerator()) {
@@ -495,19 +492,25 @@ $orderFiles = @(
 )
 foreach ($relativePath in $orderFiles) {
     $current = $documents[(Join-Path $repoRoot $relativePath)]
-    $baseline = [System.Xml.XmlDocument]::new()
-    $baseline.LoadXml((Get-GitContent -Revision $baselineCommit -Path $relativePath))
-
     $currentParams = @($current.SelectNodes('/aiscript/order/params/param') | ForEach-Object { $_.GetAttribute('name') })
-    $baselineParams = @($baseline.SelectNodes('/aiscript/order/params/param') | ForEach-Object { $_.GetAttribute('name') })
-    Assert-Condition (($currentParams -join "`n") -ceq ($baselineParams -join "`n")) "$relativePath introduced or removed an order parameter."
+    foreach ($parameter in @('IDLE_TIME', 'IDLE_ACTION', 'IDLE_MOVE_TARGET', 'START_POSITION', 'IDLE_FOLLOW_TARGET', 'IDLE_DOCK_TARGET')) {
+        Assert-Condition ($currentParams -ccontains $parameter) "$relativePath is missing idle parameter $parameter."
+    }
+    foreach ($retiredParameter in @('IDLE_MOVE_TO', 'WHERE_TO_MOVE', 'IDLE_FOLLOW', 'WHO_TO_FOLLOW', 'IDLE_DOCKING', 'FIND_STATION', 'WHERE_TO_DOCK')) {
+        Assert-Condition (-not ($currentParams -ccontains $retiredParameter)) "$relativePath still exposes retired idle parameter $retiredParameter."
+    }
+
+    $idleActionParam = $current.SelectSingleNode("/aiscript/order/params/param[@name='IDLE_ACTION']")
+    Assert-Condition ($idleActionParam.GetAttribute('type') -eq 'number') "$relativePath IDLE_ACTION must retain the numeric fallback UI type."
+    Assert-Condition ($null -ne $idleActionParam.SelectSingleNode("input_param[@name='min' and @value='0']")) "$relativePath IDLE_ACTION minimum changed."
+    Assert-Condition ($null -ne $idleActionParam.SelectSingleNode("input_param[@name='max' and @value='4']")) "$relativePath IDLE_ACTION maximum changed."
 
     $debugParam = $current.SelectSingleNode("/aiscript/order/params/param[@name='DEBUG']")
     Assert-Condition ($null -ne $debugParam) "$relativePath must retain the DEBUG parameter."
     Assert-Condition ($debugParam.GetAttribute('advanced') -eq 'true') "$relativePath DEBUG must remain advanced=true."
     Assert-Condition ($debugParam.GetAttribute('default') -match 'else 0$') "$relativePath DEBUG must remain off without saved settings."
 }
-Write-Output '10-11/20 no new UI setting; existing advanced DEBUG default retained: OK'
+Write-Output '10-11/20 single idle-action parameter contract and existing advanced DEBUG default: OK'
 
 $allModText = ($xmlFiles | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join [Environment]::NewLine
 Assert-Condition ($allModText -notmatch '\[MSX4-TDE-(?:DIAG|AUDIT)\]') 'A retired MSX4-TDE-DIAG or MSX4-TDE-AUDIT marker was introduced.'

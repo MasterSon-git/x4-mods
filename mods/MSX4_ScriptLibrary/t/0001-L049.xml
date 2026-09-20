@@ -56,6 +56,13 @@
       <t id="85">Leerlauf: Andocken?</t>
       <t id="86">Eine Station finden?</t>
       <t id="87">Wohin andocken?</t>
+      <t id="100">Leerlaufaktion</t>
+      <t id="101">Leerlaufziel</t>
+      <t id="102">Position halten</t>
+      <t id="103">Zu Position fliegen</t>
+      <t id="104">Objekt folgen</t>
+      <t id="105">An ausgewählter Station andocken</t>
+      <t id="106">An geeigneter Station andocken</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="90">Nachrichten anzeigen?</t>
       <t id="91">Ins Logbuch schreiben?</t>

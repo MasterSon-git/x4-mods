@@ -56,6 +56,13 @@
       <t id="85">Nečinný: Dokování?</t>
       <t id="86">Najít stanici?</t>
       <t id="87">Kde dokovat?</t>
+      <t id="100">Akce při nečinnosti</t>
+      <t id="101">Cíl při nečinnosti</t>
+      <t id="102">Držet pozici</t>
+      <t id="103">Přesunout se na pozici</t>
+      <t id="104">Sledovat objekt</t>
+      <t id="105">Dokovat u vybrané stanice</t>
+      <t id="106">Dokovat u vhodné stanice</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="90">Zobrazit zprávy?</t>
       <t id="91">Zapsat do palubního deníku?</t>

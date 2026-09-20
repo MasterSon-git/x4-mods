@@ -65,8 +65,12 @@ The sector behavior repeatedly:
 The Galaxy behavior uses the same final per-ship validation. A shared coarse snapshot
 only discovers potentially stale stations; it never stores a final assignment
 or a per-ship permission decision. One builder constructs a generation and
-workers reuse it until the shortest effective idle interval expires. Existing
-sector reservations prevent multiple workers from choosing the same work area.
+workers reuse it for at least the five-minute build recovery window, or longer
+when their effective idle interval is longer. Existing sector reservations
+prevent multiple workers from choosing the same work area.
+Workers that reach the search coordinator while another ship is building the
+snapshot perform their configured idle action and retry after the idle interval;
+the single builder continues until it can publish the generation.
 
 Mimic remains integrated through Vanilla `order.assist`. Vanilla first checks
 the subordinate's combined skill. Eligible ships receive the Galaxy
@@ -83,11 +87,39 @@ inside a forbidden one. Station work never uses that relaxation.
 
 ### Idle behavior
 
-Idle Move, Follow and Dock are optional fallback actions. A timeout removes
-only the exact idle stack owned by Trade Data Explorer, exposing the suspended default
-behavior so it can run a new full search. If no idle action is enabled, the
-ship simply waits. Dock-target search is bounded to the ten nearest
-gate-distance candidates and retains per-ship final checks.
+`Idle Action` is a single-choice setting: Hold Position, Move to Position,
+Follow Object, Dock at Selected Station or Dock at Suitable Station. Only the
+selected action is passed to the internal idle helper; an invalid or unavailable
+target therefore makes the ship wait instead of trying another configured
+action. The contextual `Idle Target` row delegates position and object
+selection to Vanilla's map-order parameter modes. The UI adapter is guarded by
+the two Trade Data Explorer order IDs in
+`mods/MSX4_TradeDataExplorer/ui/addons/msx4_trade_data_explorer/idle_action.lua`
+and is loaded by the extension-root `mods/MSX4_TradeDataExplorer/ui.xml`
+manifest under X4 9.00's third-party addon schema.
+
+A timeout removes only the exact idle stack still owned by Trade Data Explorer,
+exposing the suspended default behavior so it can run a new full search. A
+long-lived action releases that external timer when it accepts responsibility
+for its own periodic probes. The
+suitable-station choice first prefers the last station successfully visited by
+that ship, avoiding another finder pass when the ship is already beside a valid
+dock. The fallback puts physically nearest stations from the current sector
+before a bounded cross-sector gate-distance tier and retains per-ship final
+checks. The selected automatic dock is remembered across idle cycles. Once the
+dock action is established, ownership is explicitly handed from the exact
+internal `IdleReturnHome` parent to the tagged Vanilla `DockAndWait`; Vanilla's
+`callerid` contract remains unused and unchanged. `DockAndWait` owns the
+approach, dock and periodic TDE candidate probe after each configured idle
+interval. It remains active for an empty result and ends only when work exists;
+ending or cancelling it merely to perform the check made the ship briefly
+undock before selecting the same dock.
+The same interval semantics apply to Hold Position, Move to Position and Follow:
+their selected idle state persists until a probe finds productive TDE work.
+The remembered dock is stored in a TDE-owned per-ship table rather than on the
+ship blackboard because X4 9.00 rejects component-valued ship properties at
+runtime. Load reconstruction and order, ownership, destruction and invalid-
+target cleanup bound the lifetime of every retained reference.
 
 ## Deliberate non-features
 

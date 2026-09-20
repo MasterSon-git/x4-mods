@@ -16,7 +16,12 @@
          <param name="WHERE_TO_DOCK"  type="internal" default="null"/>
           <param name="MSX4_STRICT_BLACKLIST" type="internal" default="false"/>
           <param name="MSX4_USE_KNOWN_PATH"   type="internal" default="this.ship.isplayerowned"/>
-          <param name="IDLE_DOCK_CANDIDATE_LIMIT" type="internal" default="10"/>
+            <param name="MSX4_AUTO_IDLE_DOCK" type="internal" default="false"/>
+            <param name="MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT" type="internal" default="null"/>
+           <param name="MSX4_IDLE_PROBE_SCRIPT" type="internal" default="null"/>
+           <param name="MSX4_IDLE_PROBE_READY" type="internal" default="false"/>
+           <param name="MSX4_IDLE_HANDOFF_COMPLETE" type="internal" default="false"/>
+           <param name="IDLE_DOCK_CANDIDATE_LIMIT" type="internal" default="10"/>
           <param name="cannotdock"        type="internal" default="false"/>
          <param name="FAILED_MOVE"       type="internal" default="false"/>
          <param name="FAILED_FOLLOW"     type="internal" default="false"/>
@@ -33,7 +38,7 @@
             <event_object_signalled object="this.ship" param="'MSX4_Cancel_IdleReturnHome'"/>
          </conditions>
          <actions>
-            <do_if value="$DEBUG gt 0">
+          <do_if value="$DEBUG gt 0">
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=interrupt event=idle_interrupted result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
             </do_if>
             <cancel_order order="this.ship.order"/>
@@ -65,9 +70,20 @@
          <do_if value="$DEBUG gt 0">
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=lifecycle event=script_start result=active current_sector=%2 idle_time=%3 strictblacklist=%4 useknownpath=%5'.[$_Ship.idcode, $_Ship.sector.knownname, $IDLE_TIME, $MSX4_STRICT_BLACKLIST, $MSX4_USE_KNOWN_PATH]"/>
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=configuration event=priority result=move_follow_dock idle_move=%2 idle_follow=%3 idle_dock=%4 failed_move=%5 failed_follow=%6 failed_dock=%7 cannotdock=%8'.[$_Ship.idcode, $IDLE_MOVE_TO, $IDLE_FOLLOW, $IDLE_DOCKING, $FAILED_MOVE, $FAILED_FOLLOW, $FAILED_DOCK, $cannotdock]"/>
-         </do_if>
+          </do_if>
 
-         <do_if value="not $MSX4_STRICT_BLACKLIST and not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
+          <!-- Long-running child actions report a positive work probe through
+               the caller order.  The idle action remains active while probes
+               are empty and returns here only when productive work exists. -->
+          <do_if value="$MSX4_STRICT_BLACKLIST and $MSX4_IDLE_PROBE_READY">
+             <remove_value name="global.$MSX4_SL_IdleShips.{$_Ship}" chance="if @global.$MSX4_SL_IdleShips.{$_Ship} then 100 else 0"/>
+             <do_if value="$DEBUG gt 0">
+                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=idle_probe event=work_available result=complete reason=candidates_found'.[$_Ship.idcode]"/>
+             </do_if>
+             <resume label="END_LBL"/>
+          </do_if>
+
+          <do_if value="not $MSX4_STRICT_BLACKLIST and not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING">
             <set_value name="$IDLE_MOVE_TO" exact="true" chance="100"/>
             <set_value name="$WHERE_TO_MOVE" exact="$START_POSITION"/>
          </do_if>
@@ -108,6 +124,7 @@
             </do_if>
 
             <set_value name="$_IdleActionFailed" exact="false"/>
+            <set_value name="$_IdleActionEstablished" exact="not $IDLE_MOVE_TO and not $IDLE_FOLLOW and not $IDLE_DOCKING"/>
             <do_if value="$cannotdock">
                <!-- Vanilla DockAt reports failure to this order through callerid. -->
                <set_value name="$FAILED_DOCK" exact="true"/>
@@ -157,18 +174,23 @@
                      <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=move event=move_return result=%2 reason=%3 current_sector=%4 target_sector=%5'.[$_Ship.idcode, $_IdleMoveSuccess, if $_IdleMoveSuccess then 'success' else 'move_failed', $_Ship.sector.knownname, $WHERE_TO_MOVE.{1}.knownname]"/>
                   </do_if>
                   <do_if value="$_IdleMoveSuccess">
-                     <resume label="END_LBL"/>
+                     <set_value name="$_IdleActionEstablished" exact="true"/>
                   </do_if>
-                  <set_value name="$FAILED_MOVE" exact="true"/>
-                  <set_value name="$_IdleActionFailed" exact="true"/>
-                  <edit_order_param order="this.assignedcontrolled.order" param="'FAILED_MOVE'" value="true"/>
-                  <do_if value="$DEBUG gt 0">
-                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_action_failed result=failed reason=move_failed idle_action=move'.[$_Ship.idcode]"/>
-                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_next_alternative result=continue reason=move_failed'.[$_Ship.idcode]"/>
-                  </do_if>
+                  <do_else>
+                     <set_value name="$FAILED_MOVE" exact="true"/>
+                     <set_value name="$_IdleActionFailed" exact="true"/>
+                     <edit_order_param order="this.assignedcontrolled.order" param="'FAILED_MOVE'" value="true"/>
+                     <do_if value="$DEBUG gt 0">
+                        <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_action_failed result=failed reason=move_failed idle_action=move'.[$_Ship.idcode]"/>
+                        <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=fallback event=idle_next_alternative result=continue reason=move_failed'.[$_Ship.idcode]"/>
+                     </do_if>
+                  </do_else>
                </do_if>
-               <do_elseif value="$DEBUG gt 0 and $_IdleMoveAllowed">
-                  <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=move event=idle_action_unavailable result=skipped reason=not_required idle_action=move target_sector=%2'.[$_Ship.idcode, $WHERE_TO_MOVE.{1}.knownname]"/>
+               <do_elseif value="$_IdleMoveAllowed">
+                  <set_value name="$_IdleActionEstablished" exact="true"/>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=move event=idle_action_unavailable result=skipped reason=not_required idle_action=move target_sector=%2'.[$_Ship.idcode, $WHERE_TO_MOVE.{1}.knownname]"/>
+                  </do_if>
                </do_elseif>
             </do_if>
 
@@ -201,12 +223,18 @@
                      <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=follow event=idle_follow_selected result=selected reason=success target=%2 target_sector=%3'.[$_Ship.idcode, $WHO_TO_FOLLOW, $WHO_TO_FOLLOW.sector.knownname]"/>
                      <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=follow event=order_start result=pending target=%2 strictblacklist=true useknownpath=%3'.[$_Ship.idcode, $WHO_TO_FOLLOW, $MSX4_USE_KNOWN_PATH]"/>
                   </do_if>
-                  <run_script name="'order.move.follow'">
-                     <param name="MSX4_IDLE_RETURN_HOME" value="true"/>
-                     <param name="target" value="$WHO_TO_FOLLOW"/>
-                     <param name="MSX4_STRICT_BLACKLIST" value="true"/>
-                     <param name="MSX4_USE_KNOWN_PATH" value="$MSX4_USE_KNOWN_PATH"/>
-                  </run_script>
+                   <run_script name="'order.move.follow'">
+                      <param name="MSX4_IDLE_RETURN_HOME" value="true"/>
+                      <param name="target" value="$WHO_TO_FOLLOW"/>
+                      <param name="MSX4_STRICT_BLACKLIST" value="true"/>
+                      <param name="MSX4_USE_KNOWN_PATH" value="$MSX4_USE_KNOWN_PATH"/>
+                      <param name="MSX4_IDLE_PROBE_SCRIPT" value="$MSX4_IDLE_PROBE_SCRIPT"/>
+                      <param name="MSX4_IDLE_PROBE_INTERVAL" value="$IDLE_TIME"/>
+                      <param name="MSX4_IDLE_PROBE_CALLER" value="this.assignedcontrolled.order"/>
+                   </run_script>
+                   <do_if value="$MSX4_IDLE_PROBE_READY">
+                      <resume label="END_LBL"/>
+                   </do_if>
                   <do_if value="$DEBUG gt 0">
                      <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=follow event=order_return result=failed reason=follow_failed target=%2'.[$_Ship.idcode, $WHO_TO_FOLLOW]"/>
                   </do_if>
@@ -223,16 +251,19 @@
                </do_elseif>
             </do_if>
 
-            <!-- DockAndWait stays infinite on success.  Its documented callerid
-                 channel makes a failed DockAt observable after this order restarts. -->
+            <!-- Hand the complete approach, dock and periodic-probe lifecycle
+                 to a tagged DockAndWait order.  It explicitly retires this
+                 short-lived internal order and does not use Vanilla's
+                 callerid lifetime/failure contract. -->
             <do_if value="$IDLE_DOCKING and not $FAILED_DOCK">
                <do_if value="$DEBUG gt 0">
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=dock event=branch_check result=pending idle_action=dock target=%2 find_station=%3'.[$_Ship.idcode, $WHERE_TO_DOCK, $FIND_STATION]"/>
                </do_if>
                <set_value name="$_IdleDockAllowed" exact="false"/>
                <!-- An automatic idle target must not displace a ship from a
-                    station that still satisfies the current-dock policy. -->
-               <do_if value="not @$WHERE_TO_DOCK.exists and
+                    station that still satisfies the current-dock policy.  For
+                    an explicit target, however, the player's selection wins. -->
+               <do_if value="($MSX4_AUTO_IDLE_DOCK or not @$WHERE_TO_DOCK.exists) and
                              @$_Ship.dock.container.exists and
                              $_Ship.dock.container.isclass.station">
                   <set_value name="$_CurrentIdleDock" exact="$_Ship.dock.container"/>
@@ -273,11 +304,18 @@
                </do_if>
 
                <do_if value="not $_IdleDockAllowed and $FIND_STATION">
-                  <!-- Prefer the nearest gate-distance candidates and stop at
-                       the first target that passes the complete current-ship
-                       policy.  Do not estimate travel time for every known
-                       dockable station in the galaxy. -->
-                  <find_station name="$_FoundStations" space="player.galaxy" multiple="true"
+                  <!-- Put the physically nearest local stations first.  The
+                       additional galaxy finder retains the bounded cross-sector
+                       fallback without estimating full travel time globally. -->
+                  <find_station name="$_FoundStations" space="$_Ship.sector" multiple="true"
+                                sortbydistanceto="$_Ship" sortlimit="$IDLE_DOCK_CANDIDATE_LIMIT">
+                     <match knownto="$_Ship.owner"/>
+                     <match checkoperational="true"/>
+                     <match_relation_to faction="$_Ship.owner" comparison="ge" relation="dock"/>
+                     <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
+                     <match_use_blacklist object="$_Ship" type="blacklisttype.objectactivity" group="$blacklistgroup"/>
+                  </find_station>
+                  <find_station name="$_FallbackStations" space="player.galaxy" multiple="true" excluded="$_FoundStations"
                                 sortbygatedistancefrom="$_Ship" sortlimit="$IDLE_DOCK_CANDIDATE_LIMIT">
                      <match knownto="$_Ship.owner"/>
                      <match checkoperational="true"/>
@@ -285,6 +323,8 @@
                      <match_use_blacklist object="$_Ship" type="blacklisttype.sectoractivity" group="$blacklistgroup"/>
                      <match_use_blacklist object="$_Ship" type="blacklisttype.objectactivity" group="$blacklistgroup"/>
                   </find_station>
+                  <append_list_elements name="$_FoundStations" other="$_FallbackStations"/>
+                  <remove_value name="$_FallbackStations"/>
                   <do_if value="$DEBUG gt 0">
                      <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_search_result result=complete candidate_count=%2'.[$_Ship.idcode, $_FoundStations.count]"/>
                      <set_value name="$_IdleDockCandidatesChecked" exact="0"/>
@@ -337,25 +377,54 @@
                </do_if>
 
                <do_if value="$_IdleDockAllowed">
+                  <do_if value="$MSX4_AUTO_IDLE_DOCK and $MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT">
+                     <run_script name="$MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT">
+                        <param name="TARGET" value="$WHERE_TO_DOCK"/>
+                     </run_script>
+                     <do_if value="$DEBUG gt 0">
+                        <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=dock event=dock_target_remembered result=stored reason=success target=%2 target_sector=%3'.[$_Ship.idcode, $WHERE_TO_DOCK, $WHERE_TO_DOCK.sector.knownname]"/>
+                     </do_if>
+                  </do_if>
                   <do_if value="$DEBUG gt 0">
                      <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=dock event=idle_dock_selected result=selected reason=success target=%2 target_sector=%3'.[$_Ship.idcode, $WHERE_TO_DOCK, $WHERE_TO_DOCK.sector.knownname]"/>
-                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=dock event=order_start result=pending target=%2 callerid=%3 cannotdock=%4'.[$_Ship.idcode, $WHERE_TO_DOCK, this.assignedcontrolled.order, $cannotdock]"/>
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=dock event=order_start result=pending target=%2 parent=%3'.[$_Ship.idcode, $WHERE_TO_DOCK, this.assignedcontrolled.order]"/>
                   </do_if>
-                  <create_order object="$_Ship" id="'DockAndWait'" immediate="true">
-                     <param name="MSX4_IDLE_RETURN_HOME" value="true"/>
-                     <param name="destination" value="$WHERE_TO_DOCK"/>
-                     <param name="timeout" value="999h"/>
+                   <create_order object="$_Ship" id="'DockAndWait'" immediate="true">
+                      <param name="MSX4_IDLE_RETURN_HOME" value="true"/>
+                      <param name="MSX4_IDLE_PROBE_SCRIPT" value="$MSX4_IDLE_PROBE_SCRIPT"/>
+                      <param name="MSX4_IDLE_PARENT_ORDER" value="this.assignedcontrolled.order"/>
+                      <param name="destination" value="$WHERE_TO_DOCK"/>
+                      <param name="timeout" value="$IDLE_TIME"/>
                      <param name="internalorder" value="true"/>
-                     <param name="callerid" value="this.assignedcontrolled.order"/>
                   </create_order>
                   <wait exact="1ms"/>
                </do_if>
                <do_elseif value="$DEBUG gt 0">
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=dock event=idle_action_unavailable result=skipped reason=cannotdock idle_action=dock target=%2'.[$_Ship.idcode, $WHERE_TO_DOCK]"/>
                </do_elseif>
+               <do_if value="not $_IdleDockAllowed and $MSX4_AUTO_IDLE_DOCK and $MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT">
+                  <run_script name="$MSX4_IDLE_DOCK_TARGET_STORE_SCRIPT">
+                     <param name="TARGET" value="null"/>
+                  </run_script>
+               </do_if>
             </do_if>
 
-            <do_if value="$_IdleActionFailed">
+            <do_if value="$_IdleActionEstablished and $MSX4_IDLE_PROBE_SCRIPT">
+               <!-- Hold Position and a completed Move to Position have no
+                    long-running Vanilla child.  Keep their state and probe in
+                    this order until work becomes available. -->
+               <remove_value name="global.$MSX4_SL_IdleShips.{$_Ship}" chance="if @global.$MSX4_SL_IdleShips.{$_Ship} then 100 else 0"/>
+               <set_value name="$_IdleWorkAvailable" exact="false"/>
+               <do_while value="not $_IdleWorkAvailable">
+                  <wait exact="$IDLE_TIME"/>
+                  <run_script name="$MSX4_IDLE_PROBE_SCRIPT" result="$_IdleWorkAvailable"/>
+                  <do_if value="$DEBUG gt 0">
+                     <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=idle_probe event=candidate_result result=%2 idle_action=%3'.[$_Ship.idcode, $_IdleWorkAvailable, if $IDLE_MOVE_TO then 'move' else 'hold']"/>
+                  </do_if>
+               </do_while>
+               <resume label="END_LBL"/>
+            </do_if>
+            <do_elseif value="$_IdleActionFailed">
                <!-- Backoff is only reached after an observed child failure and
                     only when no alternative action remained successful. -->
                <set_value name="global.$MSX4_SL_IdleShips.{$_Ship}" exact="player.age"/>
@@ -363,7 +432,7 @@
                   <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-SLIB-AI] ' + player.age + ' *** msx4.lib.IdleReturnHome:' + '[MSX4-SLIB-TRACE] source=idle_return_home ship=%1 phase=backoff event=idle_full_backoff result=waiting reason=idle_backoff idle_action=none'.[$_Ship.idcode]"/>
                </do_if>
                <wait exact="$IDLE_TIME"/>
-            </do_if>
+            </do_elseif>
             <do_else>
                <!-- No action was needed or currently allowed: remain in the
                     normal idle state until the existing MD timer wakes TDE. -->
@@ -449,7 +518,7 @@
       <!-- If an external order aborts the escape while the ordinary idle timer
            is suspended, re-register the ship so the existing MD cleanup removes
            the idle name/state on its next pass. -->
-      <do_if value="$MSX4_STRICT_BLACKLIST and not @global.$MSX4_SL_IdleShips.{$_Ship}">
+      <do_if value="$MSX4_STRICT_BLACKLIST and not $MSX4_IDLE_HANDOFF_COMPLETE and not @global.$MSX4_SL_IdleShips.{$_Ship}">
          <set_value name="global.$MSX4_SL_IdleShips.{$_Ship}" exact="player.age"/>
       </do_if>
       <do_if value="$DEBUG gt 0">

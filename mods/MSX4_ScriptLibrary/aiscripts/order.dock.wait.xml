@@ -4,6 +4,8 @@
 
    <add sel="/aiscript/order[@id='DockAndWait']/params">
       <param name="MSX4_IDLE_RETURN_HOME"  type="internal" default="false"/>
+      <param name="MSX4_IDLE_PROBE_SCRIPT" type="internal" default="null"/>
+      <param name="MSX4_IDLE_PARENT_ORDER" type="internal" default="null"/>
    </add>
 
    <add sel="/aiscript/init">
@@ -12,6 +14,22 @@
          <set_value name="$_TDETraceDebug" exact="@$_TDEDefaultOrderParamRef.$DEBUG"/>
          <do_if value="@$_TDETraceDebug gt 0">
             <set_value name="$_TDETraceFile" exact="'MSX4_TradeDataExplorer_Runtime.log'"/>
+         </do_if>
+         <!-- The tagged DockAndWait order owns the complete approach, dock and
+              periodic probe lifecycle.  Retire only the exact internal
+              IdleReturnHome order that explicitly handed off to it; do not
+              overload Vanilla's callerid lifetime/failure contract. -->
+         <do_if value="@$MSX4_IDLE_PARENT_ORDER.exists and
+                       $MSX4_IDLE_PARENT_ORDER.id == 'MSX4_lib_IdleReturnHome' and
+                       $MSX4_IDLE_PARENT_ORDER.object == this.assignedcontrolled">
+            <set_value name="$_MSX4IdleParentOrder" exact="$MSX4_IDLE_PARENT_ORDER"/>
+            <edit_order_param order="$_MSX4IdleParentOrder" param="'MSX4_IDLE_HANDOFF_COMPLETE'" value="true"/>
+            <set_value name="$MSX4_IDLE_PARENT_ORDER" exact="null"/>
+            <remove_value name="global.$MSX4_SL_IdleShips.{this.assignedcontrolled}" chance="if @global.$MSX4_SL_IdleShips.{this.assignedcontrolled} then 100 else 0"/>
+            <do_if value="@$_TDETraceDebug gt 0">
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=lifecycle event=parent_handoff result=complete parent=%2 target=%3'.[this.assignedcontrolled.idcode, $_MSX4IdleParentOrder, $destination]"/>
+            </do_if>
+            <cancel_order order="$_MSX4IdleParentOrder"/>
          </do_if>
       </do_if>
    </add>
@@ -38,6 +56,17 @@
       </do_if>
    </add>
 
+   <!-- Explicitly handed-off orders already released the external timer in
+        init.  Retain the standing-by release for older tagged library callers
+        that do not supply an ownership parent. -->
+   <add sel="/aiscript/attention[@min='unknown']/actions/set_command_action[@commandaction='commandaction.standingby']" pos="before">
+      <label name="MSX4_IDLE_DOCKED_WAIT_LBL"/>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions/set_command_action[@commandaction='commandaction.standingby']" pos="after">
+      <remove_value name="global.$MSX4_SL_IdleShips.{this.assignedcontrolled}" chance="if @$MSX4_IDLE_RETURN_HOME and @global.$MSX4_SL_IdleShips.{this.assignedcontrolled} then 100 else 0"/>
+   </add>
+
    <add sel="/aiscript/attention[@min='unknown']/actions/do_if[starts-with(normalize-space(@value), '$isdockfollower')]/do_if[@value='$callerid.exists']/do_if[@value='$callerid.$cannotdock?']/edit_order_param[@order='$callerid'][@param=&quot;'cannotdock'&quot;][@value='true']" pos="before">
       <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
          <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=dock event=cannotdock_set result=failed reason=cannotdock target=%2 callerid=%3'.[this.assignedcontrolled.idcode, $destination, $callerid]"/>
@@ -47,6 +76,22 @@
    <add sel="/aiscript/attention[@min='unknown']/actions/do_if[@value='not $destination.isoperational or not @$destination.isclass.container']/do_if[@value='$callerid.exists']/do_if[@value='$callerid.$cannotdock?']/edit_order_param[@order='$callerid'][@param=&quot;'cannotdock'&quot;][@value='true']" pos="before">
       <do_if value="@$MSX4_IDLE_RETURN_HOME and @$_TDETraceDebug gt 0">
          <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=dock event=cannotdock_set result=failed reason=cannotdock target=%2 callerid=%3'.[this.assignedcontrolled.idcode, $destination, $callerid]"/>
+      </do_if>
+   </add>
+
+   <add sel="/aiscript/attention[@min='unknown']/actions/label[@name='finish']" pos="before">
+      <!-- The timeout is a work-probe interval, not a reason to release the
+           dock.  Continue the same DockAndWait order while no work exists. -->
+      <do_if value="@$MSX4_IDLE_RETURN_HOME and
+                    $MSX4_IDLE_PROBE_SCRIPT and
+                    @this.assignedcontrolled.dock.container == $destination">
+         <run_script name="$MSX4_IDLE_PROBE_SCRIPT" result="$_MSX4IdleWorkAvailable"/>
+         <do_if value="@$_TDETraceDebug gt 0">
+            <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="$_TDETraceFile" text="'[MSX4-SLIB-AI] ' + player.age + ' *** order.dock.wait:' + '[MSX4-SLIB-TRACE] source=idle_dock_wait ship=%1 phase=idle_probe event=candidate_result result=%2 target=%3'.[this.assignedcontrolled.idcode, $_MSX4IdleWorkAvailable, $destination]"/>
+         </do_if>
+         <do_if value="not $_MSX4IdleWorkAvailable">
+            <resume label="MSX4_IDLE_DOCKED_WAIT_LBL"/>
+         </do_if>
       </do_if>
    </add>
 

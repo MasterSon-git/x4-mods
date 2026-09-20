@@ -116,9 +116,12 @@ foreach ($groupName in @('global.$MSX4_TDE_ShipsGroup', 'global.$MSX4_TDE_Sector
 
 Assert-Condition ($null -ne $tdeSetup.SelectSingleNode("actions/do_if[contains(@value, 'datatype.table')]/remove_value[@name='global.`$MSX4_TDE_ShipsCurrentSectorTable']")) 'TDE_ShipsCurrentSectorTable must be type-checked.'
 Assert-Condition ($null -ne $tdeSetup.SelectSingleNode("actions/set_value[@name='global.`$MSX4_TDE_ShipsCurrentSectorTable']")) 'TDE_ShipsCurrentSectorTable must be initialized before child cues.'
+Assert-Condition ($null -ne $tdeSetup.SelectSingleNode("actions/do_if[contains(@value, 'datatype.table')]/remove_value[@name='global.`$MSX4_TDE_IdleDockTargetTable']")) 'TDE_IdleDockTargetTable must be type-checked.'
+Assert-Condition ($null -ne $tdeSetup.SelectSingleNode("actions/set_value[@name='global.`$MSX4_TDE_IdleDockTargetTable']")) 'TDE_IdleDockTargetTable must be initialized before child cues.'
 
 $requiredListenerNames = @(
     'TDE_EventObjectDestroyed_MD',
+    'TDE_EventObjectOwnershipLost_MD',
     'TDE_EventObjectOrderReady2_MD'
 )
 foreach ($listenerName in $requiredListenerNames) {
@@ -129,7 +132,7 @@ $topLevelGlobalGroupEvents = $tde.SelectNodes("/mdscript/cues/cue/conditions/*[s
 Assert-Condition ($topLevelGlobalGroupEvents.Count -eq 0) 'No top-level TDE event cue may require a global group.'
 
 $globalGroupEvents = $tde.SelectNodes("//*[starts-with(local-name(), 'event_') and starts-with(@group, 'global.`$')]")
-Assert-Condition ($globalGroupEvents.Count -eq 2) 'Exactly the two known TDE event conditions must use global groups.'
+Assert-Condition ($globalGroupEvents.Count -eq 4) 'Exactly the four known TDE event conditions must use global groups.'
 foreach ($eventNode in $globalGroupEvents) {
     Assert-Condition ($requiredGroups -contains $eventNode.GetAttribute('group')) "Unexpected global event group $($eventNode.GetAttribute('group'))."
     Assert-Condition ($null -ne $eventNode.SelectSingleNode("ancestor::cue[@name='TDE_Setup_MD']")) "$($eventNode.LocalName) must be below initialized TDE_Setup_MD."
@@ -151,7 +154,7 @@ foreach ($groupName in $requiredGroups) {
     Assert-Condition ($globalGroupCreationCounts[$groupName] -eq 1) "$groupName must have exactly one create_group action."
 }
 
-foreach ($localName in @('$_TDEActiveShips', '$_PreviousShipsCurrentSectorTable', '$_RebuiltShipsCurrentSectorTable', '$_RebuiltSectorsBlacklistGroup')) {
+foreach ($localName in @('$_TDEActiveShips', '$_PreviousShipsCurrentSectorTable', '$_RebuiltShipsCurrentSectorTable', '$_RebuiltSectorsBlacklistGroup', '$_PreviousIdleDockTargetTable', '$_RebuiltIdleDockTargetTable')) {
     Assert-Condition ($null -ne $tdeSetup.SelectSingleNode("actions/*[@name='$localName' or @groupname='$localName']")) "$localName must be initialized before use."
 }
 

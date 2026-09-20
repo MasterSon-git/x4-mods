@@ -56,6 +56,13 @@
       <t id="85">Inactivo: ¿Acoplamiento?</t>
       <t id="86">¿Encontrar una Estación?</t>
       <t id="87">¿Dónde acoplar?</t>
+      <t id="100">Acción de inactividad</t>
+      <t id="101">Objetivo de inactividad</t>
+      <t id="102">Mantener posición</t>
+      <t id="103">Moverse a una posición</t>
+      <t id="104">Seguir objeto</t>
+      <t id="105">Acoplarse en la estación seleccionada</t>
+      <t id="106">Acoplarse en una estación adecuada</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="90">¿Mostrar mensajes?</t>
       <t id="91">¿Escribir en el libro de registro?</t>

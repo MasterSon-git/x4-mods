@@ -20,8 +20,8 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <param name="CACHE_TTL"             default="1min"/>
       <param name="CACHE_BUILD_TIMEOUT"   default="5min"/>
-      <param name="COORDINATOR_WAIT"      default="5s"/>
       <param name="CACHE_BUILD_YIELD"     default="1s"/>
+      <param name="SILENT"                default="false"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <param name="debugchance" default="0"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -31,7 +31,10 @@
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <set_value name="$_Ship" exact="this.ship"/>
       <set_value name="$_DefaultOrderParamRef" exact="if $_Ship.defaultorder.id == 'Assist' then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
-      <set_value name="$_CacheTTL" exact="if @$_DefaultOrderParamRef.$IDLE_TIME then $_DefaultOrderParamRef.$IDLE_TIME else $CACHE_TTL"/>
+      <!-- A full paced galaxy build can take longer than a short configured
+           idle interval.  Keep a completed generation usable for at least the
+           recovery window instead of immediately starting another build wave. -->
+      <set_value name="$_CacheTTL" exact="[if @$_DefaultOrderParamRef.$IDLE_TIME then $_DefaultOrderParamRef.$IDLE_TIME else $CACHE_TTL, $CACHE_BUILD_TIMEOUT].max"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <create_list name="$_Sectors"/>
       <create_list name="$_FoundStations"/>
@@ -55,8 +58,6 @@
          <set_value name="$_PerfPathChecks" exact="0"/>
          <set_value name="$_PerfTravelTimeChecks" exact="0"/>
       </do_if>
-      <set_value name="$_CoordinatorWaitingRegistered" exact="false"/>
-      <set_value name="global.$MSX4_TDE_GalaxyScanWaitingWorkers" exact="0" chance="if not global.$MSX4_TDE_GalaxyScanWaitingWorkers? then 100 else 0"/>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
    </init>
 
@@ -75,10 +76,9 @@
 
          <label name="RESUME_LBL"/>
 
-         <!-- Vanilla trade.find.commander uses an owning worker plus bounded
-              waits to de-parallelize expensive searches.  Keep the existing
-              TDE critical section, but make its owner recoverable and remove
-              the previous 1 ms hot polling loop. -->
+         <!-- Keep the expensive search single-owner.  A worker that encounters
+              a healthy owner returns a deferred status so its parent behavior
+              can perform the configured idle action until the next retry. -->
          <do_if value="global.$MSX4_TDE_GetTradeDataToUpdateAlreadyProcessing? and
                        global.$MSX4_TDE_GetTradeDataToUpdateAlreadyProcessing != $_Ship">
             <set_value name="$_CoordinatorOwner" exact="global.$MSX4_TDE_GetTradeDataToUpdateAlreadyProcessing"/>
@@ -94,16 +94,16 @@
                <remove_value name="global.$MSX4_TDE_GalaxyCandidateBuilder"/>
                <resume label="RESUME_LBL"/>
             </do_if>
-            <do_if value="not $_CoordinatorWaitingRegistered">
-               <set_value name="global.$MSX4_TDE_GalaxyScanWaitingWorkers" operation="add" exact="1"/>
-               <set_value name="$_CoordinatorWaitingRegistered" exact="true"/>
+            <!-- Only a Galaxy worker blocked by an actual cache build enters
+                 the configured transient idle action.  All other contention
+                 is a cheap search retry and must not look like missing work. -->
+            <set_value name="$_DeferredStatus" exact="if $SECTOR == null and @global.$MSX4_TDE_GalaxyCandidateState == 'building' then 'cache_build_pending' else 'search_busy'"/>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-TRACE] source=get_trade_subscriptions ship=%1 phase=coordinator event=search_deferred result=deferred reason=%2 owner=%3'.[$_Ship.idcode, $_DeferredStatus, $_CoordinatorOwner.idcode]"/>
             </do_if>
-            <wait exact="$COORDINATOR_WAIT"/>
-            <resume label="RESUME_LBL"/>
-         </do_if>
-         <do_if value="$_CoordinatorWaitingRegistered">
-            <set_value name="global.$MSX4_TDE_GalaxyScanWaitingWorkers" exact="if @global.$MSX4_TDE_GalaxyScanWaitingWorkers gt 0 then global.$MSX4_TDE_GalaxyScanWaitingWorkers - 1 else 0"/>
-            <set_value name="$_CoordinatorWaitingRegistered" exact="false"/>
+            <return value="[]">
+               <retval name="status" value="$_DeferredStatus"/>
+            </return>
          </do_if>
          <set_value name="global.$MSX4_TDE_GetTradeDataToUpdateAlreadyProcessing" exact="$_Ship"/>
          <set_value name="global.$MSX4_TDE_GetTradeDataToUpdateStarted" exact="player.age"/>
@@ -513,16 +513,18 @@
                <set_value name="$_TraceReservationChanged" exact="true"/>
                <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-TRACE] source=get_trade_subscriptions ship=%1 phase=reservation event=reservation_set result=active reason=success target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $SECTOR.knownname, $_FoundStations.count]"/>
             </do_if>
-            <run_script name="'msx4.lib.GetFactionColorCode'" result="$_ObjectSectorOwnerColor">
-               <param name="FACTION" value="$SECTOR.owner"/>
-            </run_script>
-            <!-- I will start update trade subscriptions in sector %2%1\033X. -->
-            <run_script name="'msx4.lib.MessageLog'">
-               <param name="TEXT"               value="{975211, 1962}.[$SECTOR.knownname, $_ObjectSectorOwnerColor]"/>
-               <param name="INTERACTION_OBJECT" value="$SECTOR"/>
-               <param name="MESSAGE_CHANCE"     value="2"/>
-               <param name="LOG_CHANCE"         value="2"/>
-            </run_script>
+            <do_if value="not $SILENT">
+               <run_script name="'msx4.lib.GetFactionColorCode'" result="$_ObjectSectorOwnerColor">
+                  <param name="FACTION" value="$SECTOR.owner"/>
+               </run_script>
+               <!-- I will start update trade subscriptions in sector %2%1\033X. -->
+               <run_script name="'msx4.lib.MessageLog'">
+                  <param name="TEXT"               value="{975211, 1962}.[$SECTOR.knownname, $_ObjectSectorOwnerColor]"/>
+                  <param name="INTERACTION_OBJECT" value="$SECTOR"/>
+                  <param name="MESSAGE_CHANCE"     value="2"/>
+                  <param name="LOG_CHANCE"         value="2"/>
+               </run_script>
+            </do_if>
          </do_if>
          <do_if value="$DEBUG gt 0 and not $_TraceReservationChanged and $_FoundStations.count and @global.$MSX4_TDE_ShipsCurrentSectorTable.{$_Ship} == $SECTOR">
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-TRACE] source=get_trade_subscriptions ship=%1 phase=reservation event=reservation_retained result=active reason=success target_sector=%2 candidate_count=%3'.[$_Ship.idcode, $SECTOR.knownname, $_FoundStations.count]"/>
@@ -540,21 +542,20 @@
             <!-- The observed X4 9.00 runtime parsed %10 through %16 as a
                  single-digit placeholder followed by a literal digit. -->
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-PERF] event=scan scan_generation=%1 scan_owner=%2 scan_start_time=%3 scan_end_time=%4 sectors_considered=%5 sectors_accepted=%6 stations_considered=%7 stations_stale=%8'.[global.$MSX4_TDE_GalaxyCandidateGeneration, @global.$MSX4_TDE_GalaxyCandidateScanOwner.idcode, $_PerfScanStartTime, player.age, $_PerfSectorsConsidered, $_PerfSectorsAccepted, $_PerfStationsConsidered, $_PerfStationsStale]"/>
-            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-PERF] event=worker path_checks=%1 travel_time_checks=%2 candidates_returned=%3 cache_hit=%4 cache_miss=%5 cache_age=%6 cache_ttl=%7 worker_count=%8 waiting_workers=%9'.[$_PerfPathChecks, $_PerfTravelTimeChecks, $_FoundStations.count, $_CacheHit, not $_CacheHit, $_CacheAge, $_CacheTTL, @global.$MSX4_TDE_ShipsGroup.count, @global.$MSX4_TDE_GalaxyScanWaitingWorkers]"/>
+            <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-PERF] event=worker path_checks=%1 travel_time_checks=%2 candidates_returned=%3 cache_hit=%4 cache_miss=%5 cache_age=%6 cache_ttl=%7 worker_count=%8'.[$_PerfPathChecks, $_PerfTravelTimeChecks, $_FoundStations.count, $_CacheHit, not $_CacheHit, $_CacheAge, $_CacheTTL, @global.$MSX4_TDE_ShipsGroup.count]"/>
          </do_if>
          <do_if value="$DEBUG gt 0">
             <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-TRACE] source=get_trade_subscriptions ship=%1 phase=lifecycle event=script_end result=%2 reason=%3 mode=%4 candidate_count=%5 target_sector=%6'.[$_Ship.idcode, if $_FoundStations.count then 'success' else 'no_candidates', if $_FoundStations.count then 'success' else 'no_candidates', if $SECTOR == null then 'galaxy' else 'sector', $_FoundStations.count, if $SECTOR == null then 'none' else $SECTOR.knownname]"/>
          </do_if>
 
-         <return value="$_FoundStations"/>
+         <return value="$_FoundStations">
+            <retval name="status" value="'complete'"/>
+         </return>
 
       </actions>
    </attention>
 
    <on_abort>
-      <do_if value="$_CoordinatorWaitingRegistered">
-         <set_value name="global.$MSX4_TDE_GalaxyScanWaitingWorkers" exact="if @global.$MSX4_TDE_GalaxyScanWaitingWorkers gt 0 then global.$MSX4_TDE_GalaxyScanWaitingWorkers - 1 else 0"/>
-      </do_if>
       <do_if value="$DEBUG gt 0">
          <debug_to_file directory="$_DebugFolderName" name="$_DebugFileName" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.GetTradeDataToUpdate:' + '[MSX4-TDE-TRACE] source=get_trade_subscriptions ship=%1 phase=lifecycle event=script_abort result=aborted reason=order_interrupted'.[$_Ship.idcode]"/>
       </do_if>

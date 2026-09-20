@@ -56,6 +56,13 @@
       <t id="85">Ocioso: Atracar?</t>
       <t id="86">Encontrar uma estação?</t>
       <t id="87">Onde atracar?</t>
+      <t id="100">Ação de inatividade</t>
+      <t id="101">Alvo de inatividade</t>
+      <t id="102">Manter posição</t>
+      <t id="103">Mover para uma posição</t>
+      <t id="104">Seguir objeto</t>
+      <t id="105">Atracar na estação selecionada</t>
+      <t id="106">Atracar em uma estação adequada</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
       <t id="90">Mostrar mensagens?</t>
       <t id="91">Escrever no livro de registro?</t>

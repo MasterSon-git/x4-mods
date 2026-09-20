@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<aiscript name="msx4.tde.StoreIdleDockTarget" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="aiscripts.xsd">
+
+   <params>
+      <param name="TARGET" default="null"/>
+   </params>
+
+   <init>
+      <set_value name="$_Ship" exact="this.ship"/>
+      <set_value name="$_DefaultOrderParamRef" exact="if @$_Ship.defaultorder.id == 'Assist' and @$_Ship.commander.defaultorder then $_Ship.commander.defaultorder else $_Ship.defaultorder"/>
+      <set_value name="$DEBUG" exact="@$_DefaultOrderParamRef.$DEBUG"/>
+   </init>
+
+   <attention min="unknown">
+      <actions>
+         <do_if value="global.$MSX4_TDE_IdleDockTargetTable? and typeof global.$MSX4_TDE_IdleDockTargetTable != datatype.table">
+            <remove_value name="global.$MSX4_TDE_IdleDockTargetTable"/>
+         </do_if>
+         <set_value name="global.$MSX4_TDE_IdleDockTargetTable" exact="table[]" chance="if not global.$MSX4_TDE_IdleDockTargetTable? then 100 else 0"/>
+
+         <do_if value="@$TARGET.isclass.station and $TARGET.isoperational">
+            <set_value name="global.$MSX4_TDE_IdleDockTargetTable.{$_Ship}" exact="$TARGET"/>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.StoreIdleDockTarget:' + '[MSX4-TDE-TRACE] source=store_idle_dock_target ship=%1 phase=memory event=target_stored result=success target=%2 target_sector=%3'.[$_Ship.idcode, $TARGET, $TARGET.sector.knownname]"/>
+            </do_if>
+         </do_if>
+         <do_else>
+            <remove_value name="global.$MSX4_TDE_IdleDockTargetTable.{$_Ship}" chance="if @global.$MSX4_TDE_IdleDockTargetTable.{$_Ship} then 100 else 0"/>
+            <do_if value="$DEBUG gt 0">
+               <debug_to_file directory="'MSX4_TradeDataExplorer.logs'" name="'MSX4_TradeDataExplorer_Runtime.log'" text="'[MSX4-TDE-AI] ' + player.age + ' *** msx4.tde.StoreIdleDockTarget:' + '[MSX4-TDE-TRACE] source=store_idle_dock_target ship=%1 phase=memory event=target_cleared result=complete reason=invalid_or_unavailable_target'.[$_Ship.idcode]"/>
+            </do_if>
+         </do_else>
+      </actions>
+   </attention>
+
+</aiscript>

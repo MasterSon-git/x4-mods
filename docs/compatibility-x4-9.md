@@ -125,9 +125,46 @@ economy edits or permanent trade subscriptions.
   now cancels the exact Trade Data Explorer idle parent and only children explicitly tagged as
   belonging to it. Foreign queue orders are not removed. See commit `9f211f6`.
 - Productive completion starts a fresh candidate search; empty or failed work
-  still uses the configured idle backoff. With all optional idle actions off,
-  the ship waits instead of performing an invented movement. See commit
-  `8c6c7d6`.
+  still uses the configured idle backoff. A single `Idle Action` selector now
+  replaces the former independent Move, Follow and Dock switches. Only that
+  action is passed to `msx4.lib.IdleReturnHome`; Hold Position or an unavailable
+  selected target waits without falling through to a different action. The
+  order definitions are in both `MSX4_TradeDataExplorerG.xml` and
+  `MSX4_TradeDataExplorerS.xml`.
+- A Galaxy worker blocked by an active cache build receives an explicit
+  `cache_build_pending` result and performs the configured idle action before
+  retrying. Ordinary search-coordinator contention receives `search_busy` and
+  uses a short paced retry instead; a completed search with no candidates
+  retains the normal configured idle backoff.
+- Automatic suitable-station docking remembers its validated per-ship target
+  across idle cycles and retains a still-valid current dock before considering
+  that remembered target. The idle interval now drives periodic candidate
+  probes without ending Hold Position, Move to Position, Follow or the tagged
+  Vanilla `DockAndWait` child. The dock path explicitly transfers ownership
+  from its exact internal idle parent and leaves Vanilla's `callerid` lifecycle
+  unchanged. An idle action finishes only after a probe finds TDE work, instead
+  of being ended merely to run an empty check. New fallback selection
+  orders current-sector stations by physical distance before using a bounded
+  galaxy gate-distance tier, preventing nearby ships from converging on an
+  arbitrary same-sector station.
+  X4 9.00 rejected the initial component-valued ship property used for this
+  memory. The target now lives in a TDE-owned table that is reconstructed on
+  load and cleared when TDE ownership, ship ownership, target validity or the
+  selected automatic-docking action ends.
+- X4 9.00's `libraries/aiscripts.xsd` provides bounded numeric, position and
+  object order parameters but no declarative dropdown parameter. The narrowly
+  guarded adapter in
+  `mods/MSX4_TradeDataExplorer/ui/addons/msx4_trade_data_explorer/idle_action.lua`
+  renders the bounded action value as a dropdown and delegates contextual
+  target selection to Vanilla `menu_map.lua`'s `buttonSetOrderParam` flow. The
+  extension-root `mods/MSX4_TradeDataExplorer/ui.xml` manifest loads the
+  adapter after `ego_detailmonitor`. It follows X4 9.00's third-party
+  `ui/core/addon.xsd` contract: unlike a Vanilla core addon, its addon name
+  does not use the reserved `ego_` prefix. Dropdown option IDs are explicitly
+  converted to numbers before entering Vanilla's number-parameter setter; the
+  AI side also accepts the textual values produced by the first development
+  adapter so active test orders recover without reassignment.
+  Correct rendering and map interaction remain an in-game test requirement.
 - Vanilla Tide escape docking can pass `dockfollowers=true` even with
   `recallsubordinates=false`. A narrow Trade Data Explorer diff disables that follower recall
   only when a ship currently has the Galaxy default behavior and has
@@ -153,7 +190,9 @@ The port does not replace Vanilla files. Its XML diffs add guarded behavior to
 specific order scripts:
 
 - ScriptLibrary forwards internal idle parameters through Dock, DockAndWait
-  and Follow only for its own idle stack.
+  and Follow only for its own idle stack. Its DockAndWait ownership handoff is
+  guarded by the MSX4 marker, the exact internal parent order ID and the same
+  controlled ship.
 - Trade Data Explorer adds its Mimic branch to Assist for its custom Galaxy order.
 - Trade Data Explorer suppresses follower docking only for an active Galaxy commander in
   the two relevant docking paths.
@@ -177,6 +216,8 @@ The following cannot be proven by XML validation alone:
   per-ship blacklists;
 - the exact engine state of `event.object.subordinates` after destruction;
 - a controlled Tide warning in Avarice with widely dispersed subordinates;
+- the single-choice idle dropdown, conditional target row and Vanilla map
+  target-selection flow for each action in both Sector and Galaxy behavior;
 - interactions with third-party mods that patch the same Vanilla order files.
 
 These are tracked as test boundaries, not described as known failures.

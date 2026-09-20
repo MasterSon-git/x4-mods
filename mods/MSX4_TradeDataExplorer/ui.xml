@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon name="msx4_trade_data_explorer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../ui/core/addon.xsd">
+  <environment type="menus">
+    <file name="ui/addons/msx4_trade_data_explorer/idle_action.lua" />
+    <dependency name="ego_detailmonitor" />
+  </environment>
+</addon>

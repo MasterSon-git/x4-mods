@@ -9,11 +9,13 @@ $loggingFixCommit = 'f192803581ec60476b8b5252f87ff4ca9e91875c'
 $managerPath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/md/msx4.ScriptLibrary.md.xml'
 $idlePath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/msx4.lib.IdleReturnHome.xml'
 $dockWaitDiffPath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/order.dock.wait.xml'
+$tdeDockWaitDiffPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/order.dock.wait.xml'
 $dockDiffPath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/order.dock.xml'
 $followDiffPath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/order.move.follow.xml'
 $sectorPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerS.xml'
 $galaxyPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/MSX4_TradeDataExplorerG.xml'
 $targetsPath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.GetTradeDataToUpdate.xml'
+$probePath = Join-Path $repoRoot 'mods/MSX4_TradeDataExplorer/aiscripts/msx4.tde.ProbeIdleWork.xml'
 $escapePath = Join-Path $repoRoot 'mods/MSX4_ScriptLibrary/aiscripts/msx4.lib.EscapeTravelBlacklist.xml'
 
 function Assert-Condition {
@@ -51,11 +53,13 @@ foreach ($file in $allXmlFiles) {
 $manager = $documents[$managerPath]
 $idle = $documents[$idlePath]
 $dockWaitDiff = $documents[$dockWaitDiffPath]
+$tdeDockWaitDiff = $documents[$tdeDockWaitDiffPath]
 $dockDiff = $documents[$dockDiffPath]
 $followDiff = $documents[$followDiffPath]
 $sector = $documents[$sectorPath]
 $galaxy = $documents[$galaxyPath]
 $targets = $documents[$targetsPath]
+$probe = $documents[$probePath]
 $escape = $documents[$escapePath]
 
 $managerShipLoop = $manager.SelectSingleNode("//cue[@name='MSX4_SL_ManageIdleReturnHome_MD']/actions/do_for_each[@name='`$_Ship']")
@@ -81,12 +85,46 @@ $cancelSignals = @(
 Assert-Condition ($cancelSignals.Count -eq 0) 'The timeout must not broadcast Cancel_IdleReturnHome and accidentally target only this.ship.order.'
 Write-Output '1/24 active IdleReturnHome parent is selected and cancelled by exact reference: OK'
 
-$dockWaitCreate = $idle.SelectSingleNode("//create_order[@id=`"'DockAndWait'`" and @immediate='true' and param[@name='MSX4_IDLE_RETURN_HOME' and @value='true'] and param[@name='callerid' and @value='this.assignedcontrolled.order']]")
-Assert-Condition ($null -ne $dockWaitCreate) 'Strict Idle Dock must retain its tagged immediate DockAndWait child and callerid.'
+$dockWaitCreate = $idle.SelectSingleNode("//create_order[@id=`"'DockAndWait'`" and @immediate='true' and param[@name='MSX4_IDLE_RETURN_HOME' and @value='true'] and param[@name='MSX4_IDLE_PARENT_ORDER' and @value='this.assignedcontrolled.order'] and not(param[@name='callerid'])]")
+Assert-Condition ($null -ne $dockWaitCreate) 'Strict Idle Dock must hand off to a tagged immediate DockAndWait child without overloading Vanilla callerid.'
 $dockAtPropagation = $dockWaitDiff.SelectSingleNode("/diff/add/param[@name='MSX4_IDLE_RETURN_HOME' and @value='`$MSX4_IDLE_RETURN_HOME']")
 Assert-Condition ($null -ne $dockAtPropagation) 'DockAndWait must continue to tag its immediate DockAt child.'
 Assert-Condition ($targetedExpression -match '@\$_Order\.\$MSX4_IDLE_RETURN_HOME') 'Tagged DockAndWait and DockAt children must be selected by timeout cleanup.'
-Write-Output '2/24 tagged DockAndWait/DockAt immediate children are included in exact cleanup: OK'
+Write-Output '2/24 tagged DockAndWait/DockAt immediate children remain covered by exact external cleanup: OK'
+
+$idleProbeScriptParam = $idle.SelectSingleNode("/aiscript/order/params/param[@name='MSX4_IDLE_PROBE_SCRIPT' and @default='null']")
+$idleProbeReadyParam = $idle.SelectSingleNode("/aiscript/order/params/param[@name='MSX4_IDLE_PROBE_READY' and @default='false']")
+$dockWaitTimer = $dockWaitCreate.SelectSingleNode("param[@name='timeout' and @value='`$IDLE_TIME']")
+$dockWaitProbe = $dockWaitCreate.SelectSingleNode("param[@name='MSX4_IDLE_PROBE_SCRIPT' and @value='`$MSX4_IDLE_PROBE_SCRIPT']")
+$legacyDockManagerRelease = $dockWaitDiff.SelectSingleNode("//add[@sel=`"/aiscript/attention[@min='unknown']/actions/set_command_action[@commandaction='commandaction.standingby']`"][@pos='after']/remove_value[@name='global.`$MSX4_SL_IdleShips.{this.assignedcontrolled}']")
+$probeReadyReturn = $idle.SelectSingleNode("//attention[@min='unknown']/actions/do_if[@value='`$MSX4_STRICT_BLACKLIST and `$MSX4_IDLE_PROBE_READY']/resume[@label='END_LBL']")
+Assert-Condition ($null -ne $idleProbeScriptParam -and $null -ne $idleProbeReadyParam -and $null -ne $dockWaitTimer -and $null -ne $dockWaitProbe) 'Strict idle docking must use the configured interval and generic work-probe contract.'
+Assert-Condition ($null -ne $legacyDockManagerRelease) 'Older tagged library callers without explicit ownership handoff must still release the external timer after reaching the docked phase.'
+Assert-Condition ($null -ne $probeReadyReturn) 'The independent Follow path must retain its positive-probe return contract.'
+$dockedWaitLabel = $dockWaitDiff.SelectSingleNode("/diff/add[@sel=`"/aiscript/attention[@min='unknown']/actions/set_command_action[@commandaction='commandaction.standingby']`"][@pos='before']/label[@name='MSX4_IDLE_DOCKED_WAIT_LBL']")
+$dockedProbe = $dockWaitDiff.SelectSingleNode("/diff/add[@sel=`"/aiscript/attention[@min='unknown']/actions/label[@name='finish']`"][@pos='before']/do_if[contains(@value, '`$MSX4_IDLE_PROBE_SCRIPT') and contains(@value, '@this.assignedcontrolled.dock.container == `$destination')]")
+Assert-Condition ($null -ne $dockedWaitLabel -and $null -ne $dockedProbe) 'ScriptLibrary must add a guarded generic probe before a tagged dock wait can finish.'
+Assert-Condition ($null -ne $dockedProbe.SelectSingleNode("run_script[@name='`$MSX4_IDLE_PROBE_SCRIPT']")) 'DockAndWait must invoke the supplied probe dynamically.'
+Assert-Condition ($null -ne $dockedProbe.SelectSingleNode("do_if[@value='not `$_MSX4IdleWorkAvailable']/resume[@label='MSX4_IDLE_DOCKED_WAIT_LBL']")) 'An empty docked candidate probe must continue waiting inside the same DockAndWait order.'
+Assert-Condition ($tdeDockWaitDiff.SelectNodes("//run_script").Count -eq 0) 'The TDE DockAndWait diff must remain limited to its fleet-docking guard; probing belongs to the generic library hook.'
+$dockParentParam = $dockWaitDiff.SelectSingleNode("/diff/add[@sel=`"/aiscript/order[@id='DockAndWait']/params`"]//param[@name='MSX4_IDLE_PARENT_ORDER' and @default='null']")
+$handoffStateParam = $idle.SelectSingleNode("/aiscript/order/params/param[@name='MSX4_IDLE_HANDOFF_COMPLETE' and @default='false']")
+$parentHandoff = $dockWaitDiff.SelectSingleNode("/diff/add[@sel='/aiscript/init']//do_if[contains(@value, '@`$MSX4_IDLE_PARENT_ORDER.exists') and contains(@value, `"`$MSX4_IDLE_PARENT_ORDER.id == 'MSX4_lib_IdleReturnHome'`") and contains(@value, '`$MSX4_IDLE_PARENT_ORDER.object == this.assignedcontrolled')]")
+$parentMark = $dockWaitDiff.SelectSingleNode("/diff/add[@sel='/aiscript/init']//do_if[contains(@value, '@`$MSX4_IDLE_PARENT_ORDER.exists')]/edit_order_param[@order='`$_MSX4IdleParentOrder' and @param=`"'MSX4_IDLE_HANDOFF_COMPLETE'`" and @value='true']")
+$parentClear = $dockWaitDiff.SelectSingleNode("/diff/add[@sel='/aiscript/init']//do_if[contains(@value, '@`$MSX4_IDLE_PARENT_ORDER.exists')]/set_value[@name='`$MSX4_IDLE_PARENT_ORDER' and @exact='null']")
+$handoffTimerRelease = $dockWaitDiff.SelectSingleNode("/diff/add[@sel='/aiscript/init']//do_if[contains(@value, '@`$MSX4_IDLE_PARENT_ORDER.exists')]/remove_value[@name='global.`$MSX4_SL_IdleShips.{this.assignedcontrolled}']")
+$parentCancel = $dockWaitDiff.SelectSingleNode("/diff/add[@sel='/aiscript/init']//do_if[contains(@value, '@`$MSX4_IDLE_PARENT_ORDER.exists')]/cancel_order[@order='`$_MSX4IdleParentOrder']")
+Assert-Condition ($null -ne $dockParentParam -and $null -ne $handoffStateParam -and $null -ne $parentHandoff -and $null -ne $parentMark -and $null -ne $parentClear -and $null -ne $handoffTimerRelease -and $null -ne $parentCancel) 'Tagged DockAndWait must atomically accept and retire only its exact MSX4 IdleReturnHome parent and timer ownership.'
+Assert-Condition ((Get-DocumentOrder $parentClear) -lt (Get-DocumentOrder $parentCancel)) 'The one-shot handoff reference must be cleared before the exact parent is cancelled.'
+Assert-Condition ((Get-DocumentOrder $parentMark) -lt (Get-DocumentOrder $handoffTimerRelease) -and (Get-DocumentOrder $handoffTimerRelease) -lt (Get-DocumentOrder $parentCancel)) 'The parent must acknowledge the handoff before timer ownership is released and cancellation runs.'
+Assert-Condition ($null -ne $idle.SelectSingleNode("/aiscript/on_abort/do_if[contains(@value, 'not `$MSX4_IDLE_HANDOFF_COMPLETE') and contains(@value, 'not @global.`$MSX4_SL_IdleShips')]/set_value[@name='global.`$MSX4_SL_IdleShips.{`$_Ship}']")) 'A completed handoff must not let the retired parent reclaim the external idle timer.'
+Assert-Condition ($dockWaitDiff.SelectNodes("/diff/add[contains(@sel, 'event_object_order_cancelled') and contains(@sel, 'callerid')] | //set_value[@name='`$callerid']").Count -eq 0) 'The MSX4 dock lifecycle must not modify Vanilla callerid handlers or state.'
+Assert-Condition ($dockWaitDiff.SelectNodes("//edit_order_param[@order='`$callerid' and @param=`"'MSX4_IDLE_PROBE_READY'`"]").Count -eq 0) 'The self-contained dock probe must not callback into its retired parent.'
+$probeCalls = @($probe.SelectNodes("//run_script[@name=`"'msx4.tde.GetTradeDataToUpdate'`"]"))
+Assert-Condition ($probeCalls.Count -eq 2) 'The TDE work probe must cover Sector and Galaxy behavior contracts.'
+Assert-Condition ((@($probeCalls | Where-Object { $null -ne $_.SelectSingleNode("param[@name='SILENT' and @value='true']") }).Count -eq 2)) 'Periodic probes must suppress duplicate player messages.'
+Write-Output '2a/24 every docked idle check retains DockAndWait until TDE work actually exists: OK'
+Write-Output '2b/24 explicit one-shot ownership handoff keeps long dock approaches independent without altering Vanilla caller semantics: OK'
 
 Assert-Condition ($manager.SelectNodes("//create_order[@id=`"'MSX4_lib_IdleReturnHome'`"]").Count -eq 0) 'The manager must not hard-start IdleReturnHome.'
 Assert-Condition ($manager.SelectNodes("//run_script[contains(@name, 'TradeDataExplorer')] | //create_order[contains(@id, 'TradeDataExplorer')]").Count -eq 0) 'The ScriptLibrary manager must not directly start a TDE main order.'
@@ -148,19 +186,26 @@ foreach ($document in @($sector, $galaxy)) {
 Write-Output '12-13/24 a new candidate pass necessarily precedes any later idle fallback or redock: OK'
 
 Assert-Condition ($null -ne $idle.SelectSingleNode("/aiscript/order/params/param[@name='cannotdock' and @default='false']")) 'IdleReturnHome must retain cannotdock.'
-Assert-Condition ($null -ne $idle.SelectSingleNode("//create_order[@id=`"'DockAndWait'`"]/param[@name='callerid' and @value='this.assignedcontrolled.order']")) 'Idle Dock must retain callerid-based cannotdock communication.'
+Assert-Condition ($null -eq $dockWaitCreate.SelectSingleNode("param[@name='callerid']")) 'The handed-off idle DockAndWait order must leave Vanilla callerid unset.'
 Assert-Condition ($dockWaitDiff.SelectNodes("//edit_order_param[@param=`"'cannotdock'`" and @value='true']").Count -eq 0) 'DockAndWait logging diff must not replace productive cannotdock edits.'
 Assert-Condition ($dockDiff.SelectNodes("//edit_order_param[@param=`"'cannotdock'`" and @value='true']").Count -eq 0) 'DockAt logging diff must not replace productive cannotdock edits.'
-Write-Output '14/24 cannotdock parameter and caller contract remain present: OK'
+Write-Output '14/24 the standalone idle dock path leaves Vanilla callerid/cannotdock behavior untouched: OK'
 
 $idleMove = $idle.SelectSingleNode("//run_script[@name=`"'move.generic'`" and param[@name='destination' and @value='`$WHERE_TO_MOVE.{1}']]")
 Assert-Condition ($null -ne $idleMove) 'Strict Idle Move must remain a synchronous move.generic call under IdleReturnHome.'
 $idleFollow = $idle.SelectSingleNode("//run_script[@name=`"'order.move.follow'`" and param[@name='MSX4_IDLE_RETURN_HOME' and @value='true']]")
 Assert-Condition ($null -ne $idleFollow) 'Strict Idle Follow must remain a synchronous tagged call under IdleReturnHome.'
 Assert-Condition ($null -ne $followDiff.SelectSingleNode("//do_if[@value='not `$movesuccess']/do_if[@value='not `$MSX4_IDLE_RETURN_HOME and @this.assignedcontrolled.order.isrunning']")) 'Idle Follow target/move failure must remain distinct from the parent order failure path.'
-Assert-Condition ($null -ne $idle.SelectSingleNode("//do_if[@value='`$_IdleActionFailed']/wait[@exact='`$IDLE_TIME']")) 'Observed idle-action failures must retain their configured full backoff.'
-Assert-Condition ($null -ne $idle.SelectSingleNode("//do_if[@value='`$_IdleActionFailed']/following-sibling::do_else[1]/wait[not(@exact)]")) 'No available idle action must retain the parent wait until the manager timeout.'
-Write-Output '15-17/24 Idle Move, Idle Follow and both normal backoff paths remain intact: OK'
+Assert-Condition ($null -ne $idle.SelectSingleNode("//do_elseif[@value='`$_IdleActionFailed']/wait[@exact='`$IDLE_TIME']")) 'Observed idle-action failures must retain their configured full backoff.'
+Assert-Condition ($null -ne $idle.SelectSingleNode("//do_elseif[@value='`$_IdleActionFailed']/following-sibling::do_else[1]/wait[not(@exact)]")) 'No available idle action without a callback must retain the parent wait until the manager timeout.'
+$parentProbeLoop = $idle.SelectSingleNode("//do_if[@value='`$_IdleActionEstablished and `$MSX4_IDLE_PROBE_SCRIPT']/do_while[@value='not `$_IdleWorkAvailable']")
+Assert-Condition ($null -ne $parentProbeLoop -and $null -ne $parentProbeLoop.SelectSingleNode("run_script[@name='`$MSX4_IDLE_PROBE_SCRIPT']")) 'Hold and completed Move must retain their state across empty work probes.'
+Assert-Condition ($null -ne $idleFollow.SelectSingleNode("param[@name='MSX4_IDLE_PROBE_SCRIPT' and @value='`$MSX4_IDLE_PROBE_SCRIPT']") -and $null -ne $idleFollow.SelectSingleNode("param[@name='MSX4_IDLE_PROBE_INTERVAL' and @value='`$IDLE_TIME']")) 'Follow must receive the same persistent work-probe contract.'
+Assert-Condition ($followDiff.SelectNodes("//run_script[@name='`$MSX4_IDLE_PROBE_SCRIPT']").Count -eq 2 -and $null -ne $followDiff.SelectSingleNode("//edit_order_param[@param=`"'MSX4_IDLE_PROBE_READY'`" and @value='true']")) 'Follow must probe from both of its recurring Vanilla loop paths and report positive work.'
+foreach ($document in @($sector, $galaxy)) {
+    Assert-Condition ($null -ne $document.SelectSingleNode("//create_order[@id=`"'MSX4_lib_IdleReturnHome'`"]//param[@name='MSX4_IDLE_PROBE_SCRIPT' and @value=`"'msx4.tde.ProbeIdleWork'`"]")) 'Each TDE mode must supply its work-probe callback.'
+}
+Write-Output '15-17/24 Hold, Move, Follow and Dock retain their selected state across empty probes; failure backoff remains intact: OK'
 
 Assert-Condition ($managerShipLoop.SelectNodes(".//cancel_all_orders").Count -eq 0) 'Idle timeout cleanup must never cancel the whole queue.'
 Assert-Condition ($managerShipLoop.SelectNodes(".//cancel_order").Count -eq 1) 'Idle timeout cleanup must contain only its one filtered exact-order cancellation site.'
