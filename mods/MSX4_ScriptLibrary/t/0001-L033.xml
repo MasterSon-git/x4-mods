@@ -63,9 +63,13 @@
       <t id="104">Suivre un objet</t>
       <t id="105">S'amarrer à la station sélectionnée</t>
       <t id="106">S'amarrer à une station appropriée</t>
+      <t id="107">Désactivé</t>
+      <t id="108">Messages de base</t>
+      <t id="109">Mises à jour des secteurs</t>
+      <t id="110">Toutes les mises à jour des stations</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">Afficher les messages?</t>
-      <t id="91">Écrire dans le journal de bord?</t>
+      <t id="90">Afficher les messages</t>
+      <t id="91">Écrire dans le journal de bord</t>
       <t id="92">Ajouter une balise de commande?</t>
       <t id="93">Sauvegarder les paramètres de commande?</t>
       <t id="94">Réinitialiser les paramètres de commande?</t>

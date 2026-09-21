@@ -24,26 +24,33 @@ local actionOptions = {
   { id = 4, text = ReadText(975210, 106), icon = "", displayremoveoption = false },
 }
 
-local function getIdleAction(order)
+local messageLevelOptions = {
+  { id = 0, text = ReadText(975210, 107), icon = "", displayremoveoption = false },
+  { id = 1, text = ReadText(975210, 108), icon = "", displayremoveoption = false },
+  { id = 2, text = ReadText(975210, 109), icon = "", displayremoveoption = false },
+  { id = 3, text = ReadText(975210, 110), icon = "", displayremoveoption = false },
+}
+
+local function getNumberParam(order, name, fallback)
   for _, orderparam in ipairs(order.params or {}) do
-    if orderparam.name == "IDLE_ACTION" then
-      return tonumber(orderparam.value) or 0
+    if orderparam.name == name then
+      return tonumber(orderparam.value) or fallback
     end
   end
-  return 0
+  return fallback
 end
 
 local function isTradeDataExplorerOrder(order)
   return order and order.orderdefref and tdeOrderIds[order.orderdefref.id] == true
 end
 
-local function setIdleAction(menu, orderidx, paramidx, listidx, instance, action)
+local function setNumberChoice(menu, orderidx, paramidx, listidx, instance, choice)
   -- The Vanilla number-parameter handler owns default-order planning, the
   -- validity check and frame refresh.  Only its presentation is replaced.
-  return menu.slidercellSetOrderParam(orderidx, paramidx, listidx, tonumber(action), instance)
+  return menu.slidercellSetOrderParam(orderidx, paramidx, listidx, tonumber(choice), instance)
 end
 
-local function displayIdleAction(menu, ftable, orderidx, order, paramidx, param, listidx, instance)
+local function displayNumberChoice(menu, ftable, orderidx, order, paramidx, param, listidx, instance, options, selectedOption)
   local selectedorder = menu.infoTablePersistentData[instance].selectedorder
   local row = ftable:addRow({ orderidx, paramidx, listidx }, {})
   if selectedorder and selectedorder[1] == orderidx and selectedorder[2] == paramidx and selectedorder[3] == listidx then
@@ -67,14 +74,14 @@ local function displayIdleAction(menu, ftable, orderidx, order, paramidx, param,
   local active = paramactive and (not isplayeroccupiedship) and (((order.state == "setup") and (paramidx <= (order.actualparams + 1))) or ((order.state ~= "setup") and param.editable))
   local labelcol = menu.infoTableData[instance].hasloop and 4 or 2
   row[labelcol]:setColSpan(menu.infoTableData[instance].hasloop and 1 or 3):createText("  " .. param.text .. ReadText(1001, 120))
-  row[5]:setColSpan(8):createDropDown(actionOptions, {
+  row[5]:setColSpan(8):createDropDown(options, {
     active = active,
     height = Helper.standardTextHeight,
-    startOption = getIdleAction(order),
+    startOption = selectedOption,
   }):setTextProperties({ fontsize = Helper.standardFontSize, halign = "center" })
   row[5].handlers.onDropDownActivated = function () menu.noupdate = true end
-  row[5].handlers.onDropDownConfirmed = function (_, action)
-    return setIdleAction(menu, orderidx, paramidx, listidx, instance, action)
+  row[5].handlers.onDropDownConfirmed = function (_, choice)
+    return setNumberChoice(menu, orderidx, paramidx, listidx, instance, choice)
   end
 end
 
@@ -92,11 +99,13 @@ local function init()
   menu.displayOrderParam = function (ftable, orderidx, order, paramidx, param, listidx, instance)
     if isTradeDataExplorerOrder(order) then
       if param.name == "IDLE_ACTION" then
-        return displayIdleAction(menu, ftable, orderidx, order, paramidx, param, listidx, instance)
+        return displayNumberChoice(menu, ftable, orderidx, order, paramidx, param, listidx, instance, actionOptions, getNumberParam(order, "IDLE_ACTION", 0))
+      elseif param.name == "SHOW_MESSAGES" or param.name == "WRITE_TO_LOG" then
+        return displayNumberChoice(menu, ftable, orderidx, order, paramidx, param, listidx, instance, messageLevelOptions, getNumberParam(order, param.name, 0))
       end
 
       local requiredAction = targetActions[param.name]
-      if requiredAction and getIdleAction(order) ~= requiredAction then
+      if requiredAction and getNumberParam(order, "IDLE_ACTION", 0) ~= requiredAction then
         return
       end
     end

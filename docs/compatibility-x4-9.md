@@ -165,8 +165,12 @@ economy edits or permanent trade subscriptions.
   object order parameters but no declarative dropdown parameter. The narrowly
   guarded adapter in
   `mods/MSX4_TradeDataExplorer/ui/addons/msx4_trade_data_explorer/idle_action.lua`
-  renders the bounded action value as a dropdown and delegates contextual
-  target selection to Vanilla `menu_map.lua`'s `buttonSetOrderParam` flow. The
+  renders the bounded action value and the two message thresholds as
+  descriptive dropdowns. Contextual target selection delegates to Vanilla
+  `menu_map.lua`'s `buttonSetOrderParam` flow, while every dropdown update uses
+  its numeric parameter setter. `Show messages` and `Write to logbook`
+  therefore retain their saved values and threshold semantics: off, basic
+  messages, sector updates or all station updates. The
   extension-root `mods/MSX4_TradeDataExplorer/ui.xml` manifest loads the
   adapter after `ego_detailmonitor`. It follows X4 9.00's third-party
   `ui/core/addon.xsd` contract: unlike a Vanilla core addon, its addon name
@@ -235,8 +239,9 @@ The following cannot be proven by XML validation alone:
   per-ship blacklists;
 - the exact engine state of `event.object.subordinates` after destruction;
 - a controlled Tide warning in Avarice with widely dispersed subordinates;
-- the single-choice idle dropdown, conditional target row and Vanilla map
-  target-selection flow for each action in both Sector and Galaxy behavior;
+- the single-choice idle dropdown, conditional target row, two message-level
+  dropdowns and Vanilla map target-selection flow for each applicable action
+  in both Sector and Galaxy behavior;
 - interactions with third-party mods that patch the same Vanilla order files.
 
 These are tracked as test boundaries, not described as known failures.

@@ -63,9 +63,13 @@
       <t id="104">Follow Object</t>
       <t id="105">Dock at Selected Station</t>
       <t id="106">Dock at Suitable Station</t>
+      <t id="107">Off</t>
+      <t id="108">Basic messages</t>
+      <t id="109">Sector updates</t>
+      <t id="110">All station updates</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">Show messages?</t>
-      <t id="91">Write to logbook?</t>
+      <t id="90">Show messages</t>
+      <t id="91">Write to logbook</t>
       <t id="92">Add Order tag?</t>
       <t id="93">Save Order Settings?</t>
       <t id="94">Reset Order Settings?</t>

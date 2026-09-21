@@ -58,6 +58,10 @@ $retiredPublicParamNames = @(
     'FIND_STATION',
     'WHERE_TO_DOCK'
 )
+$messageLevelDefaults = [ordered]@{
+    SHOW_MESSAGES = 'if global.$MSX4_TDE_Settings? then global.$MSX4_TDE_Settings.{17} else 1'
+    WRITE_TO_LOG  = 'if global.$MSX4_TDE_Settings? then global.$MSX4_TDE_Settings.{18} else 3'
+}
 $idleMapping = [ordered]@{
     IDLE_MOVE_TO  = '$_IdleMoveEnabled'
     WHERE_TO_MOVE = '$IDLE_MOVE_TARGET'
@@ -92,6 +96,15 @@ foreach ($entry in $behaviorDocuments.GetEnumerator()) {
         $action.SelectSingleNode("input_param[@name='min']").value -eq '0' -and
         $action.SelectSingleNode("input_param[@name='max']").value -eq '4' -and
         $action.SelectSingleNode("input_param[@name='step']").value -eq '1') "$mode stores the single idle choice as a bounded integer from 0 through 4"
+
+    foreach ($messageLevel in $messageLevelDefaults.GetEnumerator()) {
+        $messageParam = Get-OrderParam -Document $document -Name $messageLevel.Key
+        Assert-Condition ($messageParam.type -eq 'number' -and
+            $messageParam.default -eq $messageLevel.Value -and
+            $messageParam.SelectSingleNode("input_param[@name='min']").value -eq '0' -and
+            $messageParam.SelectSingleNode("input_param[@name='max']").value -eq '3' -and
+            $messageParam.SelectSingleNode("input_param[@name='step']").value -eq '1') "$mode preserves the numeric $($messageLevel.Key) contract and default"
+    }
 
     $moveTarget = Get-OrderParam -Document $document -Name 'IDLE_MOVE_TARGET'
     $followTarget = Get-OrderParam -Document $document -Name 'IDLE_FOLLOW_TARGET'
@@ -175,6 +188,11 @@ for ($actionId = 0; $actionId -le 4; $actionId++) {
     $textId = 102 + $actionId
     Assert-Condition ($lua -match "\{ id = $actionId, text = ReadText\(975210, $textId\)") "UI dropdown defines action $actionId with text $textId"
 }
+for ($level = 0; $level -le 3; $level++) {
+    $textId = 107 + $level
+    Assert-Condition ($lua -match "\{ id = $level, text = ReadText\(975210, $textId\)") "UI dropdown defines message level $level with text $textId"
+}
+Assert-Condition ($lua.Contains('param.name == "SHOW_MESSAGES" or param.name == "WRITE_TO_LOG"')) 'UI adapter intercepts both message-level parameters inside the TDE order guard'
 foreach ($mapping in @{
     IDLE_MOVE_TARGET = 1
     IDLE_FOLLOW_TARGET = 2
@@ -182,7 +200,7 @@ foreach ($mapping in @{
 }.GetEnumerator()) {
     Assert-Condition ($lua -match "$($mapping.Key)\s*=\s*$($mapping.Value)") "UI shows $($mapping.Key) only for action $($mapping.Value)"
 }
-Assert-Condition ($lua.Contains('return menu.slidercellSetOrderParam(orderidx, paramidx, listidx, tonumber(action), instance)')) 'Dropdown converts its option id and uses Vanilla number-parameter update handling'
+Assert-Condition ($lua.Contains('return menu.slidercellSetOrderParam(orderidx, paramidx, listidx, tonumber(choice), instance)')) 'Dropdown converts its option id and uses Vanilla number-parameter update handling'
 Assert-Condition ($lua.Contains('return vanillaDisplayOrderParam(ftable, orderidx, order, paramidx, param, listidx, instance)')) 'Contextual target rows delegate to Vanilla order-parameter rendering'
 Assert-Condition ($lua -notmatch '(?m)^\s*SetOrderParam\(') 'UI adapter does not bypass Vanilla parameter update handling'
 Assert-Condition (-not (Test-Path (Join-Path $tdeRoot 'ui/addons/msx4_trade_data_explorer/menu_map.lua'))) 'Mod does not copy or replace Vanilla menu_map.lua'
@@ -191,10 +209,42 @@ $localizationFiles = @(Get-ChildItem (Join-Path $scriptLibraryRoot 't') -Filter 
 Assert-Condition ($localizationFiles.Count -eq 14) 'Expected Script Library localization set is present'
 foreach ($file in $localizationFiles) {
     $localization = Read-XmlDocument $file.FullName
+    foreach ($textId in 90..91) {
+        $nodes = @($localization.SelectNodes("//page[@id='975210']/t[@id='$textId']"))
+        Assert-Condition ($nodes.Count -eq 1 -and $nodes[0].InnerText -notmatch '[?？]$') "$($file.Name) defines message-level label $textId as a non-question exactly once"
+    }
     foreach ($textId in 100..106) {
         $nodes = @($localization.SelectNodes("//page[@id='975210']/t[@id='$textId']"))
         Assert-Condition ($nodes.Count -eq 1 -and -not [string]::IsNullOrWhiteSpace($nodes[0].InnerText)) "$($file.Name) defines idle UI text $textId exactly once"
     }
+    foreach ($textId in 107..110) {
+        $nodes = @($localization.SelectNodes("//page[@id='975210']/t[@id='$textId']"))
+        Assert-Condition ($nodes.Count -eq 1 -and -not [string]::IsNullOrWhiteSpace($nodes[0].InnerText)) "$($file.Name) defines message-level UI text $textId exactly once"
+    }
 }
 
-Write-Host 'Idle action selector regression: PASS'
+$messageLog = Read-XmlDocument (Join-Path $scriptLibraryRoot 'aiscripts/msx4.lib.MessageLog.xml')
+Assert-Condition ($messageLog.SelectSingleNode("/aiscript/params/param[@name='MESSAGE_CHANCE']").default -eq '1') 'Basic message events retain threshold 1'
+Assert-Condition ($messageLog.SelectSingleNode("/aiscript/params/param[@name='LOG_CHANCE']").default -eq '1') 'Basic logbook events retain threshold 1'
+$showThreshold = @($messageLog.SelectNodes('//set_value') | Where-Object {
+    $_.name -eq '$_ShowMessages' -and $_.exact -eq 'if $SHOW_MESSAGES ge $MESSAGE_CHANCE then 100 else 0'
+})
+$logThreshold = @($messageLog.SelectNodes('//set_value') | Where-Object {
+    $_.name -eq '$_WriteToLog' -and $_.exact -eq 'if $WRITE_TO_LOG ge $LOG_CHANCE then 100 else 0'
+})
+Assert-Condition ($showThreshold.Count -eq 1) 'Message display retains its numeric threshold semantics'
+Assert-Condition ($logThreshold.Count -eq 1) 'Logbook output retains its numeric threshold semantics'
+
+$sectorSearch = Read-XmlDocument (Join-Path $tdeRoot 'aiscripts/msx4.tde.GetTradeDataToUpdate.xml')
+$sectorThresholds = @($sectorSearch.SelectNodes('//run_script/param') | Where-Object {
+    ($_.name -eq 'MESSAGE_CHANCE' -or $_.name -eq 'LOG_CHANCE') -and $_.value -eq '2' -and $_.ParentNode.name -eq "'msx4.lib.MessageLog'"
+})
+Assert-Condition ($sectorThresholds.Count -eq 2) 'Sector-update messages retain threshold 2 for display and logbook output'
+
+$stationUpdate = Read-XmlDocument (Join-Path $tdeRoot 'aiscripts/msx4.tde.UpdateTradeData.xml')
+$stationThresholds = @($stationUpdate.SelectNodes('//run_script/param') | Where-Object {
+    ($_.name -eq 'MESSAGE_CHANCE' -or $_.name -eq 'LOG_CHANCE') -and $_.value -eq '3' -and $_.ParentNode.name -eq "'msx4.lib.MessageLog'"
+})
+Assert-Condition ($stationThresholds.Count -eq 2) 'Station-update messages retain threshold 3 for display and logbook output'
+
+Write-Host 'Trade Data Explorer order-parameter dropdown regression: PASS'

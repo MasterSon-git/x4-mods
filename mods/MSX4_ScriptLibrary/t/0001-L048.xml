@@ -63,9 +63,13 @@
       <t id="104">Podążaj za obiektem</t>
       <t id="105">Zadokuj na wybranej stacji</t>
       <t id="106">Zadokuj na odpowiedniej stacji</t>
+      <t id="107">Wyłączone</t>
+      <t id="108">Podstawowe komunikaty</t>
+      <t id="109">Aktualizacje sektorów</t>
+      <t id="110">Wszystkie aktualizacje stacji</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">Pokazać wiadomości?</t>
-      <t id="91">Zapisz do dziennika?</t>
+      <t id="90">Pokazywać wiadomości</t>
+      <t id="91">Zapisywać do dziennika</t>
       <t id="92">Dodać tag zamówienia?</t>
       <t id="93">Zapisać ustawienia zamówienia?</t>
       <t id="94">Zresetować ustawienia zamówienia?</t>

@@ -63,9 +63,13 @@
       <t id="104">Objekt folgen</t>
       <t id="105">An ausgewählter Station andocken</t>
       <t id="106">An geeigneter Station andocken</t>
+      <t id="107">Aus</t>
+      <t id="108">Grundlegende Meldungen</t>
+      <t id="109">Sektoraktualisierungen</t>
+      <t id="110">Alle Stationsaktualisierungen</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">Nachrichten anzeigen?</t>
-      <t id="91">Ins Logbuch schreiben?</t>
+      <t id="90">Nachrichten anzeigen</t>
+      <t id="91">Ins Logbuch schreiben</t>
       <t id="92">Befehls-Tag hinzufügen?</t>
       <t id="93">Einstellungen speichern?</t>
       <t id="94">Einstellungen zurücksetzen?</t>

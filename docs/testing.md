@@ -50,6 +50,7 @@ evidence summary, not an investigation or commit history.
 | Dynamic restrictions | A tested travel-blacklist escape completed; target access, hostility and blacklist changes are also statically revalidated |
 | Save/load | The behavior remained functional through the tested active-order load cycle |
 | Idle selector | The action rendered as a dropdown; only target-bearing actions displayed one contextual target row, and Dock at Suitable Station activated without a row |
+| Message levels | Show messages and Write to logbook rendered as four-option dropdowns; the selected levels produced the expected on-screen messages and logbook entries |
 | Persistent idle actions | In a 14-ship run, 128 empty probes did not release the selected idle action; observed releases followed positive work probes |
 | Automatic docking | Current or remembered valid nearby docks were retained, and a traced run showed one DockAt child per ownership handoff without an immediate undock/redock loop |
 | Avarice distribution | In the observed run, the reservation kept workers other than the commander out of the commander's Avarice IV sector |
@@ -80,6 +81,9 @@ size, DLC combination or third-party mod.
    dropdown and that only Move to Position, Follow Object and Dock at Selected
    Station show one `Idle Target` row. Use that row once per target-bearing
    action and confirm it opens Vanilla's normal map target-selection mode.
+   Confirm that `Show messages` and `Write to logbook` are dropdowns with
+   Off, Basic messages, Sector updates and All station updates, and that each
+   selected level remains set after closing and reopening the behavior panel.
 8. Exercise Hold Position and Dock at Suitable Station. Make a selected target
    unavailable and confirm the ship waits rather than trying another idle
    action. Then wait for the timeout and confirm a fresh search occurs before
@@ -103,8 +107,8 @@ size, DLC combination or third-party mod.
 - foreign queued orders through every Priority Order interruption boundary;
 - reproducible frame-time capture for a large fleet, rather than subjective
   hitch observation;
-- the single-choice idle UI in default-order, planned-default and Mimic
-  inheritance paths;
+- the single-choice idle and message-level dropdowns in default-order,
+  planned-default and Mimic inheritance paths;
 - the distinction between cache-build idle and short search-busy retries;
 - interactions with third-party mods that patch Assist, Dock, DockAndWait or
   Follow. Coexistence with the original JP extensions is not supported or an
