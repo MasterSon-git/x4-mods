@@ -63,9 +63,13 @@
       <t id="104">Seguir objeto</t>
       <t id="105">Acoplarse en la estación seleccionada</t>
       <t id="106">Acoplarse en una estación adecuada</t>
+      <t id="107">Desactivado</t>
+      <t id="108">Mensajes básicos</t>
+      <t id="109">Actualizaciones de sectores</t>
+      <t id="110">Todas las actualizaciones de estaciones</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">¿Mostrar mensajes?</t>
-      <t id="91">¿Escribir en el libro de registro?</t>
+      <t id="90">Mostrar mensajes</t>
+      <t id="91">Escribir en el libro de registro</t>
       <t id="92">¿Agregar etiqueta de orden?</t>
       <t id="93">¿Guardar configuraciones de orden?</t>
       <t id="94">¿Restablecer configuraciones de orden?</t>

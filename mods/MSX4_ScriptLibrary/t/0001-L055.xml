@@ -63,9 +63,13 @@
       <t id="104">Seguir objeto</t>
       <t id="105">Atracar na estação selecionada</t>
       <t id="106">Atracar em uma estação adequada</t>
+      <t id="107">Desativado</t>
+      <t id="108">Mensagens básicas</t>
+      <t id="109">Atualizações de setores</t>
+      <t id="110">Todas as atualizações de estações</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">Mostrar mensagens?</t>
-      <t id="91">Escrever no livro de registro?</t>
+      <t id="90">Mostrar mensagens</t>
+      <t id="91">Escrever no livro de registro</t>
       <t id="92">Adicionar tag de ordem?</t>
       <t id="93">Salvar configurações de ordem?</t>
       <t id="94">Redefinir configurações de ordem?</t>

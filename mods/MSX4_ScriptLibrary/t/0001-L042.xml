@@ -63,9 +63,13 @@
       <t id="104">Sledovat objekt</t>
       <t id="105">Dokovat u vybrané stanice</t>
       <t id="106">Dokovat u vhodné stanice</t>
+      <t id="107">Vypnuto</t>
+      <t id="108">Základní zprávy</t>
+      <t id="109">Aktualizace sektorů</t>
+      <t id="110">Všechny aktualizace stanic</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">Zobrazit zprávy?</t>
-      <t id="91">Zapsat do palubního deníku?</t>
+      <t id="90">Zobrazit zprávy</t>
+      <t id="91">Zapsat do palubního deníku</t>
       <t id="92">Přidat štítek k objednávce?</t>
       <t id="93">Uložit nastavení objednávky?</t>
       <t id="94">Resetovat nastavení objednávky?</t>

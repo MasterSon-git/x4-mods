@@ -63,9 +63,13 @@
       <t id="104">Segui oggetto</t>
       <t id="105">Attracca alla stazione selezionata</t>
       <t id="106">Attracca a una stazione adatta</t>
+      <t id="107">Disattivato</t>
+      <t id="108">Messaggi di base</t>
+      <t id="109">Aggiornamenti dei settori</t>
+      <t id="110">Tutti gli aggiornamenti delle stazioni</t>
       <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-      <t id="90">Mostrare i messaggi?</t>
-      <t id="91">Scrivere sul registro di bordo?</t>
+      <t id="90">Mostrare i messaggi</t>
+      <t id="91">Scrivere sul registro di bordo</t>
       <t id="92">Aggiungere il tag dell'ordine?</t>
       <t id="93">Salvare le impostazioni dell'ordine?</t>
       <t id="94">Reset delle impostazioni dell'ordine?</t>
